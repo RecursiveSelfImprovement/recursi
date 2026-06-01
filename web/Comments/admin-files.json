@@ -1,0 +1,24 @@
+{
+  "main": [
+    "js/AdminTestPage.js"
+  ],
+  "local": [
+    "js/DialogBoxExtended.js",
+    "js/Comments.js",
+    "js/CommentNode.js",
+    "js/CommentStyles.js",
+    "js/NameRenderer.js",
+    "js/RatingPanel.js",
+    "js/CommentToolbar.js",
+    "js/UserAccountDialog.js",
+    "js/CommentThreadView.js",
+    "js/UserManager.js",
+    "js/ServerAPI.js",
+    "js/MockServerAPI.js"
+  ],
+  "library": [
+    "UITools.js",
+    "GlowingTooltip.js"
+  ],
+  "thirdParty": []
+}

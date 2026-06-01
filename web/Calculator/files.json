@@ -1,0 +1,16 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/Calculator.js"
+  ],
+  "local": [
+    "js/Fractions.js",
+    "js/Parentheses.js",
+    "js/RepeatingDecimal.js",
+    "js/RepeatingDecimalExpander.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

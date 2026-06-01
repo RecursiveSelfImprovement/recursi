@@ -1,0 +1,17 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "js/MidiScraper.js"
+  ],
+  "local": [
+    "js/LaneScraper.js",
+    "js/MidiScraperExporters.js",
+    "js/MidiScraperUI.js",
+    "js/PianoScraper.js"
+  ],
+  "library": [
+    "UITools.js",
+    "GraphicPiano.js"
+  ],
+  "thirdParty": []
+}

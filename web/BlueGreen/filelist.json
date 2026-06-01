@@ -1,0 +1,54 @@
+{
+  "js": [
+    {
+      "path": "/BlueGreen/js/JitterGradient.js",
+      "hasDocs": false
+    },
+    {
+      "path": "/sharedLib/recursi.js",
+      "hasDocs": true
+    }
+  ],
+  "css": [
+    {
+      "path": "/BlueGreen/css/blueGreen.css",
+      "hasDocs": false
+    },
+    {
+      "path": "/BlueGreen/documentation/css/blueGreen.css",
+      "hasDocs": false
+    }
+  ],
+  "html": [
+    {
+      "path": "/BlueGreen/documentation/index.html",
+      "hasDocs": false
+    },
+    {
+      "path": "/BlueGreen/index.html",
+      "hasDocs": false
+    }
+  ],
+  "other": [
+    {
+      "path": "/BlueGreen/README.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/BlueGreen/documentation/js/BlueGreen_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/BlueGreen/documentation/js/lib/DialogBox_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/BlueGreen/documentation/js/lib/makeElement_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/BlueGreen/documentation/metadata.json",
+      "hasDocs": false
+    }
+  ]
+}

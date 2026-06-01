@@ -1,0 +1,10 @@
+{
+  "main": [
+    "js/SimpleTestPage.js"
+  ],
+  "local": [],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

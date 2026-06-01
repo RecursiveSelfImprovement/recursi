@@ -1,0 +1,9 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "RecursiTestRunner.js"
+  ],
+  "local": [],
+  "library": ["UITools.js", "CodeMirrorWidget.js"],
+  "thirdParty": []
+}

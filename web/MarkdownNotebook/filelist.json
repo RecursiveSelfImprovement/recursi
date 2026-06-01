@@ -1,0 +1,113 @@
+{
+  "js": [
+    {
+      "path": "/MarkdownNotebook/landing/LandingPage.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/landing/StyleManager.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/multiWidgetPage.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/ui/HamburgerMenu.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/ui/MarkdownWidget.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/ui/StaticCheckbox.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/ui/VerticalOrderingUI.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/utils/SvgUtils.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/utils/cleanMarkdown.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/sharedLib/recursi.js",
+      "hasDocs": true
+    }
+  ],
+  "css": [],
+  "html": [
+    {
+      "path": "/MarkdownNotebook/blank.html",
+      "hasDocs": true
+    },
+    {
+      "path": "/MarkdownNotebook/index.html",
+      "hasDocs": true
+    }
+  ],
+  "other": [
+    {
+      "path": "/MarkdownNotebook/build-public.mjs",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/blank_html.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/file_metadata_json.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/index_html.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/landing/LandingPage_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/landing/StyleManager_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/multiWidgetPage_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/src/app/ProjectEditorApp_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/ui/HamburgerMenu_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/ui/MarkdownWidget_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/ui/StaticCheckbox_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/ui/VerticalOrderingUI_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/utils/SvgUtils_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MarkdownNotebook/documentation/utils/cleanMarkdown_js.md",
+      "hasDocs": false
+    }
+  ]
+}

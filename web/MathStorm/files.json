@@ -1,0 +1,19 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/MathStorm.js"
+  ],
+  "local": [
+    "js/Debug.js",
+    "js/EquationFactory.js",
+    "js/GameEngine.js",
+    "js/GamePiece.js",
+    "js/InteractionHandler.js",
+    "js/PieceGroup.js",
+    "js/SolvedGroupManager.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

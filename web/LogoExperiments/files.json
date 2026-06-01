@@ -1,0 +1,12 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "js/LogoExperiments.js"
+    
+  ],
+  "local": ["js/EmberLogo.js"],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

@@ -1,0 +1,23 @@
+{
+  "main": [
+    "js/GuessTheNoteGame.js"
+  ],
+  "local": [
+    "js/GameBox.js",
+    "js/InstrumentSelector.js",
+    "js/KeySignatureSelector.js",
+    "js/Piano.js",
+    "js/PianoUtils.js",
+    "js/ScoreBox.js"
+  ],
+  "library": [
+    "GraphicPiano.js",
+    "GlowPiano.js",
+    "SmartElementPositioner.js",
+    "sound_engines/InstrumentSounds.js",
+    "sound_engines/PianoSamplePlayer.js",
+    "sound_engines/TinySynth.js",
+    "sound_engines/WafLoader.js",
+    "sound_engines/WafPlayer.js"
+  ]
+}

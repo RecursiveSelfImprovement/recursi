@@ -1,0 +1,349 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Scratch Viewer</title>
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #111; color: #ddd; }
+    .wrap { display: flex; flex-direction: column; height: 100vh; }
+    .bar { display:flex; gap:8px; align-items:center; padding:10px; background:#1b1b1b; border-bottom:1px solid #333; flex-shrink: 0; }
+    button { background:#2a2a2a; color:#ddd; border:1px solid #444; border-radius:8px; padding:6px 10px; cursor:pointer; }
+    button:hover { background:#333; }
+    .status { margin-left:10px; opacity:.9; font-size:13px; }
+    .stageWrap { 
+      flex: 1; 
+      display: flex; 
+      align-items: center; 
+      justify-content: center; 
+      background: #111; 
+      overflow: hidden; 
+      position: relative;
+    }
+    .stageContainer { 
+      position: relative; 
+      width: 100%; 
+      height: 100%; 
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #000;
+      max-width: 100%;
+      max-height: 100%;
+    }
+    canvas { 
+      width: 100%; 
+      height: 100%; 
+      image-rendering: pixelated; 
+      border: 1px solid #444; 
+      background:#fff; 
+      cursor: pointer; 
+      max-width: 100%;
+      max-height: 100%;
+    }
+    .monitorOverlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; overflow: hidden;
+    }
+    .scratch-monitor {
+      position: absolute;
+      background: rgba(255, 140, 26, 0.92);
+      border: 1px solid rgba(0,0,0,0.15);
+      border-radius: 5px;
+      padding: 3px 6px;
+      font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+      font-size: 11px;
+      color: #fff;
+      pointer-events: auto;
+      min-width: 40px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .scratch-monitor.large {
+      background: rgba(255, 140, 26, 0.92);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 14px;
+      min-width: 50px;
+    }
+    .scratch-monitor .mon-label {
+      font-weight: 600;
+      white-space: nowrap;
+      opacity: 0.95;
+    }
+    .scratch-monitor .mon-value {
+      background: rgba(0,0,0,0.15);
+      border-radius: 3px;
+      padding: 1px 5px;
+      min-width: 30px;
+      text-align: center;
+      white-space: nowrap;
+    }
+    .scratch-monitor.large .mon-value {
+      font-size: 14px;
+      padding: 1px 8px;
+      min-width: 40px;
+    }
+    .scratch-monitor .mon-slider {
+      display: flex; align-items: center; gap: 4px;
+    }
+    .scratch-monitor .mon-slider input[type=range] {
+      width: 80px; height: 12px; pointer-events: auto; cursor: pointer;
+    }
+    .dbg { display: none !important; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+  <div class="bar">
+    <button id="btnFlag" disabled>🟢 Green Flag</button>
+    <button id="btnStop" disabled>🛑 Stop</button>
+    <div class="status" id="status">Loading scripts…</div>
+  </div>
+  <div class="stageWrap">
+    <div class="stageContainer" id="stageContainer">
+      <canvas id="stage" width="480" height="360" tabindex="0"></canvas>
+      <div class="monitorOverlay" id="monitorOverlay"></div>
+    </div>
+  </div>
+</div>
+<!-- All five required Scratch modules -->
+<script src="https://recursi.dev/thirdparty/scratch-vm-0.2.0/scratch-vm.js"></script>
+<script src="https://recursi.dev/thirdparty/scratch-vm-0.2.0/scratch-render.js"></script>
+<script src="https://recursi.dev/thirdparty/scratch-vm-0.2.0/scratch-storage.js"></script>
+<script src="https://recursi.dev/thirdparty/scratch-vm-0.2.0/scratch-svg-renderer.js"></script>
+<script src="https://recursi.dev/thirdparty/scratch-vm-0.2.0/scratch-audio.js"></script>
+<script>
+  const statusEl = document.getElementById("status");
+  const canvas = document.getElementById("stage");
+  const btnFlag = document.getElementById("btnFlag");
+  const btnStop = document.getElementById("btnStop");
+  const setStatus = s => statusEl.textContent = s;
+  const stageContainer = document.getElementById('stageContainer');
+  // Resolve constructors
+  function resolve(global, name) {
+    if (typeof global === "function") return global;
+    if (global && typeof global[name] === "function") return global[name];
+    if (global && typeof global.default === "function") return global.default;
+    return global;
+  }
+  const VM = resolve(window.VirtualMachine, "VirtualMachine");
+  const SR = resolve(window.ScratchRender, "ScratchRender");
+  const Storage = resolve(window.ScratchStorage, "ScratchStorage");
+  const SVGRenderer = window.ScratchSVGRenderer || window.scratchSvgRenderer;
+  const AE = resolve(window.AudioEngine, "AudioEngine");
+  if (typeof VM !== "function" || typeof SR !== "function") {
+    setStatus("ERROR: Could not find constructors.");
+    throw new Error(`VM=${typeof VM}, SR=${typeof SR}`);
+  }
+  const vm = new VM();
+  if (typeof Storage === "function") {
+    const storage = new Storage();
+    vm.attachStorage(storage);
+  }
+  const renderer = new SR(canvas);
+  vm.attachRenderer(renderer);
+  if (SVGRenderer && SVGRenderer.BitmapAdapter) {
+    vm.attachV2BitmapAdapter(new SVGRenderer.BitmapAdapter());
+  }
+  if (typeof AE === "function") {
+    const audioEngine = new AE();
+    vm.attachAudioEngine(audioEngine);
+  } else {
+    console.warn("AudioEngine not found — sounds will not play");
+  }
+  canvas.addEventListener('mousemove', e => {
+    const rect = canvas.getBoundingClientRect();
+    vm.postIOData('mouse', {
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      canvasWidth: rect.width,
+      canvasHeight: rect.height
+    });
+  });
+  canvas.addEventListener('mousedown', e => {
+    const rect = canvas.getBoundingClientRect();
+    vm.postIOData('mouse', {
+      isDown: true,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      canvasWidth: rect.width,
+      canvasHeight: rect.height
+    });
+  });
+  canvas.addEventListener('mouseup', e => {
+    const rect = canvas.getBoundingClientRect();
+    vm.postIOData('mouse', {
+      isDown: false,
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+      canvasWidth: rect.width,
+      canvasHeight: rect.height
+    });
+  });
+  document.addEventListener('keydown', e => {
+    if (e.target !== document && e.target !== document.body && e.target !== canvas) return;
+    vm.postIOData('keyboard', { key: e.key, isDown: true });
+    if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','Space',' '].includes(e.key)) {
+      e.preventDefault();
+    }
+  });
+  document.addEventListener('keyup', e => {
+    if (e.target !== document && e.target !== document.body && e.target !== canvas) return;
+    vm.postIOData('keyboard', { key: e.key, isDown: false });
+  });
+  canvas.focus();
+  vm.setCompatibilityMode(true);
+  vm.setTurboMode(false);
+  vm.start();
+  btnFlag.disabled = false;
+  btnStop.disabled = false;
+  btnFlag.onclick = () => { canvas.focus(); vm.greenFlag(); };
+  btnStop.onclick = () => vm.stopAll();
+  async function loadSb3(buf) {
+    setStatus("Loading project…");
+    vm.stopAll();
+    await vm.loadProject(new Uint8Array(buf));
+    setStatus("Loaded. Press Green Flag to run.");
+    canvas.focus();
+    requestAnimationFrame(() => resizeStage());
+  }
+  window.addEventListener("message", async (e) => {
+    if (e.origin !== location.origin) return;
+    const msg = e.data;
+    if (!msg || msg.type !== "LOAD_SB3" || !(msg.sb3 instanceof ArrayBuffer)) return;
+    try {
+      await loadSb3(msg.sb3);
+      e.source?.postMessage({ type: "SCRATCH_VIEWER_LOADED" }, e.origin);
+    } catch (err) {
+      console.error(err);
+      e.source?.postMessage({ type: "SCRATCH_VIEWER_ERROR", message: err?.message || String(err) }, e.origin);
+      setStatus("Error: " + (err?.message || String(err)));
+    }
+  });
+  document.addEventListener("dragover", e => e.preventDefault());
+  document.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    const file = e.dataTransfer?.files?.[0];
+    if (!file || !file.name.toLowerCase().endsWith(".sb3")) return;
+    loadSb3(await file.arrayBuffer());
+  });
+  setStatus("Ready. Drop an .sb3 or wait for postMessage…");
+  try { window.parent?.postMessage({ type: "SCRATCH_VIEWER_READY" }, location.origin); } catch {}
+  try { window.opener?.postMessage({ type: "SCRATCH_VIEWER_READY" }, location.origin); } catch {}
+  window.__scratch = { vm, renderer };
+  const monitorOverlay = document.getElementById("monitorOverlay");
+  const monitorEls = {};
+  function renderMonitors(monitors) {
+    const seen = new Set();
+    monitors.forEach((mon, id) => {
+      seen.add(id);
+      const get = (k) => (typeof mon.get === 'function') ? mon.get(k) : mon[k];
+      const visible = get('visible');
+      const mode = get('mode') || 'default';
+      const label = get('params')
+        ? ((typeof get('params').get === 'function') ? get('params').get('VARIABLE') || get('params').get('LIST') : get('params')?.VARIABLE || get('params')?.LIST) || ''
+        : '';
+      const spriteName = get('spriteName');
+      const value = get('value');
+      const sliderMin = get('sliderMin') ?? 0;
+      const sliderMax = get('sliderMax') ?? 100;
+      const isDiscrete = get('isDiscrete') ?? true;
+      const x = get('x') ?? 5;
+      const y = get('y') ?? 5;
+      if (!visible) {
+        if (monitorEls[id]) {
+          monitorEls[id].el.style.display = 'none';
+        }
+        return;
+      }
+      const displayLabel = spriteName ? `${spriteName}: ${label}` : label;
+      const displayValue = Array.isArray(value) ? value.join(', ') : String(value ?? '');
+      if (!monitorEls[id]) {
+        const el = document.createElement('div');
+        el.className = 'scratch-monitor' + (mode === 'large' ? ' large' : '');
+        const labelSpan = document.createElement('span');
+        labelSpan.className = 'mon-label';
+        const valueSpan = document.createElement('span');
+        valueSpan.className = 'mon-value';
+        el.appendChild(labelSpan);
+        el.appendChild(valueSpan);
+        let sliderInput = null;
+        if (mode === 'slider') {
+          const sliderDiv = document.createElement('div');
+          sliderDiv.className = 'mon-slider';
+          sliderInput = document.createElement('input');
+          sliderInput.type = 'range';
+          sliderInput.min = sliderMin;
+          sliderInput.max = sliderMax;
+          sliderInput.step = isDiscrete ? 1 : 0.01;
+          sliderInput.value = Number(value) || 0;
+          sliderInput.addEventListener('input', () => {
+            const newVal = isDiscrete ? parseInt(sliderInput.value) : parseFloat(sliderInput.value);
+            const target = spriteName
+              ? vm.runtime.targets.find(t => t.getName?.() === spriteName || t.sprite?.name === spriteName)
+              : vm.runtime.getTargetForStage();
+            if (target) {
+              const varId = Object.keys(target.variables).find(k => target.variables[k].name === label);
+              if (varId) {
+                target.variables[varId].value = newVal;
+              }
+            }
+          });
+          sliderDiv.appendChild(sliderInput);
+          el.appendChild(sliderDiv);
+        }
+        monitorOverlay.appendChild(el);
+        monitorEls[id] = { el, labelSpan, valueSpan, sliderInput };
+      }
+      const m = monitorEls[id];
+      m.el.style.display = '';
+      m.el.style.left = x + 'px';
+      m.el.style.top = y + 'px';
+      m.el.className = 'scratch-monitor' + (mode === 'large' ? ' large' : '');
+      if (mode === 'large') {
+        m.labelSpan.style.display = 'none';
+      } else {
+        m.labelSpan.style.display = '';
+        m.labelSpan.textContent = displayLabel;
+      }
+      m.valueSpan.textContent = displayValue;
+      if (m.sliderInput && mode === 'slider') {
+        m.sliderInput.min = sliderMin;
+        m.sliderInput.max = sliderMax;
+        if (document.activeElement !== m.sliderInput) {
+          m.sliderInput.value = Number(value) || 0;
+        }
+      }
+    });
+    for (const id of Object.keys(monitorEls)) {
+      if (!seen.has(id)) {
+        monitorEls[id].el.style.display = 'none';
+      }
+    }
+  }
+  vm.on('MONITORS_UPDATE', renderMonitors);
+  // FULL RESPONSIVE SCALING - no cap, always fills dialog while keeping 480:360 ratio
+  function resizeStage() {
+    if (!vm || !vm.renderer || !stageContainer) return;
+    const rect = stageContainer.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    const ratio = Math.min(rect.width / 480, rect.height / 360);
+    const displayW = Math.floor(480 * ratio);
+    const displayH = Math.floor(360 * ratio);
+    canvas.style.width = `${displayW}px`;
+    canvas.style.height = `${displayH}px`;
+    canvas.width = displayW * dpr;
+    canvas.height = displayH * dpr;
+    vm.renderer.resize(displayW * dpr, displayH * dpr);
+  }
+  const resizeObserver = new ResizeObserver(() => {
+    requestAnimationFrame(resizeStage);
+  });
+  resizeObserver.observe(stageContainer);
+  window.addEventListener('resize', () => requestAnimationFrame(resizeStage));
+  // Initial resize after load
+  setTimeout(resizeStage, 100);
+</script>
+</body>
+</html>

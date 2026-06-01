@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>App Runner</title>
+  <style>
+    body, html {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #1e1e1e;
+      color: #d4d4d4;
+      font-family: sans-serif;
+    }
+    .loading-message {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+        font-size: 1.5em;
+        opacity: 0.5;
+    }
+  </style>
+</head>
+<body>
+  <div class="loading-message">Waiting for project data from editor...</div>
+
+  <!-- This is the only script the runner page needs. It does all the work. -->
+  <script src="./src/tools/runner/runner-client.js"></script>
+  <script>
+    new RunnerClient();
+  </script>
+</body>
+</html>
+
+<!-- recursi-meta
+{
+  "schema": 1,
+  "lines": 35
+}
+recursi-meta -->

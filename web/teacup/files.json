@@ -1,0 +1,14 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "src/Teacup.js"
+  ],
+  "local": [],
+  "library": [
+    "ThreeJSLoader.js",
+    "UITools.js"
+  ],
+  "thirdParty": [
+    
+  ]
+}

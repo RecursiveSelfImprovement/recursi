@@ -1,0 +1,11 @@
+{
+  "main": [
+    "js/CodeEditor.js"
+  ],
+  "library": [
+    "UITools.js",
+    "applyCss.js",
+    "makeElement.js",
+    "CodeMirrorWidget.js"
+  ]
+}

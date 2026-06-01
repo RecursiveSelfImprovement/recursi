@@ -1,0 +1,10 @@
+{
+  "version": "0.1.0",
+  "created": "2026-05-21T04:48:30.488Z",
+  "capabilities": {
+    "writeFiles": true,
+    "runScripts": true,
+    "runCommands": false,
+    "installDeps": false
+  }
+}

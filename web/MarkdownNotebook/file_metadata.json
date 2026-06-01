@@ -1,0 +1,86 @@
+{
+  "/MarkdownNotebook/blank.html": {
+    "codeSize": 51,
+    "docSize": 30
+  },
+  "/MarkdownNotebook/build-public.mjs": {
+    "codeSize": 17,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/file_metadata.json": {
+    "codeSize": 86,
+    "docSize": 39
+  },
+  "/MarkdownNotebook/filelist.json": {
+    "codeSize": 113,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/index.html": {
+    "codeSize": 1240,
+    "docSize": 41
+  },
+  "/MarkdownNotebook/index.html.bak": {
+    "codeSize": 1240,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/indexDynamic.html": {
+    "codeSize": 24,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/landing/LandingPage.js": {
+    "codeSize": 827,
+    "docSize": 67
+  },
+  "/MarkdownNotebook/landing/LandingPageText.js": {
+    "codeSize": 291,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/landing/StyleManager.js": {
+    "codeSize": 201,
+    "docSize": 62
+  },
+  "/MarkdownNotebook/landing/StyleManager.js.bak": {
+    "codeSize": 201,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/landing/VideoScript.js": {
+    "codeSize": 159,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/multiWidgetPage.js": {
+    "codeSize": 1078,
+    "docSize": 104
+  },
+  "/MarkdownNotebook/ui/HamburgerMenu.js": {
+    "codeSize": 279,
+    "docSize": 66
+  },
+  "/MarkdownNotebook/ui/MarkdownWidget.js": {
+    "codeSize": 848,
+    "docSize": 128
+  },
+  "/MarkdownNotebook/ui/StaticCheckbox.js": {
+    "codeSize": 100,
+    "docSize": 44
+  },
+  "/MarkdownNotebook/ui/VerticalOrderingUI.js": {
+    "codeSize": 464,
+    "docSize": 68
+  },
+  "/MarkdownNotebook/utils/SvgUtils.js": {
+    "codeSize": 161,
+    "docSize": 48
+  },
+  "/MarkdownNotebook/utils/cleanMarkdown.js": {
+    "codeSize": 8,
+    "docSize": 40
+  },
+  "/MarkdownNotebook/video-script.html": {
+    "codeSize": 28,
+    "docSize": 0
+  },
+  "/MarkdownNotebook/visibilitySets/manifest.json": {
+    "codeSize": 1,
+    "docSize": 0
+  }
+}

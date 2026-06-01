@@ -1,0 +1,225 @@
+:root {
+  --primary-color: #e0e0e0;
+  --accent-color: #00d4ff;
+  --background-color: #1a1a1a;
+  --card-background: #252525;
+  --control-background: #303030;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  --font-body: 'Architects Daughter', cursive;
+}
+
+body {
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 10px 20px 20px 20px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  box-sizing: border-box;
+}
+
+body.dark-mode {
+  background-color: var(--background-color);
+  color: var(--primary-color);
+}
+
+.app-wrapper {
+  display: flex;
+  flex-direction: row;
+  gap: 20px;
+  width: 100%;
+  max-width: 1400px;
+  flex-grow: 1;
+  min-height: 0;
+}
+
+.canvas-container {
+  flex: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: var(--card-background);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px var(--shadow-color);
+  padding: 10px;
+  min-width: 0;
+  transition: all 0.3s ease;
+}
+
+#squircle-canvas {
+  width: 100%;
+  height: 100%;
+  background-color: #151515;
+  border-radius: 8px;
+}
+
+.controls {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px; /* Reduced gap */
+  padding: 10px;
+  overflow-y: auto;
+  min-width: 350px;
+  transition: all 0.3s ease;
+}
+
+.mode-selector-group {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.mode-select-dropdown {
+  background-color: #252525; /* Darker solid background */
+  color: var(--primary-color);
+  border: 1px solid #4a4a4a; /* Add a border to define its edge */
+  padding: 8px 16px; /* A bit more compact padding */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  font-family: var(--font-body);
+  font-size: 1em; /* Slightly smaller font */
+  transition: border-color 0.2s;
+}
+
+.mode-select-dropdown:focus {
+    outline: none;
+    border-color: var(--accent-color);
+}
+
+
+.bezier-mode .blend-group,
+.bezier-mode .arc-params-group {
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+.control-group {
+  background-color: rgba(70, 70, 70, 0.5); /* Lighter gray, 50% transparent */
+  padding: 8px 15px; /* More compact vertically */
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  display: flex;
+  flex-direction: column;
+  gap: 8px; /* More compact */
+}
+
+/* Further compact the color picker group */
+.control-group:has(.control-color-picker) > div + div {
+    margin-top: 6px !important;
+}
+
+
+.dock-toggle-group {
+    margin-top: auto; /* Pushes this group to the bottom */
+    background-color: transparent;
+    box-shadow: none;
+    padding: 5px 0 0 0;
+    align-items: flex-end; /* Aligns button to the right */
+}
+
+
+.control-group label {
+  font-weight: 500;
+  font-size: 1.1em;
+  margin-bottom: -4px; /* Tighten space below label */
+}
+
+.control-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.control-slider {
+  flex-grow: 1;
+  background: #404040;
+}
+
+.control-slider::-webkit-slider-thumb {
+  background: var(--accent-color);
+  box-shadow: 0 0 8px rgba(0, 212, 255, 0.3);
+}
+
+.control-number {
+  background-color: var(--control-background);
+  color: var(--primary-color);
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  box-shadow: inset 0 1px 3px var(--shadow-color);
+  width: 80px;
+  font-family: var(--font-body);
+  font-size: 1em;
+}
+
+.control-button {
+  background-color: var(--accent-color);
+  color: #1a1a1a;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+  cursor: pointer;
+  transition: transform 0.2s, background-color 0.2s;
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.1em;
+}
+
+.control-button:hover {
+  transform: translateY(-1px);
+  background-color: #33e0ff;
+}
+
+.icon-button {
+    padding: 6px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+
+.control-button-grow {
+    flex-grow: 1;
+}
+
+.arc-params-group {
+  flex-direction: row;
+  justify-content: space-around;
+}
+
+.dialog-box {
+  font-family: var(--font-body); /* Use Architect's Daughter in dialogs */
+}
+
+.dialog-box .dialog-title {
+    font-family: 'Roboto', sans-serif; /* Keep title clean */
+    font-weight: 500;
+}
+
+
+.control-color-picker {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  width: 40px;
+  height: 25px;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+}
+.control-color-picker::-webkit-color-swatch {
+  border-radius: 4px;
+  border: 1px solid #555;
+}
+.control-color-picker::-moz-color-swatch {
+  border-radius: 4px;
+  border: 1px solid #555;
+}

@@ -1,0 +1,118 @@
+{
+  "/BookmarkExtension/BookMarksOrganizer/index.html": {
+    "codeSize": 14,
+    "docSize": 0
+  },
+  "/BookmarkExtension/popup.html": {
+    "codeSize": 31,
+    "docSize": 0
+  },
+  "/BookmarkExtension/BookMarksOrganizer/css/bookMarksOrganizer.css": {
+    "codeSize": 10,
+    "docSize": 0
+  },
+  "/BookmarkExtension/notification.css": {
+    "codeSize": 13,
+    "docSize": 0
+  },
+  "/BookmarkExtension/BookMarksOrganizer/js/BookMarksOrganizer.js": {
+    "codeSize": 2608,
+    "docSize": 0
+  },
+  "/BookmarkExtension/BookMarksOrganizer/js/BookMarksOrganizerActionsDialog.js": {
+    "codeSize": 659,
+    "docSize": 0
+  },
+  "/BookmarkExtension/BookMarksOrganizer/js/bookmarksOps.js": {
+    "codeSize": 134,
+    "docSize": 0
+  },
+  "/BookmarkExtension/BookMarksOrganizer/js/ops/BookmarksTreeOps.js": {
+    "codeSize": 126,
+    "docSize": 0
+  },
+  "/BookmarkExtension/BookMarksOrganizer/js/organizerEntry.js": {
+    "codeSize": 17,
+    "docSize": 0
+  },
+  "/BookmarkExtension/background.js": {
+    "codeSize": 13,
+    "docSize": 0
+  },
+  "/BookmarkExtension/content/ContentController.js": {
+    "codeSize": 62,
+    "docSize": 0
+  },
+  "/BookmarkExtension/content/PlayerBridge.js": {
+    "codeSize": 42,
+    "docSize": 0
+  },
+  "/BookmarkExtension/content/YouTubeContent.js": {
+    "codeSize": 357,
+    "docSize": 0
+  },
+  "/BookmarkExtension/contentScript.js": {
+    "codeSize": 2,
+    "docSize": 0
+  },
+  "/BookmarkExtension/popup.js": {
+    "codeSize": 5,
+    "docSize": 0
+  },
+  "/BookmarkExtension/services/BookmarkService.js": {
+    "codeSize": 660,
+    "docSize": 0
+  },
+  "/BookmarkExtension/services/YouTubeService.js": {
+    "codeSize": 81,
+    "docSize": 0
+  },
+  "/BookmarkExtension/ui/PopupController.js": {
+    "codeSize": 109,
+    "docSize": 0
+  },
+  "/BookmarkExtension/utils/DialogBox.js": {
+    "codeSize": 860,
+    "docSize": 0
+  },
+  "/BookmarkExtension/utils/applyCss.js": {
+    "codeSize": 24,
+    "docSize": 0
+  },
+  "/BookmarkExtension/utils/makeElement.js": {
+    "codeSize": 73,
+    "docSize": 0
+  },
+  "/BookmarkExtension/images/icon128.png": {
+    "codeSize": 145,
+    "docSize": 0
+  },
+  "/BookmarkExtension/images/icon16.png": {
+    "codeSize": 67,
+    "docSize": 0
+  },
+  "/BookmarkExtension/images/icon48.png": {
+    "codeSize": 84,
+    "docSize": 0
+  },
+  "/BookmarkExtension/manifest.json": {
+    "codeSize": 55,
+    "docSize": 0
+  },
+  "/BookmarkExtension/visibilitySets/manifest.json": {
+    "codeSize": 1,
+    "docSize": 0
+  },
+  "/services/YouTubeService.js": {
+    "codeSize": 115
+  },
+  "/manifest.json": {
+    "codeSize": 55
+  },
+  "/content/PlayerBridge.js": {
+    "codeSize": 161
+  },
+  "/content/YouTubeContent.js": {
+    "codeSize": 824
+  }
+}

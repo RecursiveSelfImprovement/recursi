@@ -1,0 +1,52 @@
+{
+  "projectName": "Recursi",
+  "version": "2.0.0-refactor",
+  "description": "A web-based LLM-connected (via OS clipboard) code and documentation editor designed for \"vibe coding\": dictated, natural language prompting with purely AI written code, with \"visibility controls\" for building prompts of user-selected code and documentation to the LLM",
+  "entryPoint": "./index.html",
+  "components": {
+    "app": {
+      "path": "src/editor/",
+      "mainClass": "ProjectEditorApp",
+      "description": "The main application orchestrator. Initializes all other components and handles global state and events."
+    },
+    "core": {
+      "path": "src/core/",
+      "description": "Core, shared, framework-agnostic utilities like UIHelpers and DialogBox."
+    },
+    "protocol": {
+      "path": "src/protocol/",
+      "description": "Components responsible for parsing and processing the update protocols (CodeParser, UpdatePatcher, etc.)."
+    },
+    "editor": {
+      "path": "src/editor/ui/editor/",
+      "mainClass": "EditorTabController",
+      "description": "Manages the multi-segment CodeMirror editor instances for a single file tab."
+    },
+    "fileTree": {
+      "path": "src/editor/ui/fileTree/",
+      "mainClass": "ProjectFilesManager",
+      "description": "Manages the display and interaction with the project's file and directory structure."
+    },
+    "tabs": {
+      "path": "src/editor/ui/tabs/",
+      "mainClass": "TabManager",
+      "description": "A generic, reusable component for managing a tabbed interface."
+    },
+    "playground": {
+      "path": "src/playground/",
+      "mainClass": "PlaygroundController",
+      "description": "A demonstration and testing area for editor features and components."
+    }
+  },
+  "harnesses": {
+    "path": "harnesses/",
+    "description": "Standalone HTML files for testing individual components in isolation."
+  },
+  "sharedFiles": [],
+  "@recursi-meta": {
+    "schema": 1,
+    "lines": 46,
+    "provides": [],
+    "deps": []
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "main": [
+    "js/AboutPages.js"
+  ],
+  "local": [],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

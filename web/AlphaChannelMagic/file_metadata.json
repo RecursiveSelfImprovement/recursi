@@ -1,0 +1,86 @@
+{
+  "/AlphaChannelMagic/README.md": {
+    "codeSize": 4,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/clone-metadata.json": {
+    "codeSize": 5,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/colorAlpha.html": {
+    "codeSize": 17,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/css/alphaChannelMagic.css": {
+    "codeSize": 10,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/file_metadata.json": {
+    "codeSize": 86,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/filelist.json": {
+    "codeSize": 86,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/index.html": {
+    "codeSize": 128,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/AlphaChannelMagic.js": {
+    "codeSize": 186,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/ColorAlphaApp.js": {
+    "codeSize": 779,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/logic/BackgroundEffects.js": {
+    "codeSize": 350,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/logic/CanvasUtils.js": {
+    "codeSize": 25,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/logic/ChunkedCanvasProcessor.js": {
+    "codeSize": 83,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/logic/ColorToAlphaProcessor.js": {
+    "codeSize": 318,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/logic/Interpolator.js": {
+    "codeSize": 32,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/logic/SimplifiedHSV.js": {
+    "codeSize": 78,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/ui/CompositeBuilder.js": {
+    "codeSize": 1018,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/ui/CropTool.js": {
+    "codeSize": 324,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/ui/ImageDialog.js": {
+    "codeSize": 288,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/ui/ImageProcessorUI.js": {
+    "codeSize": 1098,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/js/colorAlpha/ui/SidePanel.js": {
+    "codeSize": 201,
+    "docSize": 0
+  },
+  "/AlphaChannelMagic/visibilitySets/manifest.json": {
+    "codeSize": 1,
+    "docSize": 0
+  }
+}

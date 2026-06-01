@@ -1,0 +1,122 @@
+{
+  "js": [
+    {
+      "path": "/MathStorm/js/Debug.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/EquationFactory.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/GameEngine.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/GamePiece.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/InteractionHandler.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/MathStorm.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/PieceGroup.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/MathStorm/js/SolvedGroupManager.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/sharedLib/recursi.js",
+      "hasDocs": true
+    },
+    {
+      "path": "/sharedLib/DialogBox.js",
+      "hasDocs": true
+    }
+  ],
+  "css": [
+    {
+      "path": "/MathStorm/css/mathStorm.css",
+      "hasDocs": true
+    }
+  ],
+  "html": [
+    {
+      "path": "/MathStorm/blah.html",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/index.html",
+      "hasDocs": true
+    }
+  ],
+  "other": [
+    {
+      "path": "/MathStorm/documentation/clone-metadata_json.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/css/mathStorm_css.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/file_metadata_json.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/index_html.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/Debug_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/EquationFactory_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/GameEngine_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/GamePiece_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/InteractionHandler_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/MathStorm_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/PieceGroup_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/SolvedGroupManager_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/lib/DialogBox_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/js/lib/applyCss_js.md",
+      "hasDocs": false
+    },
+    {
+      "path": "/MathStorm/documentation/metadata.json",
+      "hasDocs": false
+    }
+  ]
+}

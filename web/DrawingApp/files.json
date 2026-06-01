@@ -1,0 +1,25 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "js/DrawingApp.js"
+  ],
+  "local": [
+    "js/Geometry.js",
+    "js/HistoryManager.js",
+    "js/GeometryUtils.js",
+    "js/curve/BezierVertex.js",
+    "js/curve/UpdateControlPoints.js",
+    "js/curve/Curve.js",
+    "js/tools/DrawStringTool.js",
+    "js/utils/MidiMapper.js"
+  ],
+  "library": [
+    "UITools.js",
+    "AppColorUtils.js",
+    "HueRingCP.js",
+    "TriangleCP.js",
+    "ColorPicker.js",
+    "MidiInputHandler.js"
+  ],
+  "thirdParty": []
+}

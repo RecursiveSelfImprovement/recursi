@@ -1,0 +1,104 @@
+{
+  "manifest_version": 3,
+  "name": "Aardvark",
+  "description": "DOM tool, video playlist, dictation",
+  "version": "1.5",
+  "permissions": [
+    "bookmarks",
+    "tabs",
+    "notifications",
+    "downloads",
+    "activeTab",
+    "storage",
+    "scripting",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "http://localhost:7102/*",
+    "https://recursi.dev/*",
+    "*://*.youtube.com/*",
+    "*://*.google.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "content/ContentController.js",
+        "content/YoloPageRelayBridge.js",
+        "contentScript.js"
+      ],
+      "run_at": "document_start"
+    },
+    {
+      "matches": [
+        "*://*.youtube.com/*"
+      ],
+      "js": [
+        "content/YouTubeContent.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    },
+    {
+      "matches": [
+        "*://*.google.com/*"
+      ],
+      "js": [
+        "content/GoogleContent.js"
+      ],
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "http://localhost:7102/*",
+        "https://recursi.dev/*"
+      ],
+      "js": [
+        "content/PlayerBridge.js"
+      ],
+      "run_at": "document_start",
+      "all_frames": true
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "images/icon16.png",
+      "48": "images/icon48.png",
+      "128": "images/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "images/icon16.png",
+    "48": "images/icon48.png",
+    "128": "images/icon128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "features/*.js",
+        "utils/*.js",
+        "BookMarksOrganizer/css/bookMarksOrganizer.css",
+        "images/*.png"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    },
+    {
+      "resources": [
+        "dictation.html",
+        "dictation.js"
+      ],
+      "matches": [
+        "<all_urls>"
+      ]
+    }
+  ]
+}

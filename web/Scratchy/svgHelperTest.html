@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Helper — PostMessage Bridge Test</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1e1e2e; color: #cdd6f4;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: #181825;
+    border-bottom: 1px solid #313244; flex-shrink: 0;
+  }
+  .toolbar h1 { font-size: 16px; font-weight: 600; flex: 1; }
+  .toolbar button {
+    padding: 6px 14px; border: 1px solid #45475a; border-radius: 6px;
+    background: #313244; color: #cdd6f4; cursor: pointer;
+    font-size: 13px; font-weight: 500; transition: background 0.15s;
+  }
+  .toolbar button:hover { background: #45475a; }
+  .toolbar button.primary { background: #89b4fa; color: #1e1e2e; border-color: #89b4fa; }
+  .toolbar button.primary:hover { background: #74c7ec; }
+  .main { display: flex; flex: 1; min-height: 0; }
+  .editor-pane {
+    flex: 1; display: flex; flex-direction: column; border-right: 1px solid #313244;
+  }
+  .editor-pane label {
+    padding: 8px 12px; font-size: 12px; font-weight: 600;
+    color: #a6adc8; background: #181825; border-bottom: 1px solid #313244;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .editor-pane textarea {
+    flex: 1; resize: none; border: none; outline: none;
+    background: #1e1e2e; color: #cdd6f4; padding: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px;
+    line-height: 1.5; tab-size: 2;
+  }
+  .preview-pane {
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .preview-pane label {
+    padding: 8px 12px; font-size: 12px; font-weight: 600;
+    color: #a6adc8; background: #181825; border-bottom: 1px solid #313244;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .preview-area {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    background: repeating-conic-gradient(#313244 0% 25%, #1e1e2e 0% 50%) 50% / 20px 20px;
+    overflow: hidden; padding: 20px;
+  }
+  .preview-area svg, .preview-area img {
+    max-width: 100%; max-height: 100%; object-fit: contain;
+  }
+  .status-bar {
+    padding: 6px 16px; background: #181825; border-top: 1px solid #313244;
+    font-size: 12px; color: #6c7086; flex-shrink: 0;
+  }
+  .dialog-backdrop {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6); z-index: 1000;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dialog-backdrop.hidden { display: none; }
+  .dialog-frame {
+    width: 85vw; height: 80vh; max-width: 1200px;
+    background: #1e1e2e; border: 1px solid #45475a; border-radius: 12px;
+    display: flex; flex-direction: column; overflow: hidden;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  }
+  .dialog-titlebar {
+    display: flex; align-items: center; padding: 10px 16px;
+    background: #181825; border-bottom: 1px solid #313244;
+  }
+  .dialog-titlebar span { flex: 1; font-weight: 600; font-size: 14px; }
+  .dialog-titlebar button {
+    padding: 4px 10px; border: 1px solid #45475a; border-radius: 4px;
+    background: #313244; color: #cdd6f4; cursor: pointer; font-size: 12px;
+    margin-left: 6px;
+  }
+  .dialog-titlebar button:hover { background: #45475a; }
+  .dialog-titlebar button.close { background: #f38ba8; color: #1e1e2e; border-color: #f38ba8; }
+  .dialog-body { flex: 1; position: relative; }
+  .dialog-body iframe { width: 100%; height: 100%; border: none; }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h1>SVG Helper — PostMessage Bridge Test</h1>
+  <button onclick="loadSampleSVG()">Load Sample SVG</button>
+  <button class="primary" onclick="openInDialog()">Open in SVG Helper (Dialog)</button>
+  <button onclick="openInWindow()">Open in New Window</button>
+</div>
+
+<div class="main">
+  <div class="editor-pane">
+    <label>SVG Source</label>
+    <textarea id="svgSource" spellcheck="false" placeholder="Paste or type SVG markup here..."></textarea>
+  </div>
+  <div class="preview-pane">
+    <label>Preview</label>
+    <div class="preview-area" id="previewArea"></div>
+  </div>
+</div>
+
+<div class="status-bar" id="statusBar">Ready. Paste SVG or click "Load Sample SVG" to begin.</div>
+
+<div class="dialog-backdrop hidden" id="dialogBackdrop">
+  <div class="dialog-frame">
+    <div class="dialog-titlebar">
+      <span>SVG Helper</span>
+      <button onclick="openDialogInWindow()">↗ Open in Window</button>
+      <button class="close" onclick="closeDialog()">✕ Close</button>
+    </div>
+    <div class="dialog-body" id="dialogBody"></div>
+  </div>
+</div>
+
+<script>
+const svgSource = document.getElementById('svgSource');
+const previewArea = document.getElementById('previewArea');
+const statusBar = document.getElementById('statusBar');
+const dialogBackdrop = document.getElementById('dialogBackdrop');
+const dialogBody = document.getElementById('dialogBody');
+
+let helperWindow = null;
+let helperIframe = null;
+let pendingSVG = null;
+
+function setStatus(msg) {
+  statusBar.textContent = msg;
+}
+
+function updatePreview() {
+  const svg = svgSource.value.trim();
+  if (!svg) {
+    previewArea.innerHTML = '<div style="color:#6c7086;">No SVG to preview</div>';
+    return;
+  }
+  try {
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = document.createElement('img');
+    img.onload = () => URL.revokeObjectURL(url);
+    img.onerror = () => {
+      previewArea.innerHTML = '<div style="color:#f38ba8;">Invalid SVG</div>';
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    previewArea.innerHTML = '';
+    previewArea.appendChild(img);
+  } catch (e) {
+    previewArea.innerHTML = '<div style="color:#f38ba8;">Error rendering SVG</div>';
+  }
+}
+
+svgSource.addEventListener('input', updatePreview);
+
+function loadSampleSVG() {
+  svgSource.value = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="200" height="200">
+  <defs>
+    <radialGradient id="g1" cx="50%" cy="40%" r="50%">
+      <stop offset="0%" stop-color="#ffd166"/>
+      <stop offset="100%" stop-color="#ef476f"/>
+    </radialGradient>
+  </defs>
+  <circle cx="100" cy="100" r="90" fill="url(#g1)" stroke="#073b4c" stroke-width="4"/>
+  <circle cx="72" cy="82" r="12" fill="#073b4c"/>
+  <circle cx="128" cy="82" r="12" fill="#073b4c"/>
+  <path d="M 65 125 Q 100 160 135 125" fill="none" stroke="#073b4c" stroke-width="5" stroke-linecap="round"/>
+</svg>`;
+  updatePreview();
+  setStatus('Sample SVG loaded.');
+}
+
+/**
+ * PostMessage Bridge Protocol:
+ *
+ * Parent → Child:
+ *   { type: 'SVG_HELPER_LOAD', svg: '<svg>...</svg>' }
+ *
+ * Child → Parent:
+ *   { type: 'SVG_HELPER_READY' }                  — child is ready to receive SVG
+ *   { type: 'SVG_HELPER_EXPORT', svg: '<svg>...</svg>' } — child sends edited SVG back
+ */
+
+function openInDialog() {
+  const svg = svgSource.value.trim();
+  if (!svg) {
+    setStatus('No SVG to send. Paste SVG markup first.');
+    return;
+  }
+  pendingSVG = svg;
+  dialogBody.innerHTML = '';
+  helperIframe = document.createElement('iframe');
+  helperIframe.src = 'svgHelperBridge.html';
+  dialogBody.appendChild(helperIframe);
+  dialogBackdrop.classList.remove('hidden');
+  setStatus('Opening SVG Helper in dialog... waiting for ready signal.');
+}
+
+function openInWindow() {
+  const svg = svgSource.value.trim();
+  if (!svg) {
+    setStatus('No SVG to send. Paste SVG markup first.');
+    return;
+  }
+  pendingSVG = svg;
+  helperWindow = window.open('svgHelperBridge.html', 'svgHelper', 'width=900,height=700');
+  setStatus('Opening SVG Helper in new window... waiting for ready signal.');
+}
+
+function openDialogInWindow() {
+  closeDialog();
+  openInWindow();
+}
+
+function closeDialog() {
+  dialogBackdrop.classList.add('hidden');
+  dialogBody.innerHTML = '';
+  helperIframe = null;
+  setStatus('Dialog closed.');
+}
+
+window.addEventListener('message', (e) => {
+  if (!e.data || typeof e.data.type !== 'string') return;
+
+  switch (e.data.type) {
+    case 'SVG_HELPER_READY': {
+      const target = e.source;
+      if (pendingSVG && target) {
+        target.postMessage({ type: 'SVG_HELPER_LOAD', svg: pendingSVG }, '*');
+        pendingSVG = null;
+        setStatus('SVG sent to helper.');
+      }
+      break;
+    }
+    case 'SVG_HELPER_EXPORT': {
+      const returnedSVG = e.data.svg;
+      if (typeof returnedSVG === 'string') {
+        svgSource.value = returnedSVG;
+        updatePreview();
+        setStatus('SVG received back from helper! Preview updated.');
+      }
+      break;
+    }
+  }
+});
+</script>
+</body>
+</html>

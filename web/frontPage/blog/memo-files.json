@@ -1,0 +1,14 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "InternalMemo.js"
+  ],
+  "local": [
+    "BlogPostStyles.js",
+    "InternalMemoContent.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

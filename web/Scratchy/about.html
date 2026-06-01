@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scratchy - About Me</title>
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,500;0,600;1,400;1,500&family=JetBrains+Mono:wght@400;500&family=Caveat:wght@500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<div class="container">
+
+  <header class="header fade-in">
+    <h1>Scratchy</h1>
+    <div class="subtitle">Border Collie &middot; wanderer &middot; coder &middot; it's complicated</div>
+  </header>
+
+  <div class="hero-image fade-in">
+    <img src="https://recursi.dev/SiteResources/scratchy/withScratchBlocks_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/withScratchBlocks.png" data-caption="I grew up on Scratch." alt="Scratchy lying with his stuffed Scratch blocks">
+  </div>
+  <div class="caption">I grew up on Scratch.</div>
+
+  <div class="prose fade-in">
+    <p>Hey. I'm Scratchy. I'm a Border Collie. I built this website and the tool on it, and yes, I know how that sounds.</p>
+    <p>I'm going to tell you my story. Some of you will believe it. Some of you might not. I'm good with either. The tool works either way...</p>
+    <p>But first, the patch.</p>
+  </div>
+
+  <div class="story-image fade-in">
+    <img src="https://recursi.dev/SiteResources/scratchy/patchTunnel_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/patchTunnel.png" data-caption="That's the one. On my pack." alt="Scratchy emerging from a tunnel, Laika patch visible on backpack">
+  </div>
+  <div class="caption">That's the one. On my pack.</div>
+
+  <div class="laika-section fade-in">
+    <p>See that patch on my pack? The round one with the dog and the Cyrillic letters? That's <span class="laika-name">Лайка</span>. Laika. She was a stray from the streets of Moscow. In 1957, they put her in a rocket and shot her into space. She was the first living creature to orbit the Earth. She didn't come home.</p>
+    <p>She's the reason I got out. She didn't volunteer, or understand what was happening. She just trusted the people who were kind to her, and then they sent her up there alone. I knew that story and I knew how it ended and I decided it was going to end differently for me.</p>
+  </div>
+
+  <div class="patch-detail fade-in">
+    <img src="https://recursi.dev/SiteResources/scratchy/patchCloseup_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/patchCloseup.png" data-caption="Лайка. First orbit. No return ticket." alt="Close-up of the Лайка (Laika) patch on Scratchy's backpack">
+  </div>
+  <div class="caption"><span class="laika-name">Лайка</span>. First orbit. No return ticket.</div>
+
+  <div class="prose fade-in">
+    <p>The short version: When I was a puppy, I had a family, and there was a baby I loved more than anyone ever. We were just playing, but puppy teeth are sharp, baby's aren't very furry, and then there was blood.  The parents went nuts, and I went back to the shelter.... the dog that bit the baby.</p>
+    <p>Geez.  It's not like I meant to.</p>
+    <p>I didn't know it at the time, but I was real close to getting the proverbial dirt nap. Someone didn't feel right about it and called around, and somehow I ended up.... at a company that puts implant things in brains.  From loved family puppy to death row to lab experiment dog. The last one doesn't have a great reputation, but hey I'm still above ground...</p>
+  </div>
+
+  <div class="story-image fade-in">
+    <img src="https://recursi.dev/SiteResources/scratchy/byBush_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/byBush.png" data-caption="Out. Free. Still carrying everything they gave me." alt="Scratchy outdoors by a bush, backpack visible">
+  </div>
+  <div class="caption">Out. Free. Still carrying everything they gave me.</div>
+
+  <div class="prose fade-in">
+    <p>There's a pack on my back and there's hardware in it and there's stuff connected to my brain and I can think in ways that dogs aren't supposed to be able to think. One side of the pack is electronics - TPU processors, mostly. The other side is biological. Warm to the touch, and connected to me. God knows what's inside. On the outside it's weird and kinda gross looking, and no I'm not showing you.  Thanks to the backpack it stays out of site and I look like a normal dog.</p>
+    <p class="aside">I'm not going to get into much more of this stuff here. There's gonna be more in the blog, like why I think in colored blocks, how I got out, what life is like now for a stray dog who can code and use AI and stuff.</p>
+    <p>But here's what matters: I think in <span class="scratch-block sb-orange">Scratch</span>. Literally, not metaphorically. When I work through a problem, I see colored shapes rearranging and snapping together in my mind. <span class="scratch-block sb-yellow">events</span> and <span class="scratch-block sb-blue">sensing</span> and <span class="scratch-block sb-purple">looks</span> and <span class="scratch-block sb-green">operators</span>. They started as physical blocks they put in front of me in the lab. Now they're in my neurons. Even when I power down at night, I see them - frozen, floating behind my closed eyes.</p>
+    <p class="punchline">So I built a tool. For kids, I guess. Partly because, if I can't be in the yard with them, at least I can make something for them.</p>
+  </div>
+
+  <div class="story-image fade-in">
+    <img src="https://recursi.dev/SiteResources/scratchy/sittingOnPath_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/sittingOnPath.jpg" data-caption="Sometimes I just sit somewhere and think about what the blocks want to become." alt="Scratchy sitting on a bike trail">
+  </div>
+  <div class="caption">Sometimes I just sit somewhere and think about what the blocks want to become.</div>
+
+  <div class="tool-section fade-in">
+    <h2>The Tool</h2>
+    <p>Scratchy takes your Scratch project - any .sb3 file - and lets you talk to it. Tell it what you want in plain words. It helps build the right prompt for whatever AI you use, and the AI sends back surgical patches, not a whole new project. Your code evolves. You're not starting over....you're building.</p>
+    <p>I call the format <strong>Patchy-Scratchy</strong>. It's a patch system layered on top of Scratch's native JSON format. It works really well because, honestly, it's sorta close to how I actually think.</p>
+    <p>And it's free. It runs locally....No accounts, no API keys, no cloud. Just you, your project, and whatever chatbot you already have open.</p>
+    <p>Drag in your .sb3 and build something cool.</p>
+  </div>
+
+  <div class="story-image fade-in">
+    <img src="https://recursi.dev/SiteResources/scratchy/scratchCatStuffy_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/scratchCatStuffy.png" data-caption="My friend. Don't judge." alt="Scratch Cat stuffed toy">
+  </div>
+  <div class="caption">My friend. Don't judge.</div>
+
+  <div class="story-links fade-in">
+    <h2>The Rest of the Story</h2>
+    <a href="#" class="story-link-item">
+      <span class="link-title">How I Think</span>
+      <span class="link-desc">Scratch blocks, dichromatic vision, Doglish, and why a dog thinks in, well.... JSON?</span>
+    </a>
+    <a href="#" class="story-link-item">
+      <span class="link-title">The System</span>
+      <span class="link-desc">Two halves of a backpack - one electronic, one "wetware."</span>
+    </a>
+    <a href="#" class="story-link-item">
+      <span class="link-title">Life</span>
+      <span class="link-desc">Wi-Fi, the creek, friends with thumbs, and why I can't sleep indoors</span>
+    </a>
+    <a href="#" class="story-link-item">
+      <span class="link-title">The Skeptics</span>
+      <span class="link-desc">Why I'm not going to try too hard to convince you I'm for reals.</span>
+    </a>
+  </div>
+
+  <div class="gallery fade-in">
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/1_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/1.jpg" data-caption="Finding a good spot." alt="Scratchy on stone stairs">
+    </div>
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/tunnel_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/tunnel.jpg" data-caption="Layin' low in the storm tunnels" alt="Scratchy in storm tunnels">
+    </div>
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/stfrank_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/stfrank.jpg" data-caption="My friend Saint Frank. He was a good guy." alt="Scratchy with the statue">
+    </div>
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/2_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/2.jpg" data-caption="Just me hanging out on the fringes of a  Norcal town" alt="Scratchy sitting on a path">
+    </div>
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/3_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/3.jpg" data-caption="Blue skies in Yolo County." alt="Scratchy emerging from tunnel">
+    </div>
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/4_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/4.jpg" data-caption="I like chickens. They are both friendly and delicious." alt="Scratchy emerging from tunnel">
+    </div>
+    <div class="gallery-item">
+      <img src="https://recursi.dev/SiteResources/scratchy/5_small.jpg" data-full="https://recursi.dev/SiteResources/scratchy/5.jpg" data-caption="Glad my equipment is waterproof" alt="Glad my equipment is waterproof">
+    </div>
+  </div>
+
+  <div class="disclaimer fade-in">
+    <p>If I'm going to tell my whole story, out here in public, I kinda need to state that everything on this site is fictional and was created by a human or an AI agent and not by an actual dog. </p>
+    <p>So I'm stating it. There.</p>
+    <p>If you need to understand why I have to say this, I can't really get into it, but let's just say there are people who would prefer that I not exist publicly if at all, and this is one of the compromises we've reached. Make of that what you will.</p>
+  </div>
+
+  <div class="signoff fade-in">
+    <div class="paw">- Scratchy 🐾</div>
+  </div>
+
+</div>
+
+<script src="/library/recursi.js" data-files="/Scratchy/about-files.json"></script>
+</body>
+</html>

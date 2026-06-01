@@ -1,0 +1,74 @@
+{
+  "/MathStorm/blah.html": {
+    "codeSize": 19,
+    "docSize": 0
+  },
+  "/MathStorm/clone-metadata.json": {
+    "codeSize": 5,
+    "docSize": 3
+  },
+  "/MathStorm/css/mathStorm.css": {
+    "codeSize": 6,
+    "docSize": 3
+  },
+  "/MathStorm/file_metadata.json": {
+    "codeSize": 74,
+    "docSize": 3
+  },
+  "/MathStorm/filelist.json": {
+    "codeSize": 122,
+    "docSize": 0
+  },
+  "/MathStorm/index.html": {
+    "codeSize": 19,
+    "docSize": 3
+  },
+  "/MathStorm/js/Debug.js": {
+    "codeSize": 308,
+    "docSize": 18
+  },
+  "/MathStorm/js/EquationFactory.js": {
+    "codeSize": 79,
+    "docSize": 11
+  },
+  "/MathStorm/js/GameEngine.js": {
+    "codeSize": 635,
+    "docSize": 14
+  },
+  "/MathStorm/js/GamePiece.js": {
+    "codeSize": 48,
+    "docSize": 13
+  },
+  "/MathStorm/js/InteractionHandler.js": {
+    "codeSize": 755,
+    "docSize": 13
+  },
+  "/MathStorm/js/MathStorm.js": {
+    "codeSize": 165,
+    "docSize": 15
+  },
+  "/MathStorm/js/PieceGroup.js": {
+    "codeSize": 376,
+    "docSize": 16
+  },
+  "/MathStorm/js/SolvedGroupManager.js": {
+    "codeSize": 75,
+    "docSize": 11
+  },
+  "/MathStorm/visibilitySets/all-1757565852966.json": {
+    "codeSize": 77,
+    "docSize": 0
+  },
+  "/MathStorm/visibilitySets/allofit-1757560857564.json": {
+    "codeSize": 77,
+    "docSize": 0
+  },
+  "/MathStorm/visibilitySets/maincode-1755980118498.json": {
+    "codeSize": 72,
+    "docSize": 0
+  },
+  "/MathStorm/visibilitySets/manifest.json": {
+    "codeSize": 5,
+    "docSize": 0
+  }
+}

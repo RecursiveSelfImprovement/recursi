@@ -1,0 +1,6 @@
+{
+  "writeFiles": true,
+  "runScripts": true,
+  "runCommands": false,
+  "installDeps": false
+}

@@ -1,0 +1,116 @@
+[
+  {
+    "id": "tEUsfyru7pU",
+    "title": "Project Genesis",
+    "subtitle": "Where it all started",
+    "description": "This <b>video</b> explains the initial <b><i>spark</i></b> of the <b><i>ideaaaaa</i></b>. Watch how asdfasdfasdfa f fasdf&nbsp; core concepts were developed and the earliest prototypes came to life through iterative design and experimentation.",
+    "sections": [
+      {
+        "time": 0,
+        "label": "Introduction",
+        "description": "Overview of the project goals and the problem space we set out to address."
+      },
+      {
+        "time": 10,
+        "label": "The Elephants",
+        "description": "First look at the core data structures and how they interact with the rendering layer."
+      },
+      {
+        "time": 15,
+        "label": "Long Trunks",
+        "description": "Deep dive into the extension mechanism that allows modular growth."
+      }
+    ]
+  },
+  {
+    "id": "dQw4w9WgXcQ",
+    "title": "Technical Deep Dive",
+    "subtitle": "Architecture, patterns & implementation details",
+    "description": "A comprehensive walkthrough of the entire system architecture covering design patterns, communication bridges, rendering pipelines, state management, and testing strategies.",
+    "sections": [
+      {
+        "time": 0,
+        "label": "System Overview",
+        "description": "High-level topology of the application and how the major subsystems connect."
+      },
+      {
+        "time": 18,
+        "label": "Message Bus",
+        "description": "The event-driven backbone that routes commands between the UI, workers, and server."
+      },
+      {
+        "time": 42,
+        "label": "State Management",
+        "description": "How we track and synchronize state across multiple execution contexts without conflicts."
+      },
+      {
+        "time": 65,
+        "label": "Rendering Pipeline",
+        "description": "From data model to pixels: the multi-stage rendering pipeline and its optimization points."
+      },
+      {
+        "time": 85,
+        "label": "Bridge Layer",
+        "description": "Cross-context communication patterns including the iframe bridge and postMessage protocol."
+      },
+      {
+        "time": 110,
+        "label": "Plugin Architecture",
+        "description": "How third-party extensions hook into the system without touching core code."
+      },
+      {
+        "time": 135,
+        "label": "Error Handling",
+        "description": "Graceful degradation, retry strategies, and how we surface actionable errors to users."
+      },
+      {
+        "time": 160,
+        "label": "Testing Strategy",
+        "description": "Unit, integration, and visual regression testing with our custom snapshot approach."
+      },
+      {
+        "time": 180,
+        "label": "Performance Profiling",
+        "description": "Identifying bottlenecks: flame charts, memory snapshots, and render timing analysis."
+      },
+      {
+        "time": 200,
+        "label": "Deployment Pipeline",
+        "description": "From commit to production: CI checks, staging environments, and rollback procedures."
+      }
+    ]
+  },
+  {
+    "id": "M7lc1UVf-VE",
+    "title": "Future Roadmap",
+    "subtitle": "What comes next",
+    "description": "Where we are going next. Discussing upcoming features, scaling plans, and how the community can get involved in shaping the direction.",
+    "sections": [
+      {
+        "time": 30,
+        "label": "Vision",
+        "description": "The north star and guiding principles for the next phase of development."
+      },
+      {
+        "time": 60,
+        "label": "Collaboration Tools",
+        "description": "Real-time multi-user editing and how we plan to handle conflicts at scale."
+      },
+      {
+        "time": 120,
+        "label": "Milestones",
+        "description": "Concrete deliverables and target dates for the next three quarters."
+      },
+      {
+        "time": 180,
+        "label": "Community Input",
+        "description": "How user feedback has shaped the roadmap and the process for submitting proposals."
+      },
+      {
+        "time": 240,
+        "label": "Q&A",
+        "description": "Open discussion addressing community questions and feature requests."
+      }
+    ]
+  }
+]

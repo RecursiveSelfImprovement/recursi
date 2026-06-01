@@ -1,0 +1,24 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/AlphabetGame.js"
+  ],
+  "local": [
+    "js/AnimationController.js",
+    "js/BoardRenderer.js",
+    "js/DevPanel.js",
+    "js/DragController.js",
+    "js/GameBoard.js",
+    "js/GameSolver.js",
+    "js/ImageAtlasManager.js",
+    "js/ScoreManager.js",
+    "js/SolverController.js",
+    "js/StylesModule.js",
+    "js/ThemeManager.js",
+    "js/UIFactory.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

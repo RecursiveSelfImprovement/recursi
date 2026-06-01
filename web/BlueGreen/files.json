@@ -1,0 +1,12 @@
+{
+  "main": [
+    "js/JitterGradient.js"
+  ],
+  "local": [],
+  "library": [
+    "DialogBox.js",
+    "applyCss.js",
+    "makeElement.js",
+    "recursi.js"
+  ]
+}

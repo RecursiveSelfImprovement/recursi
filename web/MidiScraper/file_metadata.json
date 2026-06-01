@@ -1,0 +1,42 @@
+{
+  "/MidiScraper/css/midiScraper.css": {
+    "codeSize": 10,
+    "docSize": 0
+  },
+  "/MidiScraper/file_metadata.json": {
+    "codeSize": 42,
+    "docSize": 0
+  },
+  "/MidiScraper/filelist.json": {
+    "codeSize": 50,
+    "docSize": 0
+  },
+  "/MidiScraper/index.html": {
+    "codeSize": 18,
+    "docSize": 0
+  },
+  "/MidiScraper/js/LaneScraper.js": {
+    "codeSize": 1656,
+    "docSize": 0
+  },
+  "/MidiScraper/js/MidiScraper.js": {
+    "codeSize": 2226,
+    "docSize": 0
+  },
+  "/MidiScraper/js/MidiScraperExporters.js": {
+    "codeSize": 584,
+    "docSize": 0
+  },
+  "/MidiScraper/js/MidiScraperUI.js": {
+    "codeSize": 2074,
+    "docSize": 0
+  },
+  "/MidiScraper/js/PianoScraper.js": {
+    "codeSize": 147,
+    "docSize": 0
+  },
+  "/MidiScraper/visibilitySets/manifest.json": {
+    "codeSize": 1,
+    "docSize": 0
+  }
+}

@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Aardvark</title>
+    <style>
+        body {
+            width: 320px; margin: 0; padding: 15px;
+            background: #111; color: #ddd;
+            font-family: system-ui, sans-serif; font-size: 13px;
+        }
+        
+        .section {
+            margin-bottom: 15px; padding: 12px;
+            background: #222; border: 1px solid #333; border-radius: 6px;
+        }
+        
+        label { 
+            display: block; font-weight: 700; color: #fff; 
+            margin-bottom: 8px; font-size: 11px; text-transform: uppercase; 
+        }
+
+        input[type="text"] {
+            width: 100%; box-sizing: border-box; background: #000;
+            border: 1px solid #444; color: #fff; padding: 8px;
+            border-radius: 4px; margin-bottom: 8px; font-size: 13px;
+        }
+        input:focus { border-color: #ff9800; outline: none; }
+
+        button {
+            width: 100%; padding: 10px; border: none; border-radius: 4px;
+            background: #333; color: #fff; cursor: pointer; font-weight: 600;
+            border: 1px solid #444; transition: background 0.1s;
+        }
+        button:hover { background: #444; border-color: #666; }
+        
+        button.primary { 
+            background: #ff9800; color: #000; border-color: #f57c00;
+        }
+        button.primary:hover { background: #f57c00; }
+
+        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-row button { flex: 1; }
+
+        .checkbox-row {
+            display: flex; align-items: center; gap: 8px; margin-bottom: 6px;
+        }
+        .checkbox-row input { margin: 0; cursor: pointer; }
+        .checkbox-row span { font-size: 12px; cursor: default; }
+
+        .sub-group {
+            margin-top: 6px; padding-left: 10px; border-left: 2px solid #444;
+        }
+
+        /* STATUS BOX */
+        #statusConsole {
+            background: #000; border: 1px solid #444; color: #0f0;
+            font-family: 'Courier New', monospace; font-size: 11px;
+            padding: 8px; height: 60px; overflow-y: auto;
+            white-space: pre-wrap; margin-top: 5px;
+        }
+        .log-err { color: #f55; }
+        .log-ok { color: #6f6; }
+    </style>
+</head>
+<body>
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+        <h2 style="margin:0; font-size:16px;">Aardvark Extension</h2>
+    </div>
+
+    <!-- MAIN LAUNCHER -->
+    <div class="section">
+        <label>Aardvark Player / Playlist</label>
+        <button id="openOrganizer" class="primary">Launch Player</button>
+    </div>
+
+    <!-- BOOKMARKS SETTINGS -->
+    <div class="section">
+        <label>Bookmarks</label>
+        <div class="checkbox-row">
+            <input type="checkbox" id="autoOrganizeToggle" />
+            <span>Auto-Organize Folders</span>
+        </div>
+        <button id="openInternalOrganizer" style="margin-top:8px; padding:6px;">Open Bookmarks Organizer</button>
+    </div>
+
+    <!-- AI / LLM SETTINGS -->
+    <div class="section">
+        <label>LLM Helper Auto-Load</label>
+        <div class="sub-group">
+            <div class="checkbox-row"><input type="checkbox" id="llmAutoChatgpt" /><span>ChatGPT</span></div>
+            <div class="checkbox-row"><input type="checkbox" id="llmAutoClaude" /><span>Claude</span></div>
+            <div class="checkbox-row"><input type="checkbox" id="llmAutoStudio" /><span>AI Studio</span></div>
+            <div class="checkbox-row"><input type="checkbox" id="llmAutoGrok" /><span>Grok (X)</span></div>
+        </div>
+    </div>
+
+    <!-- MANUAL INJECTION TOOLS -->
+    <div class="section">
+        <label>Manual Tools</label>
+        <div class="btn-row">
+            <button id="startAardvark">Start Aardvark (DOM Tool)</button>
+            <button id="startLlmHelper">Run LLM Helper</button>
+        </div>
+    </div>
+
+    <!-- STATUS LOG -->
+    <div class="section" style="margin-bottom:15px;">
+        <label>Status</label>
+        <div id="statusConsole">Ready.</div>
+    </div>
+
+    <!-- DEV MODE AT BOTTOM -->
+    <div style="text-align:center; padding-top: 10px; border-top: 1px solid #333;">
+        <label style="display:inline-flex; align-items:center; gap:6px; cursor:pointer; color:#aaa; font-size:10px;">
+            <input type="checkbox" id="devModeToggle" />
+            Developer Mode (localhost:7102)
+        </label>
+    </div>
+
+    <script src="utils/applyCss.js"></script>
+    <script src="utils/makeElement.js"></script>
+    <script src="PopupController.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>
+
+<!-- recursi-meta
+{
+  "schema": 1,
+  "lines": 126,
+  "provides": [],
+  "deps": []
+}
+recursi-meta -->

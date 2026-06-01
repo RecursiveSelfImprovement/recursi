@@ -1,0 +1,12 @@
+{
+  "main": [
+    "js/MaintenancePage.js"
+  ],
+  "local": [
+    "js/ServerAPI.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

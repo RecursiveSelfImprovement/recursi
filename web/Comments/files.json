@@ -1,0 +1,25 @@
+{
+  "main": [
+    "js/Comments.js"
+  ],
+  "local": [
+    "js/DialogBoxExtended.js",
+    "js/CommentNode.js",
+    "js/CommentStyles.js",
+    "js/NameRenderer.js",
+    "js/RatingPanel.js",
+    "js/CommentToolbar.js",
+    "js/UserAccountDialog.js",
+    "js/CommentThreadView.js",
+    "js/UserManager.js",
+    "js/ServerAPI.js",
+    "js/MockServerAPI.js",
+    "js/TestHarness.js",
+    "js/HarnessSettingsManager.js"
+  ],
+  "library": [
+    "UITools.js",
+    "GlowingTooltip.js"
+  ],
+  "thirdParty": []
+}

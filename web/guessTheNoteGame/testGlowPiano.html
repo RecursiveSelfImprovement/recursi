@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Glow Piano Test Harness</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css">
+  <link rel="stylesheet" href="../settingsManager/settingsManager.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #2a2a4a);
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #piano-container {
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      text-align: center;
+    }
+
+    #piano-svg {
+      background: transparent;
+      border: 2px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    #controls-container {
+      flex: 1;
+      display: flex;
+      padding: 20px;
+    }
+
+    #piano-settings,
+    #glow-settings {
+      width: 50%;
+      padding: 10px;
+    }
+
+    #active-notes {
+      margin-top: 10px;
+      font-size: 14px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="piano-container">
+    <svg id="piano-svg"></svg>
+  </div>
+  <div id="controls-container">
+    <div id="piano-settings"></div>
+    <div id="glow-settings"></div>
+  </div>
+  <div id="active-notes">Active Notes: None</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
+  <script src="js/makeElement.js"></script>
+  <script src="js/GraphicPiano.js"></script>
+  <script src="js/GlowPiano.js"></script>
+  <script src="js/svgButtonManager.js"></script>
+  <script src="../settingsManager/js/settingsManager.js"></script>
+  <script>
+    // GraphicPiano settings and slider specs
+    const pianoSettings = {
+      startMidi: 53,
+      endMidi: 76,
+      svgSize: [900, 300],
+      padding: [5, 5],
+      blackKeyHeightRatio: 0.55,
+      keySpacing: 3,
+      cornerRadius: 4
+    };
+
+    const pianoSliderSpecs = {
+      startMidi: { min: 0, max: 127, step: 1 },
+      endMidi: { min: 0, max: 127, step: 1 },
+      svgSize: {
+        type: "array",
+        elements: [
+          { min: 100, max: 2000, step: 1 }, // width
+          { min: 100, max: 1000, step: 1 }  // height
+        ]
+      },
+      padding: {
+        type: "array",
+        elements: [
+          { min: 0, max: 50, step: 1 }, // padding x
+          { min: 0, max: 50, step: 1 }  // padding y
+        ]
+      },
+      blackKeyHeightRatio: { min: 0, max: 1, step: 0.01 },
+      keySpacing: { min: 0, max: 10, step: 0.1 },
+      cornerRadius: { min: 0, max: 10, step: 0.1 }
+    };
+
+    // GlowPiano settings and slider specs
+    const glowSettings = {
+      pastelFactor: 0.7,
+      activePastelFactor: 0.15,
+      borderPastelFactor: 0.3,
+      borderThickness: 4,
+      darkGrayBrightness: 51,
+      whiteGlowThickness: 10,
+      blackGlowThickness: 10,
+      whiteBlurRadius: 4,
+      blackBlurRadius: 4,
+      blackPastelFactor: 0.3,
+      minPlayTime: 1000 // Default to 1 second
+    };
+
+    const glowSliderSpecs = {
+      pastelFactor: { min: 0, max: 1, step: 0.01 },
+      activePastelFactor: { min: 0, max: 1, step: 0.01 },
+      borderPastelFactor: { min: 0, max: 1, step: 0.01 },
+      borderThickness: { min: 1, max: 10, step: 0.1 },
+      darkGrayBrightness: { min: 0, max: 255, step: 1 },
+      whiteGlowThickness: { min: 1, max: 20, step: 0.1 },
+      blackGlowThickness: { min: 1, max: 20, step: 0.1 },
+      whiteBlurRadius: { min: 0, max: 10, step: 0.1 },
+      blackBlurRadius: { min: 0, max: 10, step: 0.1 },
+      blackPastelFactor: { min: 0, max: 1, step: 0.01 },
+      minPlayTime: { min: 100, max: 5000, step: 100 } // Up to 5 seconds
+    };
+
+    // Initialize the pianos
+    const pianoSvg = document.getElementById('piano-svg');
+    const piano = new GraphicPiano(pianoSvg, pianoSettings);
+    const glowPiano = new GlowPiano(piano, glowSettings);
+
+    // Manage active notes in the test harness
+    const activeNotes = new Set();
+
+    // Callback to handle note events
+    glowPiano.setNoteCallback((midi, action) => {
+      console.log(midi, action);
+      if (action === 'start') {
+        activeNotes.add(midi);
+      } else if (action === 'stop') {
+        activeNotes.delete(midi);
+      }
+      const activeNotesDiv = document.getElementById('active-notes');
+      if (activeNotes.size > 0) {
+        activeNotesDiv.textContent = `Active Notes: ${Array.from(activeNotes).join(', ')}`;
+      } else {
+        activeNotesDiv.textContent = 'Active Notes: None';
+      }
+      console.log(`Note ${midi} ${action}`);
+    });
+
+    // SettingsManager for GraphicPiano
+    const pianoSettingsDiv = document.getElementById('piano-settings');
+    const pianoMgr = new SettingsManager(
+      pianoSettingsDiv,
+      pianoSettings,
+      pianoSliderSpecs,
+      (settings) => {
+        piano.updateSettings(settings);
+        piano.initializeData();
+        piano.draw();
+        glowPiano.initialize();
+      },
+      'pianoSettings'
+    );
+    pianoMgr.init();
+
+    // SettingsManager for GlowPiano
+    const glowSettingsDiv = document.getElementById('glow-settings');
+    const glowMgr = new SettingsManager(
+      glowSettingsDiv,
+      glowSettings,
+      glowSliderSpecs,
+      (settings) => {
+        Object.assign(glowPiano.settings, settings);
+        glowPiano.initialize();
+      },
+      'glowSettings'
+    );
+    glowMgr.init();
+
+    // Initial setup
+    piano.initializeData();
+    piano.draw();
+    glowPiano.initialize();
+
+    createSvgButtonManager(pianoSvg);
+  </script>
+  
+</body>
+
+</html>

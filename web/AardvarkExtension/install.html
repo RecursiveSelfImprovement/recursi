@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Install Aardvark Extension</title>
+  <style>
+    :root {
+      --bg: #121212;
+      --surface: #1e1e1e;
+      --primary: #4a90e2;
+      --text: #e0e0e0;
+      --accent: #ffb74d;
+    }
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+    .hero-link {
+      display: block;
+      position: relative; 
+      text-decoration: none;
+    }
+    .hero {
+      position: relative;
+      width: 100%;
+      height: 50vh;
+      min-height: 400px;
+      background: url('https://recursi.dev/SiteResources/frontPage/varkcolors.png') no-repeat center center;
+      background-size: cover;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      transition: filter 0.3s ease;
+    }
+    .hero::after {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: linear-gradient(to bottom, rgba(18,18,18,0) 0%, rgba(18,18,18,1) 95%);
+      transition: background 0.3s ease;
+    }
+    .hero-hover-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 1.1rem;
+      font-weight: bold;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: 15;
+      pointer-events: none;
+      backdrop-filter: blur(4px);
+      border: 1px solid rgba(255,255,255,0.2);
+    }
+    .hero-link:hover .hero-hover-text {
+      opacity: 1;
+    }
+    .hero-link:hover .hero::after {
+      background: linear-gradient(to bottom, rgba(18,18,18,0.2) 0%, rgba(18,18,18,0.9) 95%);
+    }
+    .hero-content {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 40px 20px;
+      pointer-events: none;
+    }
+    h1 {
+      font-size: 3.5rem;
+      margin: 0 0 10px;
+      color: #fff;
+      text-shadow: 0 4px 12px rgba(0,0,0,0.8);
+      font-weight: 800;
+      letter-spacing: -1px;
+    }
+    .subtitle {
+      font-size: 1.3rem;
+      color: #ccc;
+      max-width: 600px;
+      margin: 0 auto;
+      text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 40px 20px;
+    }
+    .download-card {
+      background: var(--surface);
+      border-radius: 12px;
+      padding: 30px;
+      text-align: center;
+      border: 1px solid #333;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+      margin-top: -60px;
+      position: relative;
+      z-index: 20;
+    }
+    .btn {
+      display: inline-block;
+      background: var(--primary);
+      color: #fff;
+      text-decoration: none;
+      padding: 16px 32px;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 1.1rem;
+      transition: all 0.2s ease;
+      box-shadow: 0 4px 15px rgba(74, 144, 226, 0.3);
+    }
+    .btn:hover {
+      background: #357abd;
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(74, 144, 226, 0.5);
+    }
+    .instructions {
+      margin-top: 40px;
+      background: var(--surface);
+      padding: 30px 40px;
+      border-radius: 12px;
+      border: 1px solid #333;
+    }
+    .instructions h2 {
+      margin-top: 0;
+      color: var(--accent);
+      border-bottom: 1px solid #333;
+      padding-bottom: 15px;
+    }
+    ol {
+      padding-left: 20px;
+      margin: 0;
+    }
+    li {
+      margin-bottom: 16px;
+      font-size: 1.05rem;
+    }
+    li::marker {
+      color: var(--primary);
+      font-weight: bold;
+    }
+    code {
+      background: #111;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-family: monospace;
+      color: var(--accent);
+      border: 1px solid #333;
+    }
+  </style>
+</head>
+<body>
+  <a href="https://recursi.dev/SiteResources/frontPage/varkcolors.png" target="_blank" class="hero-link" title="Open full image in new window">
+    <div class="hero">
+      <div class="hero-hover-text">↗ Open image in new window</div>
+      <div class="hero-content">
+        <h1>Aardvark Extension</h1>
+        <p class="subtitle">Supercharge your workflow. The full power of Aardvark, directly in your browser.</p>
+      </div>
+    </div>
+  </a>
+  
+  <div class="container">
+    <div class="download-card">
+      <a href="/api/download-source?dir=AardvarkExtension/browserExtension" class="btn">⬇ Download Extension (.zip)</a>
+      <p style="margin-top: 15px; color: #888; font-size: 0.9rem;">Currently in developer preview.</p>
+    </div>
+
+    <div class="instructions">
+      <h2>How to install manually</h2>
+      <ol>
+        <li>Click the button above to download the <code>.zip</code> file.</li>
+        <li><strong>Extract</strong> the downloaded <code>.zip</code> file to a folder on your computer.</li>
+        <li>Open your browser and navigate to <code>chrome://extensions</code> (or <code>edge://extensions</code> if using Edge).</li>
+        <li>Turn on <strong>Developer mode</strong> (usually a toggle in the top right corner).</li>
+        <li>Click the <strong>Load unpacked</strong> button that appears in the top left.</li>
+        <li>Select the extracted folder containing the extension files.</li>
+        <li>You're good to go! Refresh any Aardvark pages to see it in action.</li>
+      </ol>
+    </div>
+  </div>
+</body>
+</html>

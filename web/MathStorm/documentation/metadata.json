@@ -1,0 +1,44 @@
+{
+  "clone-metadata.json": {
+    "lastUpdated": "2025-09-11T03:18:02.844Z"
+  },
+  "css/mathStorm.css": {
+    "lastUpdated": "2025-09-11T03:18:02.864Z"
+  },
+  "file_metadata.json": {
+    "lastUpdated": "2025-09-11T03:18:02.881Z"
+  },
+  "index.html": {
+    "lastUpdated": "2025-09-11T03:18:02.897Z"
+  },
+  "js/MathStorm.js": {
+    "lastUpdated": "2025-09-11T03:18:02.913Z"
+  },
+  "js/GameEngine.js": {
+    "lastUpdated": "2025-09-11T03:18:14.107Z"
+  },
+  "js/EquationFactory.js": {
+    "lastUpdated": "2025-09-11T03:18:14.127Z"
+  },
+  "js/GamePiece.js": {
+    "lastUpdated": "2025-09-11T03:18:14.147Z"
+  },
+  "js/PieceGroup.js": {
+    "lastUpdated": "2025-09-11T03:18:14.162Z"
+  },
+  "js/SolvedGroupManager.js": {
+    "lastUpdated": "2025-09-11T03:18:14.181Z"
+  },
+  "js/InteractionHandler.js": {
+    "lastUpdated": "2025-09-11T03:18:28.456Z"
+  },
+  "js/Debug.js": {
+    "lastUpdated": "2025-09-11T03:18:28.481Z"
+  },
+  "js/lib/applyCss.js": {
+    "lastUpdated": "2025-09-11T03:19:26.335Z"
+  },
+  "js/lib/DialogBox.js": {
+    "lastUpdated": "2025-09-11T03:19:26.363Z"
+  }
+}

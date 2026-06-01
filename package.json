@@ -1,0 +1,24 @@
+{
+  "name": "recursi-unified",
+  "version": "2.0.0",
+  "description": "Recursi Unified Node Server (YOLO + Vibes)",
+  "main": "nodeServer/launcher.js",
+  "scripts": {
+    "start": "node web/staticServer/server.js",
+    "start:alt": "VIBES_STATIC_PORT=7102 node web/staticServer/server.js",
+    "start:new": "node web/staticServer/server.js"
+  },
+  "dependencies": {
+    "acorn": "^8.16.0",
+    "acorn-walk": "^8.3.5",
+    "body-parser": "^2.2.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "fs-extra": "^11.3.0",
+    "js-yaml": "^4.1.0",
+    "minimatch": "^10.0.1",
+    "ssh2-sftp-client": "^12.0.1",
+    "ws": "^8.18.0",
+    "yargs": "^17.7.2"
+  }
+}

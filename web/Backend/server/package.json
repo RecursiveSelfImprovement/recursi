@@ -1,0 +1,14 @@
+{
+  "name": "recursi-unified-backend",
+  "version": "1.0.0",
+  "description": "Unified disk scan, deployment, and execution engine",
+  "type": "module",
+  "main": "Starter.js",
+  "scripts": {
+    "start": "node Starter.js"
+  },
+  "dependencies": {
+    "ssh2-sftp-client": "^12.0.1",
+    "ws": "^8.18.0"
+  }
+}

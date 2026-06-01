@@ -1,0 +1,25 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "src/LegoFun.js"
+  ],
+  "local": [
+    "src/AnimationManager.js",
+    "src/LayoutManager.js",
+    "src/GameUI.js",
+    "src/GameController.js",
+    "src/LegoFactory.js",
+    "src/PuzzleMaker.js",
+    "src/PuzzleManager.js",
+    "src/RandomUtils.js",
+    "src/StructureBuilder.js",
+    "src/StudGrid.js",
+    "src/SupportAnalyzer.js",
+    "src/VisibilityTester.js"
+  ],
+  "library": [
+    "ThreeJsLoader.js",
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

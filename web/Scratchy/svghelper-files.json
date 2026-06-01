@@ -1,0 +1,19 @@
+{
+  "main": [
+    "js/svgHelper/SvgHelper.js"
+  ],
+  "local": [
+    "js/svgHelper/SvgCanvasView.js",
+    "js/svgHelper/SvgElementIterator.js",
+    "js/svgHelper/SvgElementTreeView.js",
+    "js/svgHelper/SvgFileHandler.js",
+    "js/svgHelper/SvgHelperStyles.js",
+    "js/svgHelper/SvgSmudgeTool.js",
+    "js/svgHelper/SvgToolsPanel.js",
+    "js/svgHelper/SvgTransformResolver.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

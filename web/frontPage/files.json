@@ -1,0 +1,27 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "FrontPage.js"
+  ],
+  "local": [
+    "FrontPageContent.js",
+    "FrontPageStyles.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": [
+    "/Comments/js/DialogBoxExtended.js",
+    "/Comments/js/CommentNode.js",
+    "/Comments/js/CommentStyles.js",
+    "/Comments/js/NameRenderer.js",
+    "/Comments/js/RatingPanel.js",
+    "/Comments/js/CommentToolbar.js",
+    "/Comments/js/UserAccountDialog.js",
+    "/Comments/js/CommentThreadView.js",
+    "/Comments/js/UserManager.js",
+    "/Comments/js/ServerAPI.js",
+    "/Comments/js/MockServerAPI.js",
+    "/Comments/js/Comments.js"
+  ]
+}

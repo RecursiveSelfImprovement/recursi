@@ -1,0 +1,15 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "Squircle.js"
+  ],
+  "local": [
+    "js/SquircleArc.js",
+    "js/SquircleBezier.js",
+    "js/SquirclePolygon.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

@@ -1,0 +1,14 @@
+{
+  "meta": "Managed by Vibes",
+  "main": [
+    "landing/LandingPage.js"
+  ],
+  "local": [
+    "landing/LandingPageText.js",
+    "landing/StyleManager.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

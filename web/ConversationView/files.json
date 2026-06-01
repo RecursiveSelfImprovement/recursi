@@ -1,0 +1,22 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/SeedAgent.js"
+  ],
+  "local": [
+    "js/AgentStats.js",
+    "js/ConversationView.js",
+    "js/DemoPlayer.js",
+    "js/DemoScript.js",
+    "js/MessageNode.js",
+    "js/RunnerBridge.js",
+    "js/RunnerTemplate.js",
+    "js/SliderPanel.js",
+    "js/TaskParser.js",
+    "js/WorkspaceManager.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

@@ -1,0 +1,20 @@
+{
+  "main": [
+    "src/RankedChoiceApp.js"
+  ],
+  "local": [
+    "src/CondorcetTabulator.js",
+    "src/ElectionData.js",
+    "src/InstantRunoffWidget.js",
+    "src/IRV.js",
+    "src/IrvTabulator.js",
+    "src/Minimax.js",
+    "src/PairwiseCalculator.js",
+    "src/PairwiseMatrixWidget.js",
+    "src/SankeyDiagram.js",
+    "src/ThemeManager.js"
+  ],
+  "library": [
+    "UITools.js"
+  ]
+}

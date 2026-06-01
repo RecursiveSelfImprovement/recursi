@@ -1,0 +1,11 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "src/ScrewThread.js"
+  ],
+  "local": [],
+  "library": [
+    "UITools.js",
+    "ThreeJsLoader.js"
+  ]
+}

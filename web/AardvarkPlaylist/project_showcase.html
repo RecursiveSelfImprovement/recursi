@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Project Showcase</title>
+<body>
+  
+  <script src="/library/UITools.js"></script>
+  <script src="/library/applyCss.js"></script>
+  <script src="/library/makeElement.js"></script>
+  <script src="./js/ProjectShowcase.js"></script>
+  <script>
+    (async () => {
+      const showcase = new ProjectShowcase(document.body);
+      await showcase.init();
+      window.showcaseInstance = showcase;
+    })();
+  </script>
+</body>
+</html>
+
+<!-- recursi-meta
+{
+  "schema": 1,
+  "lines": 15,
+  "provides": [],
+  "deps": []
+}
+recursi-meta -->

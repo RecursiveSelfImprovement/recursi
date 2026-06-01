@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SVG Helper Bridge</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: system-ui, -apple-system, sans-serif;
+    background: #1e1e2e; color: #cdd6f4;
+    display: flex; flex-direction: column; height: 100vh;
+  }
+  .toolbar {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 16px; background: #181825;
+    border-bottom: 1px solid #313244; flex-shrink: 0;
+  }
+  .toolbar h2 { font-size: 14px; font-weight: 600; flex: 1; }
+  .toolbar .badge {
+    font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    background: #a6e3a1; color: #1e1e2e; font-weight: 600;
+  }
+  .toolbar .badge.disconnected { background: #f38ba8; }
+  .toolbar button {
+    padding: 6px 14px; border: 1px solid #45475a; border-radius: 6px;
+    background: #313244; color: #cdd6f4; cursor: pointer;
+    font-size: 13px; font-weight: 500; transition: background 0.15s;
+  }
+  .toolbar button:hover { background: #45475a; }
+  .toolbar button.primary { background: #a6e3a1; color: #1e1e2e; border-color: #a6e3a1; font-weight: 600; }
+  .toolbar button.primary:hover { background: #94e2d5; }
+  .main { display: flex; flex: 1; min-height: 0; }
+  .edit-pane {
+    flex: 1; display: flex; flex-direction: column; border-right: 1px solid #313244;
+  }
+  .edit-pane label {
+    padding: 8px 12px; font-size: 12px; font-weight: 600;
+    color: #a6adc8; background: #181825; border-bottom: 1px solid #313244;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .edit-pane textarea {
+    flex: 1; resize: none; border: none; outline: none;
+    background: #1e1e2e; color: #cdd6f4; padding: 12px;
+    font-family: 'JetBrains Mono', 'Fira Code', monospace; font-size: 13px;
+    line-height: 1.5; tab-size: 2;
+  }
+  .preview-pane {
+    flex: 1; display: flex; flex-direction: column;
+  }
+  .preview-pane label {
+    padding: 8px 12px; font-size: 12px; font-weight: 600;
+    color: #a6adc8; background: #181825; border-bottom: 1px solid #313244;
+    text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .preview-area {
+    flex: 1; display: flex; align-items: center; justify-content: center;
+    background: repeating-conic-gradient(#313244 0% 25%, #1e1e2e 0% 50%) 50% / 20px 20px;
+    overflow: hidden; padding: 20px;
+  }
+  .preview-area img {
+    max-width: 100%; max-height: 100%; object-fit: contain;
+  }
+  .status-bar {
+    padding: 6px 16px; background: #181825; border-top: 1px solid #313244;
+    font-size: 12px; color: #6c7086; flex-shrink: 0;
+  }
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <h2>SVG Helper (Bridge Mode)</h2>
+  <span class="badge disconnected" id="connBadge">waiting...</span>
+  <button onclick="saveToDisk()">💾 Save to Disk</button>
+  <button class="primary" onclick="sendBack()">✅ Send Back to Parent</button>
+</div>
+
+<div class="main">
+  <div class="edit-pane">
+    <label>Edit SVG</label>
+    <textarea id="svgEditor" spellcheck="false" placeholder="Waiting for SVG from parent..."></textarea>
+  </div>
+  <div class="preview-pane">
+    <label>Preview</label>
+    <div class="preview-area" id="previewArea"></div>
+  </div>
+</div>
+
+<div class="status-bar" id="statusBar">Waiting for parent connection...</div>
+
+<script>
+const svgEditor = document.getElementById('svgEditor');
+const previewArea = document.getElementById('previewArea');
+const statusBar = document.getElementById('statusBar');
+const connBadge = document.getElementById('connBadge');
+
+let parentSource = null;
+let parentOrigin = '*';
+let connected = false;
+
+function setStatus(msg) {
+  statusBar.textContent = msg;
+}
+
+function setConnected() {
+  connected = true;
+  connBadge.textContent = 'connected';
+  connBadge.classList.remove('disconnected');
+}
+
+function updatePreview() {
+  const svg = svgEditor.value.trim();
+  if (!svg) {
+    previewArea.innerHTML = '<div style="color:#6c7086;">No SVG loaded</div>';
+    return;
+  }
+  try {
+    const blob = new Blob([svg], { type: 'image/svg+xml' });
+    const url = URL.createObjectURL(blob);
+    const img = document.createElement('img');
+    img.onload = () => URL.revokeObjectURL(url);
+    img.onerror = () => {
+      previewArea.innerHTML = '<div style="color:#f38ba8;">Invalid SVG</div>';
+      URL.revokeObjectURL(url);
+    };
+    img.src = url;
+    previewArea.innerHTML = '';
+    previewArea.appendChild(img);
+  } catch (e) {
+    previewArea.innerHTML = '<div style="color:#f38ba8;">Error rendering SVG</div>';
+  }
+}
+
+svgEditor.addEventListener('input', updatePreview);
+
+function sendBack() {
+  const svg = svgEditor.value.trim();
+  if (!svg) {
+    setStatus('Nothing to send back.');
+    return;
+  }
+  const target = parentSource || window.opener || window.parent;
+  if (target && target !== window) {
+    target.postMessage({ type: 'SVG_HELPER_EXPORT', svg: svg }, parentOrigin);
+    setStatus('SVG sent back to parent!');
+  } else {
+    setStatus('No parent connection. Cannot send back.');
+  }
+}
+
+function saveToDisk() {
+  const svg = svgEditor.value.trim();
+  if (!svg) { setStatus('Nothing to save.'); return; }
+  const blob = new Blob([svg], { type: 'image/svg+xml' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'edited.svg';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  setStatus('SVG saved to disk.');
+}
+
+window.addEventListener('message', (e) => {
+  if (!e.data || typeof e.data.type !== 'string') return;
+
+  if (e.data.type === 'SVG_HELPER_LOAD') {
+    parentSource = e.source;
+    parentOrigin = e.origin || '*';
+    svgEditor.value = e.data.svg || '';
+    updatePreview();
+    setConnected();
+    setStatus('SVG loaded from parent. Edit and click "Send Back" when done.');
+  }
+});
+
+// Signal readiness to parent (works for both iframe and window.opener)
+function signalReady() {
+  try {
+    if (window.opener) {
+      window.opener.postMessage({ type: 'SVG_HELPER_READY' }, '*');
+    }
+  } catch (e) {}
+  try {
+    if (window.parent && window.parent !== window) {
+      window.parent.postMessage({ type: 'SVG_HELPER_READY' }, '*');
+    }
+  } catch (e) {}
+}
+
+signalReady();
+setStatus('Ready signal sent. Waiting for SVG from parent...');
+</script>
+</body>
+</html>

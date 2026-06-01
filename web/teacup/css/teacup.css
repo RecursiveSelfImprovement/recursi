@@ -1,0 +1,16 @@
+/* style.css */
+body {
+  margin: 0;
+  overflow: hidden;
+  background-color: #222;
+  font-family: Arial, sans-serif;
+}
+
+#canvas-container {
+  width: 100vw;
+  height: 100vh;
+}
+
+canvas {
+  display: block;
+}

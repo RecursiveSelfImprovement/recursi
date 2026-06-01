@@ -1,0 +1,37 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/Scratchy.js"
+  ],
+  "local": [
+    "js/ScratchyStyles.js",
+    "js/ScratchyDropHandler.js",
+    "js/ScratchyFileList.js",
+    "js/ScratchyLLMBridge.js",
+    "js/ScratchyExporter.js",
+    "js/ScratchyIntro.js",
+    "js/ScratchyCallouts.js",
+    "js/ScratchySettings.js",
+    "js/ScratchyInstructions.js",
+    "js/ScratchyViewerLauncher.js",
+    "js/ScratchyTemplateSelector.js",
+    "js/Hatchy.js",
+    "js/CalloutArrow.js",
+    "js/DictationPopup.js",
+    "js/DictationWidget.js",
+    "js/AboutPages.js",
+    "js/PatchManager.js",
+    "js/RawExporter.js",
+    "js/RawPatchProcessor.js",
+    "js/ScratchViewer.js",
+    "js/StructuredExporter.js",
+    "js/StructuredPatchProcessor.js",
+    "js/ScratchyEditorManager.js"
+  ],
+  "library": [
+    "UITools.js",
+    "GlowingTooltip.js",
+    "CodeMirrorWidget.js"
+  ],
+  "thirdParty": []
+}

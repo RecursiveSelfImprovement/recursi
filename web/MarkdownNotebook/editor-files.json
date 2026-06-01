@@ -1,0 +1,18 @@
+{
+  "meta": "Managed by Vibes",
+  "main": [
+    "MultiWidgetPage.js"
+  ],
+  "local": [
+    "ui/MarkdownWidget.js",
+    "ui/HamburgerMenu.js",
+    "ui/VerticalOrderingUI.js",
+    "ui/StaticCheckbox.js",
+    "utils/SvgUtils.js",
+    "utils/cleanMarkdown.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}

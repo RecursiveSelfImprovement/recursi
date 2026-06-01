@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Piano Test Harness</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.css">
+
+  <link rel="stylesheet" href="../settingsManager/settingsManager.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Arial', sans-serif;
+      background: linear-gradient(135deg, #1e1e2f, #2a2a4a);
+      color: #fff;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    #piano-container {
+      padding: 20px;
+      background: rgba(255, 255, 255, 0.7);
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2);
+      text-align: center;
+    }
+
+    #piano-svg {
+      background: transparent;
+      border: 2px solid #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    #controls-container {
+      flex: 1;
+      display: flex;
+      padding: 20px;
+    }
+
+    #piano-settings,
+    #glow-settings {
+      width: 50%;
+      padding: 10px;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="piano-container">
+    <svg id="piano-svg"></svg>
+  </div>
+  <div id="controls-container">
+    <div id="piano-settings"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/codemirror.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.17/mode/javascript/javascript.min.js"></script>
+  <script src="js/makeElement.js"></script>
+  <script src="js/GraphicPiano.js"></script>
+  <script src="js/svgButtonManager.js"></script>
+  <script src="../settingsManager/js/settingsManager.js"></script>
+  <script>
+    const pianoSettings = {
+      startMidi: 53,
+      endMidi: 76,
+      svgSize: [900, 300],
+      padding: [5, 5],
+      blackKeyHeightRatio: 0.55,
+      keySpacing: 3,
+      cornerRadius: 4
+    };
+
+    const pianoSliderSpecs = {
+      startMidi: {min: 0, max: 127, step: 1},
+      endMidi: {min: 0, max: 127, step: 1},
+      svgSize: {
+        type: "array",
+        elements: [
+          {min: 100, max: 2000, step: 1},
+          {min: 100, max: 1000, step: 1}
+        ]
+      },
+      padding: {
+        type: "array",
+        elements: [
+          {min: 0, max: 80, step: 1},
+          {min: 0, max: 80, step: 1}
+        ]
+      },
+      blackKeyHeightRatio: {min: 0, max: 1, step: 0.01},
+      keySpacing: {min: 0, max: 10, step: 0.2},
+      cornerRadius: {min: 0, max: 20, step: 0.2}
+    };
+   
+    const pianoSettingsDiv = document.getElementById('piano-settings');
+    const pianoSvg = document.getElementById('piano-svg');
+    const piano = new GraphicPiano(pianoSvg, pianoSettings);
+
+    const pianoMgr = new SettingsManager(
+      pianoSettingsDiv,
+      pianoSettings,
+      pianoSliderSpecs,
+      (settings) => {
+        piano.updateSettings(settings);
+        piano.initializeData();
+        piano.draw();
+      },
+      'pianoSettings'
+    );
+    pianoMgr.init();
+    piano.initializeData();
+    piano.draw();
+    createSvgButtonManager(pianoSvg);
+  </script>
+</body>
+
+</html>

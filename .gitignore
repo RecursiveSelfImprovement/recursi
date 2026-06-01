@@ -1,0 +1,27 @@
+node_modules/
+config.local.yaml
+*.bak
+*.bak-*
+.DS_Store
+._*
+debug-*.js
+debug-*.txt
+prelude-test.js
+.backups/
+
+# Local numbered working copies (e.g. Aardvark-1, vibes-2)
+web/*-[0-9]/
+web/*-[0-9][0-9]/
+
+# Vibes creates this dir when no project is open; block it
+web/Project\ Browser/
+
+# thirdparty symlink — use recursi-thirdparty sibling repo or deploy
+web/thirdparty
+
+# Vibes workspace local metadata & quarantine
+.vibes/
+.vibes-node-runner/
+.vibes-quarantine/
+.deploy-backups/
+.3dviewer-state.json

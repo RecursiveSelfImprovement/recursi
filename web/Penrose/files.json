@@ -1,0 +1,11 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/Penrose.js"
+  ],
+  "local": [],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}
