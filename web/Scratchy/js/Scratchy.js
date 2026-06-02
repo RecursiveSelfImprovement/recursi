@@ -383,6 +383,11 @@ class Scratchy {
     }
 
   async _handleAutoLoad() {
+      // Load templates dynamically first
+      if (this.templateSelector && typeof this.templateSelector.loadTemplates === 'function') {
+        await this.templateSelector.loadTemplates();
+      }
+
       const params = new URLSearchParams(window.location.search);
       const url = params.get('url');
       let targetUrl = url;
@@ -391,13 +396,7 @@ class Scratchy {
       if (!targetUrl) {
         const tmpl = this.templateSelector.getSelectedTemplate();
         const file = tmpl.file;
-        if (file.startsWith('http://') || file.startsWith('https://')) {
-          targetUrl = file;
-        } else if (file.startsWith('/Scratchy/') || file.startsWith('Scratchy/')) {
-          targetUrl = file.startsWith('/') ? file : '/' + file;
-        } else {
-          targetUrl = '/Scratchy/' + (file.startsWith('/') ? file.slice(1) : file);
-        }
+        targetUrl = this._resolveUrl(file);
         filename = file.split('/').pop() || file;
         this.loadedFileName = tmpl.name;
       } else {
@@ -426,14 +425,7 @@ class Scratchy {
   async _loadTemplate(templateFile, displayName) {
       try {
         this.statusDiv.textContent = `Loading template: ${displayName}...`;
-        let targetUrl = '';
-        if (templateFile.startsWith('http://') || templateFile.startsWith('https://')) {
-          targetUrl = templateFile;
-        } else if (templateFile.startsWith('/Scratchy/') || templateFile.startsWith('Scratchy/')) {
-          targetUrl = templateFile.startsWith('/') ? templateFile : '/' + templateFile;
-        } else {
-          targetUrl = '/Scratchy/' + (templateFile.startsWith('/') ? templateFile.slice(1) : templateFile);
-        }
+        const targetUrl = this._resolveUrl(templateFile);
 
         const response = await fetch(targetUrl);
         if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
@@ -460,5 +452,15 @@ class Scratchy {
     }
 
   
+
+  _resolveUrl(file) {
+      if (!file) return '';
+      if (file.startsWith('http://') || file.startsWith('https://')) {
+        return file;
+      }
+      // If path already starts with /Scratchy/ but we are in a subdirectory,
+      // let's resolve it smoothly. The best way is to keep files relative.
+      return file;
+    }
 }
 

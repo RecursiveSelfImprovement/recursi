@@ -11,40 +11,34 @@ class ScratchyTemplateSelector {
       this._templates = [
         {
           name: 'Blank Canvas',
-          file: '/Scratchy/empty.sb3',
-          description:
-            'An empty project with a single blank sprite. Start from scratch.',
+          file: 'empty.sb3',
+          description: 'An empty project with a single blank sprite. Start from scratch.',
         },
         {
           name: 'Story Starter',
-          file: '/Scratchy/empty.sb3',
-          description:
-            'Two sprites with a backdrop - great for dialogue and narration projects.',
+          file: 'empty.sb3',
+          description: 'Two sprites with a backdrop - great for dialogue and narration projects.',
         },
         {
           name: 'Platformer Kit',
-          file: '/Scratchy/empty.sb3',
-          description:
-            'A sprite with basic gravity and movement blocks. Jump right into game building.',
+          file: 'empty.sb3',
+          description: 'A sprite with basic gravity and movement blocks. Jump right into game building.',
         },
         {
           name: 'Art Studio',
-          file: '/Scratchy/empty.sb3',
-          description:
-            'Pen-based drawing template with color controls and stamp tools ready to go.',
+          file: 'empty.sb3',
+          description: 'Pen-based drawing template with color controls and stamp tools ready to go.',
         },
         {
           name: 'Quiz Show',
-          file: '/Scratchy/empty.sb3',
-          description:
-            'Ask-and-answer framework with scoring. Perfect for trivia and learning games.',
+          file: 'empty.sb3',
+          description: 'Ask-and-answer framework with scoring. Perfect for trivia and learning games.',
         },
         {
           name: 'Animation Lab',
-          file: '/Scratchy/empty.sb3',
-          description:
-            'Multiple costumes and frame-by-frame setup for flipbook-style animations.',
-        },
+          file: 'empty.sb3',
+          description: 'Multiple costumes and frame-by-frame setup for flipbook-style animations.',
+        }
       ];
       this._selectedTemplate = this._templates[0];
     }
@@ -352,5 +346,21 @@ class ScratchyTemplateSelector {
       'scratchy-template-selector-styles'
     );
   }
+
+  async loadTemplates() {
+      try {
+        const response = await fetch('templates.json');
+        if (response.ok) {
+          const list = await response.json();
+          if (Array.isArray(list) && list.length > 0) {
+            this._templates = list;
+            this._selectedTemplate = this._templates[0];
+            console.log('[TemplateSelector] Successfully loaded dynamic templates from templates.json');
+          }
+        }
+      } catch (e) {
+        console.warn('[TemplateSelector] Failed to fetch templates.json, using relative fallbacks:', e);
+      }
+    }
 }
 

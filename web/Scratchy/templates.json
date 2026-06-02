@@ -1,0 +1,32 @@
+[
+  {
+    "name": "Blank Canvas",
+    "file": "empty.sb3",
+    "description": "An empty project with a single blank sprite. Start from scratch."
+  },
+  {
+    "name": "Story Starter",
+    "file": "empty.sb3",
+    "description": "Two sprites with a backdrop - great for dialogue and narration projects."
+  },
+  {
+    "name": "Platformer Kit",
+    "file": "empty.sb3",
+    "description": "A sprite with basic gravity and movement blocks. Jump right into game building."
+  },
+  {
+    "name": "Art Studio",
+    "file": "empty.sb3",
+    "description": "Pen-based drawing template with color controls and stamp tools ready to go."
+  },
+  {
+    "name": "Quiz Show",
+    "file": "empty.sb3",
+    "description": "Ask-and-answer framework with scoring. Perfect for trivia and learning games."
+  },
+  {
+    "name": "Animation Lab",
+    "file": "empty.sb3",
+    "description": "Multiple costumes and frame-by-frame setup for flipbook-style animations."
+  }
+]
