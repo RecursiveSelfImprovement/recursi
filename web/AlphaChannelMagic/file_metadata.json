@@ -1,86 +1,88 @@
 {
-  "/AlphaChannelMagic/README.md": {
-    "codeSize": 4,
-    "docSize": 0
-  },
-  "/AlphaChannelMagic/clone-metadata.json": {
-    "codeSize": 5,
-    "docSize": 0
-  },
-  "/AlphaChannelMagic/colorAlpha.html": {
+  "/SparklyColorChangeMagic/colorAlpha.html": {
     "codeSize": 17,
     "docSize": 0
   },
-  "/AlphaChannelMagic/css/alphaChannelMagic.css": {
-    "codeSize": 10,
-    "docSize": 0
-  },
-  "/AlphaChannelMagic/file_metadata.json": {
-    "codeSize": 86,
-    "docSize": 0
-  },
-  "/AlphaChannelMagic/filelist.json": {
-    "codeSize": 86,
-    "docSize": 0
-  },
-  "/AlphaChannelMagic/index.html": {
+  "/SparklyColorChangeMagic/index.html": {
     "codeSize": 128,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/AlphaChannelMagic.js": {
+  "/SparklyColorChangeMagic/css/sparklyColorChangeMagic.css": {
+    "codeSize": 10,
+    "docSize": 0
+  },
+  "/SparklyColorChangeMagic/js/SparklyColorChangeMagic.js": {
     "codeSize": 186,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/ColorAlphaApp.js": {
-    "codeSize": 779,
+  "/SparklyColorChangeMagic/js/colorAlpha/ColorAlphaApp.js": {
+    "codeSize": 831,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/logic/BackgroundEffects.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/logic/BackgroundEffects.js": {
     "codeSize": 350,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/logic/CanvasUtils.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/logic/CanvasUtils.js": {
     "codeSize": 25,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/logic/ChunkedCanvasProcessor.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/logic/ChunkedCanvasProcessor.js": {
     "codeSize": 83,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/logic/ColorToAlphaProcessor.js": {
-    "codeSize": 318,
+  "/SparklyColorChangeMagic/js/colorAlpha/logic/ColorToAlphaProcessor.js": {
+    "codeSize": 181,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/logic/Interpolator.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/logic/Interpolator.js": {
     "codeSize": 32,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/logic/SimplifiedHSV.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/logic/SimplifiedHSV.js": {
     "codeSize": 78,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/ui/CompositeBuilder.js": {
-    "codeSize": 1018,
+  "/SparklyColorChangeMagic/js/colorAlpha/ui/CompositeBuilder.js": {
+    "codeSize": 912,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/ui/CropTool.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/ui/CropTool.js": {
     "codeSize": 324,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/ui/ImageDialog.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/ui/ImageDialog.js": {
     "codeSize": 288,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/ui/ImageProcessorUI.js": {
-    "codeSize": 1098,
+  "/SparklyColorChangeMagic/js/colorAlpha/ui/ImageProcessorUI.js": {
+    "codeSize": 1041,
     "docSize": 0
   },
-  "/AlphaChannelMagic/js/colorAlpha/ui/SidePanel.js": {
+  "/SparklyColorChangeMagic/js/colorAlpha/ui/SidePanel.js": {
     "codeSize": 201,
     "docSize": 0
   },
-  "/AlphaChannelMagic/visibilitySets/manifest.json": {
+  "/SparklyColorChangeMagic/README.md": {
+    "codeSize": 4,
+    "docSize": 0
+  },
+  "/SparklyColorChangeMagic/clone-metadata.json": {
+    "codeSize": 5,
+    "docSize": 0
+  },
+  "/SparklyColorChangeMagic/file_metadata.json": {
+    "codeSize": 8,
+    "docSize": 0
+  },
+  "/SparklyColorChangeMagic/visibilitySets/manifest.json": {
     "codeSize": 1,
     "docSize": 0
+  },
+  "/js/colorAlpha/ui/ImageProcessorUI.js": {
+    "codeSize": 1098
+  },
+  "/js/colorAlpha/logic/ColorToAlphaProcessor.js": {
+    "codeSize": 318
   }
 }

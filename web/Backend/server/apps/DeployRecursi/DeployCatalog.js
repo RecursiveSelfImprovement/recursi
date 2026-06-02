@@ -68,8 +68,8 @@ class DeployCatalog {
         }
       }
 
-      // Added 'library' to the scanned list so recursi.js and RecursiLoader.js are updated on remote
-      const defaultDirs = ['frontPage', 'sharedLib', 'recursi', 'modules', 'library'];
+      // Added 'projectBrowserThumbnails' to enable automatic deployment of assets
+      const defaultDirs = ['frontPage', 'sharedLib', 'recursi', 'modules', 'library', 'projectBrowserThumbnails'];
       for (const dir of defaultDirs) {
         if (seen.has(dir)) continue;
         const localAbs = path.resolve(webRoot, dir);

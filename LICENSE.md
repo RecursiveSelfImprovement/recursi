@@ -20,18 +20,18 @@ is available at: https://www.gnu.org/licenses/agpl-3.0.en.html
 
 ---
 
-WHAT THIS MEANS IN PLAIN ENGLISH
+## What this means in plain English
 
-You are free to:
-- Use Recursi for anything -- personal projects, learning, internal company
+**You are free to:**
+- Use Recursi for anything — personal projects, learning, internal company
   tools, commercial products you build with it
 - Study, modify, and improve the code
 - Distribute copies to others
 
-The one condition that matters:
+**The one condition that matters:**
 If you run Recursi (or a modified version of it) on a server and offer
-it to other people over a network -- think SaaS, hosted platform,
-"Recursi as a service" -- you must release the complete source code
+it to other people over a network — think SaaS, hosted platform,
+"Recursi as a service" — you must release the complete source code
 of your application under the AGPL. That includes any modifications
 you made to Recursi itself.
 
@@ -39,13 +39,13 @@ This means a cloud provider or AI company cannot simply wrap Recursi
 in a product and charge for it without either open-sourcing their
 entire stack or obtaining a commercial license from us.
 
-Internal company use is completely free. Build internal tools,
-use it in your development workflow, run it for your own team --
+**Internal company use is completely free.** Build internal tools,
+use it in your development workflow, run it for your own team —
 no restrictions, no fees.
 
 ---
 
-COMMERCIAL LICENSING
+## Commercial Licensing
 
 If you want to run Recursi as a hosted service or build a product on
 top of it without open-sourcing your stack, we offer commercial licenses.
@@ -53,11 +53,11 @@ top of it without open-sourcing your stack, we offer commercial licenses.
 Contact: [your email]
 
 We're reasonable. Indie developers and small teams building something
-interesting -- just reach out, we'll make it work.
+interesting — just reach out, we'll make it work.
 
 ---
 
-CONTRIBUTOR LICENSE AGREEMENT
+## Contributor License Agreement
 
 By submitting contributions (pull requests, patches, etc.) to this
 project, you agree that your contributions are licensed under the same

@@ -822,18 +822,19 @@ class ScreenCapTool {
 
   async _fetchProjects() {
       try {
-        const res = await fetch(
-          '/vibes/src/tools/browser/project-catalog.json?t=' + Date.now()
-        );
-        const catalogData = await res.json();
+        if (typeof ProjectCatalogCapsule === 'undefined') {
+          await this.app._loadClassicScriptOnce('/vibes/src/tools/browser/ProjectCatalogCapsule.js');
+        }
+        const catalogData = ProjectCatalogCapsule.getCatalog();
         this.allProjects = [];
 
         for (const cat in catalogData) {
           if (Array.isArray(catalogData[cat])) {
             catalogData[cat].forEach((p) => {
-              if (!p.name.endsWith('.js')) {
+              const name = p.directory || p.name;
+              if (!name.endsWith('.js')) {
                 this.allProjects.push(p);
-                const opt = makeElement('option', { value: p.name }, p.name);
+                const opt = makeElement('option', { value: name }, p.name);
                 this.projectSelect.appendChild(opt);
               }
             });
@@ -1027,9 +1028,45 @@ class ScreenCapTool {
     }
 
   _generateCapsuleCode(catalog) {
+      const formatCategory = (catName) => {
+        const list = catalog[catName] || [];
+        return JSON.stringify(list, null, 2).split('\n').map(line => '      ' + line).join('\n').trim();
+      };
+
       return `class ProjectCatalogCapsule {
+  static starterTemplates() {
+    return ${formatCategory("Starter Templates")};
+  }
+
+  static gamesAndInteractive() {
+    return ${formatCategory("Games & Interactive")};
+  }
+
+  static toolsAndApps() {
+    return ${formatCategory("Tools & Apps")};
+  }
+
+  static experiments() {
+    return ${formatCategory("Experiments")};
+  }
+
+  static meta() {
+    return ${formatCategory("meta")};
+  }
+
+  static sharedLibraryFiles() {
+    return ${formatCategory("Shared Library Files")};
+  }
+
   static _data_catalog() {
-    return ${JSON.stringify(catalog, null, 2).split('\n').join('\n    ')};
+    return {
+      "Starter Templates": this.starterTemplates(),
+      "Games & Interactive": this.gamesAndInteractive(),
+      "Tools & Apps": this.toolsAndApps(),
+      "Experiments": this.experiments(),
+      "meta": this.meta(),
+      "Shared Library Files": this.sharedLibraryFiles()
+    };
   }
 
   static getCatalog() {
@@ -1054,7 +1091,8 @@ class ScreenCapTool {
     for (const categoryName of Object.keys(catalog)) {
       const projects = Array.isArray(catalog[categoryName]) ? catalog[categoryName] : [];
       for (const project of projects) {
-        if (String(project?.name || "").toLowerCase() === wanted) {
+        const dir = project.directory || project.name;
+        if (String(dir).toLowerCase() === wanted || String(project.name).toLowerCase() === wanted) {
           return {
             categoryName,
             project: { ...project }

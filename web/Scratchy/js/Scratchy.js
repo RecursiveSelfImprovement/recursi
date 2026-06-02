@@ -390,8 +390,15 @@ class Scratchy {
 
       if (!targetUrl) {
         const tmpl = this.templateSelector.getSelectedTemplate();
-        targetUrl = tmpl.file.startsWith('http') ? tmpl.file : '/Scratchy/' + tmpl.file;
-        filename = tmpl.file;
+        const file = tmpl.file;
+        if (file.startsWith('http://') || file.startsWith('https://')) {
+          targetUrl = file;
+        } else if (file.startsWith('/Scratchy/') || file.startsWith('Scratchy/')) {
+          targetUrl = file.startsWith('/') ? file : '/' + file;
+        } else {
+          targetUrl = '/Scratchy/' + (file.startsWith('/') ? file.slice(1) : file);
+        }
+        filename = file.split('/').pop() || file;
         this.loadedFileName = tmpl.name;
       } else {
         const parts = targetUrl.split('/');
@@ -419,7 +426,16 @@ class Scratchy {
   async _loadTemplate(templateFile, displayName) {
       try {
         this.statusDiv.textContent = `Loading template: ${displayName}...`;
-        const response = await fetch(templateFile.startsWith('http') ? templateFile : '/Scratchy/' + templateFile);
+        let targetUrl = '';
+        if (templateFile.startsWith('http://') || templateFile.startsWith('https://')) {
+          targetUrl = templateFile;
+        } else if (templateFile.startsWith('/Scratchy/') || templateFile.startsWith('Scratchy/')) {
+          targetUrl = templateFile.startsWith('/') ? templateFile : '/' + templateFile;
+        } else {
+          targetUrl = '/Scratchy/' + (templateFile.startsWith('/') ? templateFile.slice(1) : templateFile);
+        }
+
+        const response = await fetch(targetUrl);
         if (!response.ok) throw new Error(`Fetch failed: ${response.status}`);
         const blob = await response.blob();
 

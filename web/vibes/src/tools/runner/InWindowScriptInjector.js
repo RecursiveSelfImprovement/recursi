@@ -600,7 +600,8 @@ class InWindowScriptInjector {
 
         // Check if the global constructor is already loaded to prevent duplicate declaration syntax errors
         const className = normalized.split('/').pop().replace(/\.js$/i, '');
-        const alreadyOnGlobal = typeof window[className] === 'function' || typeof globalThis[className] === 'function';
+        const globalVal = this._runAppCapsuleResolveLoadedGlobal(className);
+        const alreadyOnGlobal = typeof globalVal === 'function' || typeof window[className] === 'function' || (window[className] !== undefined && window[className] !== null) || (globalThis[className] !== undefined && globalThis[className] !== null);
 
         if (alreadyInDom || alreadyOnGlobal) {
           this._loadedClassicScripts.add(normalized);
@@ -1006,6 +1007,9 @@ class InWindowScriptInjector {
           `if (typeof ${className} !== "undefined") { ` +
           `globalThis.${className} = ${className}; ` +
           `window.${className} = ${className}; ` +
+          `if (globalThis.__classRegistrationLogger && typeof globalThis.__classRegistrationLogger.log === 'function') { ` +
+          `globalThis.__classRegistrationLogger.log('${className}', 'in-window'); ` +
+          `} ` +
           `if (typeof ${fileClass} !== "undefined" && ${fileClass} !== ${className}) { ` +
           `globalThis.${fileClass} = ${className}; ` +
           `window.${fileClass} = ${className}; ` +

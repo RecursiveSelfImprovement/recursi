@@ -109,7 +109,6 @@ class DeployConfig {
     static getCatalogConfig(deps = {}) {
       return {
         excludeNames: [
-          'projectBrowserThumbnails',
           'video',
           'modules',
           'recursi',

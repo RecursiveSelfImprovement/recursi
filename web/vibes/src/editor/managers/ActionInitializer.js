@@ -16,10 +16,18 @@ class ActionInitializer {
       this.app.actionRegistry.register({ id: 'view:rearrange-windows', label: '🗔 Rearrange Windows', handler: () => this.app.actionHandler.handleRearrangeWindows() });
       this.app.actionRegistry.register({ id: 'view:appearance-settings', label: '🖌️ Global Appearance Settings', handler: () => this.app.appearanceManager.showDialog(), menuPath: 'View / Appearance Settings' });
       this.app.actionRegistry.register({ id: 'view:show-logo', label: '✨ Show Logo', handler: () => this.app.uiManager.showLogoAnimation(), menuPath: 'View / Show Logo' });
-      this.app.actionRegistry.register({ id: 'tools:show-playground', label: '🕹️ Component Playground', handler: () => this.app.actionHandler.togglePlayground(), menuPath: 'Tools / Component Playground' });
       
+      this.app.actionRegistry.register({ id: 'tools:show-playground', label: '🕹️ Component Playground', handler: () => this.app.actionHandler.togglePlayground(), menuPath: 'Tools / Component Playground' });
       this.app.actionRegistry.register({ id: 'tools:push-to-runner', label: '🚀 Live Preview', handler: () => this.app.actionHandler.handlePushToRunner() });
       
+      // Class Registration Logs Viewer
+      this.app.actionRegistry.register({
+        id: 'tools:view-class-logs',
+        label: '📋 View Global Class Logs',
+        handler: () => this.app.actionHandler.handleViewClassLogs(),
+        menuPath: 'Tools / View Global Class Logs'
+      });
+
       this.app.actionRegistry.register({
         id: 'tools:hot-patch-manager', label: '🔥 Toggle Hot Patch Mode',
         handler: () => {

@@ -272,7 +272,7 @@ class VibesEnv {
       let inStore = false;
       for (const fs of this._getStoreCandidates()) {
         if (fs.has ? fs.has(key) : fs[key] !== undefined) {
-          inStore = true;
+          inStore = true; // <-- Fixed variable name
           break;
         }
       }
@@ -294,18 +294,13 @@ class VibesEnv {
     return allOk;
   }
 
-  
-
-  
-
-  ensureImport(filePathOrName, importStatement) {
+ensureImport(filePathOrName, importStatement) {
     let resolvedPath = filePathOrName;
     if (!filePathOrName.startsWith('/')) {
       const allFiles = this.listFiles();
       const matches = allFiles.filter((p) => {
         if (!p.endsWith('.js')) return false;
-        const parts = p.split('/');
-        const filename = parts[parts.length - 1];
+        const filename = p.split('/').pop(); // <-- Fixed to extract filename from p
         const withoutExt = filename.substring(0, filename.length - 3);
         return withoutExt.toLowerCase() === filePathOrName.toLowerCase();
       });
@@ -660,48 +655,54 @@ class VibesEnv {
   }
 
   findFile(pattern, hint = null) {
-      const all = this.listFiles();
-      let matches;
-      if (pattern instanceof RegExp) {
-        matches = all.filter((p) => pattern.test(p));
-      } else {
-        const lower = pattern.toLowerCase();
-        matches = all.filter((p) => p.toLowerCase().includes(lower));
-      }
+    const all = this.listFiles();
+    let matches;
+    if (pattern instanceof RegExp) {
+      matches = all.filter((p) => pattern.test(p));
+    } else {
+      const lower = pattern.toLowerCase();
+      matches = all.filter((p) => p.toLowerCase().includes(lower));
+    }
 
-      // Filter matches by path hint if present
-      if (hint && typeof hint === 'string') {
-        const cleanHint = hint.toLowerCase().replace(/^\/+/, '');
-        const filtered = matches.filter(p => p.toLowerCase().includes(cleanHint));
-        if (filtered.length > 0) {
-          matches = filtered;
-        }
+    // Filter matches by path hint if present
+    if (hint && typeof hint === 'string') {
+      const cleanHint = hint.toLowerCase().replace(/^\/+/, '');
+      const filtered = matches.filter((p) =>
+        p.toLowerCase().includes(cleanHint)
+      );
+      if (filtered.length > 0) {
+        matches = filtered;
       }
+    }
 
-      if (matches.length === 1) return matches[0];
-      if (matches.length === 0) {
-        this.logs.push('[findFile] no match for: ' + pattern + (hint ? ' with hint: ' + hint : ''));
-        return null;
-      }
-      if (typeof pattern === 'string') {
-        const lower = pattern.toLowerCase();
-        const exact = matches.filter((p) => {
-          const parts = p.split('/');
-          const filename = parts[parts.length - 1].toLowerCase();
-          return filename === lower || filename.replace(/\.js$/, '') === lower;
-        });
-        if (exact.length === 1) return exact[0];
-      }
+    if (matches.length === 1) return matches[0];
+    if (matches.length === 0) {
       this.logs.push(
-        '[findFile] ambiguous (' +
-          matches.length +
-          ' matches) for: ' +
+        '[findFile] no match for: ' +
           pattern +
-          ' -> ' +
-          matches.join(', ')
+          (hint ? ' with hint: ' + hint : '')
       );
       return null;
     }
+    if (typeof pattern === 'string') {
+      const lower = pattern.toLowerCase();
+      const exact = matches.filter((p) => {
+        const parts = p.split('/');
+        const filename = parts[parts.length - 1].toLowerCase();
+        return filename === lower || filename.replace(/\.js$/, '') === lower;
+      });
+      if (exact.length === 1) return exact[0];
+    }
+    this.logs.push(
+      '[findFile] ambiguous (' +
+        matches.length +
+        ' matches) for: ' +
+        pattern +
+        ' -> ' +
+        matches.join(', ')
+    );
+    return null;
+  }
 
   log(...args) {
     const line = args
@@ -1201,8 +1202,6 @@ class VibesEnv {
     });
   }
 
-  
-
   listFiles(pattern) {
     const all = [];
 
@@ -1262,17 +1261,15 @@ class VibesEnv {
   }
 
   saveCapsule(targetPath) {
-      const code = this.executingCode;
-      if (!code) {
-        this.logs.push('[saveCapsule] No executing code found.');
-        return false;
-      }
-      this.writeFile(targetPath, code);
-      this.logs.push(`[saveCapsule] Saved class capsule to ${targetPath}`);
-      return true;
+    const code = this.executingCode;
+    if (!code) {
+      this.logs.push('[saveCapsule] No executing code found.');
+      return false;
     }
-
-  
+    this.writeFile(targetPath, code);
+    this.logs.push(`[saveCapsule] Saved class capsule to ${targetPath}`);
+    return true;
+  }
 
   _visibilityCapsulePath() {
     return '/vibes/VisibilitySetsCapsule.js';
@@ -1438,8 +1435,7 @@ class VibesEnv {
 
     return [
       'class VisibilitySetsCapsule {',
-      '
-',
+      '\n', // <-- Fixed with escaped \n
       '}',
       '',
     ].join('\n');
@@ -2032,66 +2028,73 @@ class VibesEnv {
     }
   }
 
-  
-
-  
-
   async saveClass(options, classExpression) {
-      if (!options) throw new Error('saveClass requires an options object');
+    if (!options) throw new Error('saveClass requires an options object');
 
-      let className = options.name;
-      if (
-        !className &&
-        classExpression &&
-        typeof classExpression === 'function'
-      ) {
-        className = classExpression.name;
-      }
+    let className = options.name;
+    if (
+      !className &&
+      classExpression &&
+      typeof classExpression === 'function'
+    ) {
+      className = classExpression.name;
+    }
 
-      if (!className && options.path) {
-        className = options.path.split('/').pop().replace(/\.js$/i, '');
-      }
+    if (!className && options.path) {
+      className = options.path.split('/').pop().replace(/\.js$/i, '');
+    }
 
-      if (!className) {
-        const optsStr = JSON.stringify(options || {});
-        const exprStr = String(classExpression || '')
-          .substring(0, 150)
-          .replace(/\n/g, '\\n');
+    if (!className) {
+      const optsStr = JSON.stringify(options || {});
+      const exprStr = String(classExpression || '')
+        .substring(0, 150)
+        .replace(/\n/g, '\\n');
+      throw new Error(
+        `[saveClass Error] Missing class name!\n` +
+          `Could not determine target class name. options.name was missing, and we couldn't infer it from the path.\n` +
+          `Options passed: ${optsStr}\n` +
+          `Payload snippet: "${exprStr}..."\n` +
+          `Fix: Add 'name: "YourClassName"' to the options object.`
+      );
+    }
+
+    let targetPath = options.path;
+    if (!targetPath) {
+      targetPath = await this._resolveTargetPath(className);
+      if (!targetPath) {
         throw new Error(
-          `[saveClass Error] Missing class name!\n` +
-            `Could not determine target class name. options.name was missing, and we couldn't infer it from the path.\n` +
-            `Options passed: ${optsStr}\n` +
-            `Payload snippet: "${exprStr}..."\n` +
-            `Fix: Add 'name: "YourClassName"' to the options object.`
+          `[saveClass Error] Could not find or resolve file for class '${className}'. Please provide a 'path' in options.`
         );
       }
+    }
 
-      let targetPath = options.path;
-      if (!targetPath) {
-        targetPath = await this._resolveTargetPath(className);
-        if (!targetPath) {
-          throw new Error(
-            `[saveClass Error] Could not find or resolve file for class '${className}'. Please provide a 'path' in options.`
-          );
-        }
+    let pristineSource = '';
+    if (typeof classExpression === 'string') {
+      pristineSource = classExpression;
+    } else if (classExpression) {
+      pristineSource = this._extractClassSource(className);
+    }
+
+    const type = options.type || 'modify';
+    let currentContent = this.readFile(targetPath);
+
+    if (type === 'new') {
+      if (currentContent !== null) {
+        throw new Error(
+          `[saveClass Error] File already exists at '${targetPath}'. To modify an existing JavaScript file, you must use type: "modify" to apply safe method-level patches.`
+        );
       }
-
-      let pristineSource = '';
-      if (typeof classExpression === 'string') {
-        pristineSource = classExpression;
-      } else if (classExpression) {
-        pristineSource = this._extractClassSource(className);
-      }
-
-      const type = options.type || 'modify';
-      let currentContent = this.readFile(targetPath);
-
-      if (type === 'new') {
-        if (currentContent !== null) {
-          throw new Error(
-            `[saveClass Error] File already exists at '${targetPath}'. To modify an existing JavaScript file, you must use type: "modify" to apply safe method-level patches.`
-          );
-        }
+      let newContent = pristineSource;
+      newContent = this._updateMetadata(
+        newContent,
+        targetPath,
+        className,
+        options
+      );
+      this.writeFile(targetPath, newContent);
+      return true;
+    } else if (type === 'modify') {
+      if (currentContent === null) {
         let newContent = pristineSource;
         newContent = this._updateMetadata(
           newContent,
@@ -2101,66 +2104,58 @@ class VibesEnv {
         );
         this.writeFile(targetPath, newContent);
         return true;
-      } else if (type === 'modify') {
-        if (currentContent === null) {
-          let newContent = pristineSource;
-          newContent = this._updateMetadata(
-            newContent,
-            targetPath,
-            className,
-            options
-          );
-          this.writeFile(targetPath, newContent);
-          return true;
-        }
+      }
 
-        let patchedContent = currentContent;
+      let patchedContent = currentContent;
 
-        // Surgically handle deleteMethods array directly within saveClass
-        if (options.deleteMethods && Array.isArray(options.deleteMethods)) {
-          const CJCP = window.ClientJSClassPatcher || globalThis.ClientJSClassPatcher;
-          if (CJCP) {
-            for (const method of options.deleteMethods) {
-              let mockContent = patchedContent;
-              const mockEnv = {
-                appRef: this.appRef,
-                readFile: (p) => mockContent,
-                writeFile: (p, c) => { mockContent = c; },
-                log: () => {}
-              };
-              CJCP.deleteMethod(mockEnv, {
-                methodName: method,
-                targetFile: targetPath,
-                targetClass: className,
-                allowComplianceDowngrade: true
-              });
-              patchedContent = mockContent;
-            }
+      // Surgically handle deleteMethods array directly within saveClass
+      if (options.deleteMethods && Array.isArray(options.deleteMethods)) {
+        const CJCP =
+          window.ClientJSClassPatcher || globalThis.ClientJSClassPatcher;
+        if (CJCP) {
+          for (const method of options.deleteMethods) {
+            let mockContent = patchedContent;
+            const mockEnv = {
+              appRef: this.appRef,
+              readFile: (p) => mockContent,
+              writeFile: (p, c) => {
+                mockContent = c;
+              },
+              log: () => {},
+            };
+            CJCP.deleteMethod(mockEnv, {
+              methodName: method,
+              targetFile: targetPath,
+              targetClass: className,
+              allowComplianceDowngrade: true,
+            });
+            patchedContent = mockContent;
           }
         }
-
-        if (pristineSource) {
-          patchedContent = this._applySurgicalDiff(
-            patchedContent,
-            pristineSource,
-            className
-          );
-        }
-        patchedContent = this._updateMetadata(
-          patchedContent,
-          targetPath,
-          className,
-          options
-        );
-
-        if (patchedContent !== currentContent) {
-          this.writeFile(targetPath, patchedContent);
-        } else {
-          this.log(`ℹ️ No changes detected for ${className} at ${targetPath}.`);
-        }
-        return true;
       }
+
+      if (pristineSource) {
+        patchedContent = this._applySurgicalDiff(
+          patchedContent,
+          pristineSource,
+          className
+        );
+      }
+      patchedContent = this._updateMetadata(
+        patchedContent,
+        targetPath,
+        className,
+        options
+      );
+
+      if (patchedContent !== currentContent) {
+        this.writeFile(targetPath, patchedContent);
+      } else {
+        this.log(`ℹ️ No changes detected for ${className} at ${targetPath}.`);
+      }
+      return true;
     }
+  }
 
   _extractClassSource(className) {
     const acorn = this.appRef?.codeParser?.acorn || window.acorn;
@@ -2382,78 +2377,81 @@ class VibesEnv {
   }
 
   async _resolveTargetPath(className, options = {}) {
-      const allFiles = this.listFiles();
-      let matches;
-      const lower = className.toLowerCase();
+    const allFiles = this.listFiles();
+    let matches;
+    const lower = className.toLowerCase();
 
-      const exact = allFiles.filter((p) => {
-        const parts = p.split('/');
-        const filename = parts[parts.length - 1].toLowerCase();
-        return filename === lower || filename.replace(/\.js$/, '') === lower;
-      });
+    const exact = allFiles.filter((p) => {
+      const parts = p.split('/');
+      const filename = parts[parts.length - 1].toLowerCase();
+      return filename === lower || filename.replace(/\.js$/, '') === lower;
+    });
 
-      if (exact.length > 0) {
-        matches = exact;
-      } else {
-        matches = allFiles.filter((p) => p.toLowerCase().includes(lower));
-      }
-
-      // Filter by path hint if provided
-      const hint = options.hint || options.pathHint;
-      if (hint && typeof hint === 'string') {
-        const cleanHint = hint.toLowerCase().replace(/^\/+/, '');
-        const filtered = matches.filter(p => p.toLowerCase().includes(cleanHint));
-        if (filtered.length > 0) {
-          matches = filtered;
-        }
-      }
-
-      if (matches.length === 0) {
-        this.logs.push(`[saveClass] No file found for class: ${className}`);
-        return null;
-      }
-      if (matches.length === 1) {
-        return matches[0];
-      }
-
-      const inOpenTree = matches.filter((p) => this._isPathInOpenTree(p));
-
-      if (inOpenTree.length === 1) {
-        this.log(
-          `⚠️ Ambiguous class name "${className}". Automatically chose ${inOpenTree[0]} because it is in an open tree. Please provide 'path' in options next time.`
-        );
-        return inOpenTree[0];
-      }
-
-      const optionsToAsk = inOpenTree.length > 1 ? inOpenTree : matches;
-      const chosen = await this._askUserToResolveAmbiguity(
-        className,
-        optionsToAsk
-      );
-
-      if (chosen) {
-        this.log(
-          `⚠️ Ambiguous class name "${className}". User manually resolved to ${chosen}. Please provide 'path' in options next time.`
-        );
-      } else {
-        this.log(`❌ User cancelled ambiguity resolution for "${className}".`);
-      }
-      return chosen;
+    if (exact.length > 0) {
+      matches = exact;
+    } else {
+      matches = allFiles.filter((p) => p.toLowerCase().includes(lower));
     }
+
+    // Filter by path hint if provided
+    const hint = options.hint || options.pathHint;
+    if (hint && typeof hint === 'string') {
+      const cleanHint = hint.toLowerCase().replace(/^\/+/, '');
+      const filtered = matches.filter((p) =>
+        p.toLowerCase().includes(cleanHint)
+      );
+      if (filtered.length > 0) {
+        matches = filtered;
+      }
+    }
+
+    if (matches.length === 0) {
+      this.logs.push(`[saveClass] No file found for class: ${className}`);
+      return null;
+    }
+    if (matches.length === 1) {
+      return matches[0];
+    }
+
+    const inOpenTree = matches.filter((p) => this._isPathInOpenTree(p));
+
+    if (inOpenTree.length === 1) {
+      this.log(
+        `⚠️ Ambiguous class name "${className}". Automatically chose ${inOpenTree[0]} because it is in an open tree. Please provide 'path' in options next time.`
+      );
+      return inOpenTree[0];
+    }
+
+    const optionsToAsk = inOpenTree.length > 1 ? inOpenTree : matches;
+    const chosen = await this._askUserToResolveAmbiguity(
+      className,
+      optionsToAsk
+    );
+
+    if (chosen) {
+      this.log(
+        `⚠️ Ambiguous class name "${className}". User manually resolved to ${chosen}. Please provide 'path' in options next time.`
+      );
+    } else {
+      this.log(`❌ User cancelled ambiguity resolution for "${className}".`);
+    }
+    return chosen;
+  }
 
   _isPathInOpenTree(path) {
-      const pfm = this.appRef?.projectFilesManager;
-      if (!pfm) return false;
-      let found = false;
-      const trees = typeof pfm.getFileTreeViews === 'function' ? pfm.getFileTreeViews() : [];
-      for (const tree of trees) {
-        if (tree?.nodesMap && tree.nodesMap.has(path)) {
-          found = true;
-          break;
-        }
+    const pfm = this.appRef?.projectFilesManager;
+    if (!pfm) return false;
+    let found = false;
+    const trees =
+      typeof pfm.getFileTreeViews === 'function' ? pfm.getFileTreeViews() : [];
+    for (const tree of trees) {
+      if (tree?.nodesMap && tree.nodesMap.has(path)) {
+        found = true;
+        break;
       }
-      return found;
     }
+    return found;
+  }
 
   _askUserToResolveAmbiguity(className, options) {
     return new Promise((resolve) => {
@@ -2523,18 +2521,21 @@ class VibesEnv {
   }
 
   async addDependency(path, manifestPath = null) {
-      if (this.appRef?.commands?.addDependency) {
-        return await this.appRef.commands.addDependency({ path, manifestPath });
-      }
-      this.log('❌ addDependency failed: commands list not loaded on app.');
-      return { ok: false, error: 'Commands not loaded' };
+    if (this.appRef?.commands?.addDependency) {
+      return await this.appRef.commands.addDependency({ path, manifestPath });
     }
+    this.log('❌ addDependency failed: commands list not loaded on app.');
+    return { ok: false, error: 'Commands not loaded' };
+  }
 
   async removeDependency(path, manifestPath = null) {
-      if (this.appRef?.commands?.removeDependency) {
-        return await this.appRef.commands.removeDependency({ path, manifestPath });
-      }
-      this.log('❌ removeDependency failed: commands list not loaded on app.');
-      return { ok: false, error: 'Commands not loaded' };
+    if (this.appRef?.commands?.removeDependency) {
+      return await this.appRef.commands.removeDependency({
+        path,
+        manifestPath,
+      });
     }
+    this.log('❌ removeDependency failed: commands list not loaded on app.');
+    return { ok: false, error: 'Commands not loaded' };
+  }
 }

@@ -94,13 +94,29 @@ class MainSiteDeployer {
     }
 
     static async _collectProjectFiles(projectEntries, context, allFiles, logger, deps = {}) {
-      const { fs, FileWalker } = deps;
+      const { fs, path, FileWalker, ProjectBundler } = deps;
+      
+      const ProjectBundlerClass = ProjectBundler;
+
       for (const entry of projectEntries) {
         try {
           const stat = await fs.stat(entry.localDir);
           if (!stat.isDirectory()) {
             throw new Error('Path exists but is not a directory: ' + entry.localDir);
           }
+
+          // Automatically compile the production bundle locally before collecting files
+          if (ProjectBundlerClass) {
+            try {
+              const bundleResult = await ProjectBundlerClass.bundleProject(entry.name, context.localWwwRoot, fs, path);
+              if (bundleResult) {
+                logger.log(`[ProjectBundler] Compiled production bundle for "${entry.name}": ${(bundleResult.sizeBytes / 1024).toFixed(1)} KB (${bundleResult.filesBundledCount} files consolidated).`);
+              }
+            } catch (bundleErr) {
+              logger.log(`[ProjectBundler] Warning: Bundler failed for "${entry.name}": ${bundleErr.message}`);
+            }
+          }
+
           const files = await FileWalker.walkDirectory(entry.localDir, {}, deps);
           for (const file of files) {
             allFiles.push({

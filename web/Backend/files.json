@@ -8,18 +8,19 @@
     "UITools.js"
   ],
   "server": [
-        "server/Starter.js",
-        "server/package.json",
-        "server/apps/BigFileFinder/BigFileScanner.js",
-        "server/apps/DeployRecursi/CommentsDeployer.js",
-        "server/apps/DeployRecursi/DeployCatalog.js",
-        "server/apps/DeployRecursi/DeployConfig.js",
-        "server/apps/DeployRecursi/MainSiteDeployer.js",
-        "server/apps/DeployRecursi/ProjectsService.js",
-        "server/utils/DeployLogger.js",
-        "server/utils/FileWalker.js",
-        "server/utils/PathUtils.js",
-        "server/utils/SftpHelper.js"
-      ],
+    "server/Starter.js",
+    "server/apps/BigFileFinder/BigFileScanner.js",
+    "server/apps/DeployRecursi/CommentsDeployer.js",
+    "server/apps/DeployRecursi/DeployCatalog.js",
+    "server/apps/DeployRecursi/DeployConfig.js",
+    "server/apps/DeployRecursi/MainSiteDeployer.js",
+    "server/apps/DeployRecursi/ProjectBundler.js",
+    "server/apps/DeployRecursi/ProjectsService.js",
+    "server/package.json",
+    "server/utils/DeployLogger.js",
+    "server/utils/FileWalker.js",
+    "server/utils/PathUtils.js",
+    "server/utils/SftpHelper.js"
+  ],
   "thirdParty": []
 }

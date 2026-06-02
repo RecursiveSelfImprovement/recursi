@@ -215,7 +215,8 @@ class EmberLogo {
       }
     }
 
-  _setupHoverTransitions() {
+  // Modified hover setup supporting skipEntranceCollapse parameter
+    _setupHoverTransitions(skipEntranceCollapse = false) {
       const f1 = this.brand.querySelector('.p-f1');
       const f2 = this.brand.querySelector('.p-f2');
       const f3 = this.brand.querySelector('.p-f3');
@@ -289,9 +290,25 @@ class EmberLogo {
       }
       void getComputedStyle(f1).opacity;
 
+      // Re-trigger precise measurement with a 150ms reflow delay as soon as Google Fonts are fully loaded
+      if (typeof document.fonts !== 'undefined') {
+        document.fonts.ready.then(() => {
+          setTimeout(() => {
+            this._widthsMeasured = false;
+            if (performMeasurement() && !this.isHovered) {
+              this._doCollapseAnimation();
+            }
+          }, 150);
+        });
+      }
+
       this._pollInterval = setInterval(() => {
         if (performMeasurement()) {
           clearInterval(this._pollInterval);
+          if (this.options.isStartupLogo || skipEntranceCollapse) {
+            // Stay expanded on the loading screen, or skip the entrance collapse timer entirely if already collapsed
+            return;
+          }
           this._entranceTimer = setTimeout(() => {
             if (!this.isHovered) {
               // Snap back to expanded (no transition) before collapsing - guards
@@ -1053,6 +1070,26 @@ class EmberLogo {
 
     return logo;
   }
+
+  // High-performance glide transition built directly into the logo class
+    glideToHeader(left, top, scale) {
+      if (!this._shell) return;
+      
+      this._shell.style.transform = 'none';
+      this._shell.style.position = 'absolute';
+      this._shell.style.left = left;
+      this._shell.style.top = top;
+      
+      this.options.isStartupLogo = false;
+      this.options.showSubtitle = false;
+      this.setScale(scale);
+      
+      // Collapse letters smoothly and only once during the flight transition
+      this._doCollapseAnimation();
+      
+      // Bind normal hover listeners but skip the double-collapse entrance timer
+      this._setupHoverTransitions(true);
+    }
 
   // ── Public API ─────────────────────────────────────────────────────────
 

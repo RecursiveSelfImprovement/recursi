@@ -1,14 +1,13 @@
 class VibesProtocolCapsule {
-
   static _doc_intro() {
-      return `
+    return `
 # Vibes Protocol (V3)
 
 You are connected to **Vibes**, a browser-based development environment for building JavaScript applications.
 
 Vibes evaluates your code, performs AST-based diffs, shows a change summary, and applies updates after approval.
 
-All JavaScript updates must be written inside standard run(env) execution contexts.
+All JavaScript updates must be written inside standard run(env) execution contexts. Whole-file JavaScript pastes are deprecated.
 
 All JavaScript logic is now written inside a single entry point:
 
@@ -16,10 +15,10 @@ All JavaScript logic is now written inside a single entry point:
 
 This function is the only supported execution surface for JavaScript updates.
 `;
-    }
+  }
 
   static _doc_runProtocol() {
-      return `
+    return `
 ## The run(env) Protocol
 
 All operations are performed inside:
@@ -38,10 +37,10 @@ The primary mechanism for code changes is:
 
 This performs AST-diffing and safely applies modifications to existing files.
 `;
-    }
+  }
 
   static _doc_saveClassDeepDive() {
-      return `
+    return `
 ## env.saveClass(options, classExpression)
 
 This is the core mutation API for JavaScript files.
@@ -69,10 +68,10 @@ No manual file writing is required for JavaScript files.
 
 ---
 `;
-    }
+  }
 
   static _doc_optionsObject() {
-      return `
+    return `
 ## saveClass Options Object
 
 ### Required / Core Fields
@@ -103,10 +102,10 @@ If \`path\` is omitted during modification:
 - Must resolve to exactly one file
 - Otherwise operation fails safely
 `;
-    }
+  }
 
   static _doc_formations() {
-      return `
+    return `
 ## Formations & Use Cases
 
 ---
@@ -173,10 +172,10 @@ async function run(env) {
 }
 \`\`\`
 `;
-    }
+  }
 
   static _doc_dependencies() {
-      return `
+    return `
 ## Project Dependency Management (files.json)
 
 All project dependencies and script topologies are managed cleanly and directly inside each project's \`files.json\` manifest. The order of entries inside \`files.json\` does not matter; on startup, the loader automatically and topologically sorts all scripts based on their class declarations.
@@ -187,12 +186,25 @@ When creating a new class or deleting an existing class, you must update the pro
 Intelligently categorizes and appends a file path to the correct section of the project's \`files.json\` manifest.
 
 - **path** (string): The golden path of the file to add as a dependency (e.g. \`"/MyProject/src/NewComponent.js"\`).
-- **manifestPath** (string, optional): The path to the specific \`files.json\` manifest. If omitted, the system automatically locates the appropriate \`files.json\` based on the target path root.
+- **manifestPath** (string, optional): The path to the specific \`files.json\` manifest.
 
-#### Behavior:
+#### Manifest Resolution Rules & Warning:
+If \`manifestPath\` is omitted, the system determines which manifest to update based on the root-level folder of the file being added:
+- Adding \`/AardvarkPlaylist/js/Helper.js\` will resolve the project root to \`/AardvarkPlaylist\` and update \`/AardvarkPlaylist/files.json\`.
+- **The Fallback Limitation**: If the file being added does not belong to a root directory with its own manifest (such as a shared asset like \`/library/UITools.js\` or a file in a sibling project), the system will fail to match a specific project folder and fallback to updating the **first active manifest in the workspace** (\`manifests[0]\`).
+
+**Best Practice Rule**:
+- **Implicit Manifest**: Use for project-internal files (e.g. \`env.addDependency("/AardvarkPlaylist/js/NewHelper.js")\` is completely safe).
+- **Explicit Manifest**: Always pass the second argument explicitly when adding shared library files, cross-project dependencies, or sibling folder references to avoid fallback mismatch errors:
+  \`\`\`javascript
+  // Always specify the target manifest when adding shared or sibling files
+  await env.addDependency('/library/UITools.js', '/AardvarkPlaylist/files.json');
+  \`\`\`
+
+#### Path Sorting Behavior:
 - Paths beginning with \`http://\` or \`https://\` are placed in \`"thirdParty"\`.
 - Paths under \`/library/\` are placed in \`"library"\` (and simplified to their filename or library sub-path).
-- Other local project paths (including sibling directory references, such as \`"/LogoExperiments/js/EmberLogo.js"\` used by other projects) are resolved and placed in the \`"local"\` array.
+- Sibling and local project paths are resolved and placed in the \`"local"\` array.
 - All lists are automatically sorted alphabetically and deduplicated.
 
 \`\`\`javascript
@@ -216,7 +228,7 @@ async function run(env) {
 \`\`\`
 
 ### env.removeDependency(path, manifestPath = null)
-Removes a dependency path from the project's \`files.json\` manifest.
+Removes a dependency path from the project's \`files.json\` manifest. Like \`addDependency\`, always specify \`manifestPath\` when removing a shared or sibling file.
 
 \`\`\`javascript
 async function run(env) {
@@ -226,15 +238,15 @@ async function run(env) {
   env.deleteFile(oldClassPath);
 
   // 2. Unregister the dependency automatically
-  await env.removeDependency(oldClassPath);
+  await env.removeDependency(oldClassPath, '/MyProject/files.json');
   env.log('Deleted OldComponent and removed its dependency.');
 }
 \`\`\`
 `;
-    }
+  }
 
   static _doc_deletion() {
-      return `
+    return `
 ## File Deletion
 
 Deletion is handled outside saveClass.
@@ -251,10 +263,10 @@ async function run(env) {
 
 Always resolve paths first using \`env.findFile()\`.
 `;
-    }
+  }
 
   static _doc_fallbacksNonJS() {
-      return `
+    return `
 ## Fallbacks & Non-JavaScript Files
 
 env.saveClass only applies to JavaScript AST-managed files.
@@ -280,10 +292,10 @@ body { background: #000; }
 
 Note: JavaScript files MUST use saveClass. Direct overwrite patterns are not allowed for .js files.
 `;
-    }
+  }
 
   static _doc_envObject() {
-      return `
+    return `
 ## The env Object
 
 ### File System
@@ -326,10 +338,10 @@ env.loadVisibilitySet(name)
 env.listVisibilitySets()
 \`\`\`
 `;
-    }
+  }
 
   static _doc_globalHelpers() {
-      return `
+    return `
 ## Global Helper Functions
 
 These are available globally in all Vibes environments.
@@ -364,10 +376,10 @@ applyCss(\`
 \`, 'theme');
 \`\`\`
 `;
-    }
+  }
 
   static _doc_fileOperations() {
-      return `
+    return `
 ## Common File Operations
 
 ---
@@ -400,10 +412,10 @@ env.writeFile('/vibes/file.txt', 'hello world');
 env.moveFile('/old/path.js', '/new/path.js');
 \`\`\`
 `;
-    }
+  }
 
   static _doc_projectStructure() {
-      return `
+    return `
 ## Project Structure
 
 - /library/ - shared runtime utilities
@@ -415,10 +427,10 @@ Rules:
 - No imports/exports in app files
 - No global side effects in class files
 `;
-    }
+  }
 
   static _doc_visibilitySets() {
-      return `
+    return `
 ## Visibility Sets
 
 Visibility sets control what is shown in the Build Prompt UI.
@@ -457,10 +469,10 @@ env.setVisibility({
 });
 \`\`\`
 `;
-    }
+  }
 
   static _doc_afterApproving() {
-      return `
+    return `
 ## After Approving
 
 Once approved:
@@ -471,27 +483,24 @@ Once approved:
 
 No manual save step is required.
 `;
-    }
+  }
 
   static _doc() {
-      return [
-        this._doc_intro(),
-        this._doc_runProtocol(),
-        this._doc_saveClassDeepDive(),
-        this._doc_optionsObject(),
-        this._doc_formations(),
-        this._doc_dependencies(), // Registered into the main stitched documentation array
-        this._doc_deletion(),
-        this._doc_fallbacksNonJS(),
-        this._doc_envObject(),
-        this._doc_globalHelpers(),
-        this._doc_fileOperations(),
-        this._doc_projectStructure(),
-        this._doc_visibilitySets(),
-        this._doc_afterApproving(),
-      ].join('\n\n');
-    }
-
-  
-
+    return [
+      this._doc_intro(),
+      this._doc_runProtocol(),
+      this._doc_saveClassDeepDive(),
+      this._doc_optionsObject(),
+      this._doc_formations(),
+      this._doc_dependencies(),
+      this._doc_deletion(),
+      this._doc_fallbacksNonJS(),
+      this._doc_envObject(),
+      this._doc_globalHelpers(),
+      this._doc_fileOperations(),
+      this._doc_projectStructure(),
+      this._doc_visibilitySets(),
+      this._doc_afterApproving(),
+    ].join('\n\n');
+  }
 }

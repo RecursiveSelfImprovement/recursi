@@ -58,8 +58,8 @@ class RecursiLoader {
     }
 
   static async loadCss(url) {
-      if (this.loadedCss.has(url)) return;
-      this.loadedCss.add(url);
+      if (this.loaded.has(url)) return;
+      this.loaded.add(url);
       const link = document.createElement('link');
       link.rel = 'stylesheet';
       link.href = url;
@@ -68,50 +68,131 @@ class RecursiLoader {
 
   static async loadClassFile(url) {
       const className = this.getClassNameFromUrl(url);
-      
-      if (this.loaded.has(className)) return this.findGlobalClass(className);
-      this.loaded.add(className);
-      
+      const isTargetTrace = className.toLowerCase() === 'projecteditorapp';
+
+      if (!this.loadingPromises) {
+        this.loadingPromises = new Map();
+      }
+
+      if (isTargetTrace) {
+        console.group(`[RecursiLoader] [TRACE-ProjectEditorApp] loadClassFile called for URL: ${url}`);
+        console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] Checking 'loaded' cache state:`, this.loaded.has(className));
+      }
+
+      if (this.loaded.has(className)) {
+        if (isTargetTrace) {
+          console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] Already present in 'loaded' cache. Returning global instance directly.`);
+          console.groupEnd();
+        }
+        return this.findGlobalClass(className);
+      }
+
+      if (isTargetTrace) {
+        console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] Checking global scope (window/globalThis) for existing class:`);
+      }
+
       const existingCtor = this.findGlobalClass(className);
-      if (existingCtor) return existingCtor;
+      if (existingCtor) {
+        if (isTargetTrace) {
+          console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] 🟢 Global class instance found! Skipping network pull and registering as loaded.`);
+          console.groupEnd();
+        }
+        this.loaded.add(className);
+        return existingCtor;
+      }
 
-      this.state.activeUrl = url;
-      this.state.phase = `Evaluating script: ${className}`;
-      
-      const code = await this.fetchText(url);
-      
-      const isIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(className);
-      const exposureTrailer = isIdentifier ? `\n;if (typeof ${className} !== "undefined") { globalThis.${className} = ${className}; }` : '';
-      
-      const script = document.createElement('script');
-      script.dataset.recursiSrc = url;
-      script.textContent = code + exposureTrailer + '\n//# sourceURL=' + url;
-      document.head.appendChild(script);
+      if (isTargetTrace) {
+        console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] 🔴 Class not found on global scope. Checking active loading promises...`);
+      }
 
-      const fakeScript = document.createElement('script');
-      fakeScript.type = 'recursi/loaded';
-      fakeScript.src = url;
-      document.head.appendChild(fakeScript);
+      if (this.loadingPromises.has(className)) {
+        if (isTargetTrace) {
+          console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] Active load promise found. Awaiting execution...`);
+          console.groupEnd();
+        }
+        await this.loadingPromises.get(className);
+        return this.findGlobalClass(className);
+      }
 
-      const Ctor = this.findGlobalClass(className);
-      
-      if (!Ctor) {
-        const parsedNames = this._extractClassNames(code);
-        let nameMismatchHelp = '';
-        if (parsedNames.length > 0) {
-          nameMismatchHelp = `\n\n💡 System detected class declarations [${parsedNames.join(', ')}] inside the loaded code, but you requested "${className}". The physical class name must exactly match your filename (case-insensitive in loader, case-sensitive in engine).`;
+      if (isTargetTrace) {
+        console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] ⏬ No global class or active promise. Fetching/Evaluating file from server...`);
+      }
+
+      const loadPromise = (async () => {
+        this.state.activeUrl = url;
+        this.state.phase = `Evaluating script: ${className}`;
+
+        const isBundle = className.endsWith('-bundle') || url.includes('-bundle') || url.includes('/dist/');
+        
+        if (isBundle) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = url;
+            script.dataset.recursiSrc = url;
+            script.onload = () => {
+              this.state.loadedList.push({ className, url });
+              resolve();
+            };
+            script.onerror = (err) => {
+              reject(new Error(`Failed to load bundle script via src: ${url}`));
+            };
+            document.head.appendChild(script);
+          });
+          return { isBundle: true };
         }
         
-        let moduleHelp = '';
-        if (code.includes('import ') || code.includes('export ')) {
-          moduleHelp = `\n\n💡 System detected top-level "import" or "export" statements inside your class file. Standard loader environments evaluate classic scripts. Please ensure your Vibes JS files do not contain top-level ES6 import/export statements.`;
+        const code = await this.fetchText(url);
+        
+        const isIdentifier = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(className);
+        const exposureTrailer = isIdentifier ? `\n;if (typeof ${className} !== "undefined") { globalThis.${className} = ${className}; if (typeof window !== "undefined") { window.${className} = ${className}; } }` : '';
+        
+        const script = document.createElement('script');
+        script.dataset.recursiSrc = url;
+        script.textContent = code + exposureTrailer + '\n//# sourceURL=' + url;
+        document.head.appendChild(script);
+
+        const fakeScript = document.createElement('script');
+        fakeScript.type = 'recursi/loaded';
+        fakeScript.src = url;
+        document.head.appendChild(fakeScript);
+
+        const Ctor = this.findGlobalClass(className);
+        
+        if (!Ctor) {
+          const parsedNames = this._extractClassNames(code);
+          let nameMismatchHelp = '';
+          if (parsedNames.length > 0) {
+            nameMismatchHelp = `\n\n💡 System detected class declarations [${parsedNames.join(', ')}] inside the loaded code, but you requested "${className}". The physical class name must exactly match your filename (case-insensitive in loader, case-sensitive in engine).`;
+          }
+          
+          let moduleHelp = '';
+          if (code.includes('import ') || code.includes('export ')) {
+            moduleHelp = `\n\n💡 System detected top-level "import" or "export" statements inside your class file. Standard loader environments evaluate classic scripts. Please ensure your Vibes JS files do not contain top-level ES6 import/export statements.`;
+          }
+
+          throw new Error(`Class "${className}" was not registered on the global scope after evaluating: ${url}.${nameMismatchHelp}${moduleHelp}`);
         }
 
-        throw new Error(`Class "${className}" was not registered on the global scope after evaluating: ${url}.${nameMismatchHelp}${moduleHelp}`);
+        if (globalThis.__classRegistrationLogger && typeof globalThis.__classRegistrationLogger.log === 'function') {
+          globalThis.__classRegistrationLogger.log(className, 'loader');
+        }
+        
+        this.state.loadedList.push({ className, url });
+        this.loaded.add(className);
+        return Ctor;
+      })();
+
+      this.loadingPromises.set(className, loadPromise);
+      try {
+        const result = await loadPromise;
+        if (isTargetTrace) {
+          console.log(`[RecursiLoader] [TRACE-ProjectEditorApp] Evaluation completed. Global registration status:`, typeof globalThis[className] !== 'undefined');
+          console.groupEnd();
+        }
+        return result;
+      } finally {
+        this.loadingPromises.delete(className);
       }
-      
-      this.state.loadedList.push({ className, url });
-      return Ctor;
     }
 
   static async run(appUrl, basePath, filesUrl) {
@@ -138,43 +219,33 @@ class RecursiLoader {
           const filesData = JSON.parse(filesText);
           this.state.filesJson = filesData;
           
-          this.state.phase = 'Loading Library Dependencies';
-          for (const lib of (filesData.library || [])) {
-            try {
-              let libUrl = lib;
-              if (!libUrl.startsWith('/')) libUrl = '/library/' + libUrl;
-              if (libUrl.endsWith('.css')) {
-                await this.loadCss(new URL(libUrl, absoluteBase).href);
-              } else {
-                if (!libUrl.endsWith('.js')) libUrl += '.js';
-                await this.loadClassFile(new URL(libUrl, absoluteBase).href);
-              }
-            } catch (e) {
-              console.error(`[RecursiLoader] Failed to load library dependency: ${lib}. Skipping over it.`, e);
-            }
-          }
+          // Strict hostname validation: Check if localhost or 127.0.0.1 is present in the URL string
+          const isLocalhost = window.location.href.toLowerCase().includes('localhost') || 
+                              window.location.href.toLowerCase().includes('127.0.0.1') ||
+                              window.location.search.includes('dev=true') || 
+                              window.location.search.includes('useDB=true');
 
-          this.state.phase = 'Loading Third Party Assets';
-          for (const tp of (filesData.thirdParty || [])) {
-            try {
-              const url = new URL(tp, absoluteBase).href;
-              if (url.endsWith('.css')) await this.loadCss(url);
-              else await this.loadClassFile(url);
-            } catch (e) {
-              console.error(`[RecursiLoader] Failed to load third party asset: ${tp}. Skipping over it.`, e);
-            }
-          }
+          const traceTarget = 'ProjectEditorApp';
+          console.group(`[RecursiLoader] [TRACE-${traceTarget}] Run loop initialized. Is Localhost/Dev mode?`, isLocalhost);
+          console.log(`[RecursiLoader] [TRACE-${traceTarget}] Current global existence state of ${traceTarget}:`, typeof globalThis[traceTarget] !== 'undefined');
 
-          this.state.phase = 'Loading Local Supporting Classes';
-          for (const loc of (filesData.local || [])) {
+          if (filesData.bundle && !isLocalhost) {
+            console.log(`[RecursiLoader] [TRACE-${traceTarget}] Deciding to load bundle: ${filesData.bundle}`);
+            this.state.phase = `Loading production bundle: ${filesData.bundle}`;
             try {
-              const url = new URL(loc, absoluteBase).href;
-              if (url.endsWith('.css')) await this.loadCss(url);
-              else await this.loadClassFile(url);
+              const bundleUrl = new URL(filesData.bundle, absoluteBase).href;
+              await this.loadClassFile(bundleUrl);
+              console.log(`[RecursiLoader] [TRACE-${traceTarget}] Production bundle load complete.`);
+              console.log(`[RecursiLoader] [TRACE-${traceTarget}] Post-bundle global existence of ${traceTarget}:`, typeof globalThis[traceTarget] !== 'undefined');
             } catch (e) {
-              console.error(`[RecursiLoader] Failed to load local supporting class: ${loc}. Skipping over it.`, e);
+              console.error(`[RecursiLoader] Failed to load production bundle: ${filesData.bundle}. Falling back to individual files.`, e);
+              await this._loadIndividualDependencies(filesData, absoluteBase);
             }
+          } else {
+            console.log(`[RecursiLoader] [TRACE-${traceTarget}] Running on localhost/dev mode. Skipping bundle and loading individual files.`);
+            await this._loadIndividualDependencies(filesData, absoluteBase);
           }
+          console.groupEnd();
 
           if (filesData.main && filesData.main.length > 0) {
             appUrl = new URL(filesData.main[0], absoluteBase).href;
@@ -197,7 +268,6 @@ class RecursiLoader {
 
         this.state.phase = `Initializing runtime instance: ${className}`;
         
-        // Clear out the dual static vs instance and constructor fallback paths:
         const instance = new AppClass();
         globalThis[className.charAt(0).toLowerCase() + className.slice(1) + 'Instance'] = instance;
 
@@ -246,8 +316,7 @@ class RecursiLoader {
 
   
 
-  // Direct query to the EXACT database and store defined in VibesPatchStore
-    static _readVibesPatches() {
+  static _readVibesPatches() {
       return new Promise((resolve) => {
         try {
           const req = indexedDB.open('vibes-patch-store');
@@ -281,9 +350,7 @@ class RecursiLoader {
     }
 
   static async _applyAstPatches(code, patches, path) {
-      // 1. Ensure Acorn is loaded and globally bound
       if (typeof globalThis.acorn === 'undefined') {
-        console.log('[RecursiLoader] DEV MODE: Lazy-loading Acorn parser...');
         await new Promise(r => { 
           const s = document.createElement('script'); 
           s.src = 'https://cdn.jsdelivr.net/npm/acorn@8.11.3/dist/acorn.min.js'; 
@@ -292,9 +359,7 @@ class RecursiLoader {
         });
       }
 
-      // 2. Ensure AstUtils is loaded (Dependency for the Patcher)
       if (typeof globalThis.AstUtils === 'undefined') {
-        console.log('[RecursiLoader] DEV MODE: Fetching AstUtils...');
         const res = await fetch('/vibes/src/protocol/parsers/AstUtils.js');
         const text = await res.text();
         const script = document.createElement('script');
@@ -302,14 +367,10 @@ class RecursiLoader {
         document.head.appendChild(script);
       }
       
-      // 3. Ensure the Patcher is loaded AND explicitly bound to globalThis
       if (typeof globalThis.ClientJSClassPatcher === 'undefined') {
-        console.log('[RecursiLoader] DEV MODE: Fetching ClientJSClassPatcher...');
         const res = await fetch('/vibes/src/protocol/ClientJSClassPatcher.js');
         const text = await res.text();
-        
         const script = document.createElement('script');
-        // This trailer guarantees we can read it off globalThis!
         script.textContent = text + '\n;globalThis.ClientJSClassPatcher = ClientJSClassPatcher;';
         document.head.appendChild(script);
       }
@@ -327,7 +388,6 @@ class RecursiLoader {
          
          const classBody = Patcher._findClassBody(patchedCode, className);
          if (!classBody) {
-             console.warn(`[RecursiLoader] DEV MODE: Class ${className} not found for patch: ${patch.methodName}`);
              continue;
          }
          
@@ -338,10 +398,8 @@ class RecursiLoader {
              const absStart = classBody.bodyStart + existing.start;
              const absEnd = classBody.bodyStart + existing.end;
              patchedCode = patchedCode.slice(0, absStart) + patch.source.trim() + patchedCode.slice(absEnd);
-             console.log(`[RecursiLoader] 🟢 DEV MODE: Replaced method -> ${className}.${patch.methodName}`);
          } else {
              patchedCode = patchedCode.slice(0, classBody.bodyEnd) + '\n  ' + patch.source.trim() + '\n' + patchedCode.slice(classBody.bodyEnd);
-             console.log(`[RecursiLoader] 🟢 DEV MODE: Inserted method -> ${className}.${patch.methodName}`);
          }
       }
       
@@ -376,8 +434,7 @@ class RecursiLoader {
       return names;
     }
 
-  // Shared state tracking to assist with diagnostics
-    static state = {
+  static state = {
       phase: 'Bootstrap',
       activeUrl: null,
       loadedList: [],
@@ -417,14 +474,12 @@ class RecursiLoader {
         return h;
       };
 
-      // Error message
       container.appendChild(sectionTitle('Diagnostic Message'));
       const errBox = document.createElement('div');
       errBox.style.cssText = 'background: rgba(255, 85, 85, 0.08); border-left: 4px solid #ff5555; padding: 16px; border-radius: 4px; font-family: monospace; font-size: 14px; white-space: pre-wrap; margin-bottom: 16px;';
       errBox.textContent = error.message || String(error);
       container.appendChild(errBox);
 
-      // Current Phase & Active URL
       container.appendChild(sectionTitle('Loader Telemetry'));
       const telemetryTable = document.createElement('div');
       telemetryTable.style.cssText = 'display: grid; grid-template-columns: 140px 1fr; gap: 8px 16px; font-size: 13px; background: #181920; padding: 16px; border-radius: 6px; border: 1px solid #282a36;';
@@ -436,24 +491,22 @@ class RecursiLoader {
       `;
       container.appendChild(telemetryTable);
 
-      // Load History Timeline
       container.appendChild(sectionTitle('Loading Execution Timeline'));
       const timelineBox = document.createElement('div');
       timelineBox.style.cssText = 'font-size: 13px; background: #12131a; padding: 12px 16px; border-radius: 6px; border: 1px solid #222; font-family: monospace;';
       
       const timelineHtml = [];
       if (this.state.loadedList.length === 0) {
-        timelineHtml.push('<span style="color:#ff5555;">✖ Failed before any classes were loaded.</span>');
+        timelineHtml.push('<span style="color:#ff5555;">... Failed before any classes were loaded.</span>');
       } else {
         this.state.loadedList.forEach(item => {
-          timelineHtml.push(`<span style="color:#50fa7b;">✔ Loaded class:</span> <b style="color:#fff;">${item.className}</b> (${item.url})`);
+          timelineHtml.push(`<span style="color:#50fa7b;">... Loaded class:</span> <b style="color:#fff;">${item.className}</b> (${item.url})`);
         });
       }
       timelineHtml.push(`<span style="color:#ffb86c; animation: blink 1s infinite;">▶ Current Step:</span> ${this.state.phase}`);
       timelineBox.innerHTML = timelineHtml.join('<br>');
       container.appendChild(timelineBox);
 
-      // Full Stack Trace
       if (error.stack) {
         container.appendChild(sectionTitle('Debugger Stack Trace'));
         const stackBox = document.createElement('pre');
@@ -463,6 +516,46 @@ class RecursiLoader {
       }
 
       document.body.appendChild(container);
+    }
+
+  static async _loadIndividualDependencies(filesData, absoluteBase) {
+      this.state.phase = 'Loading Library Dependencies';
+      for (const lib of (filesData.library || [])) {
+        try {
+          let libUrl = lib;
+          if (!libUrl.startsWith('/')) libUrl = '/library/' + libUrl;
+          if (libUrl.endsWith('.css')) {
+            await this.loadCss(new URL(libUrl, absoluteBase).href);
+          } else {
+            if (!libUrl.endsWith('.js')) libUrl += '.js';
+            await this.loadClassFile(new URL(libUrl, absoluteBase).href);
+          }
+        } catch (e) {
+          console.error(`[RecursiLoader] Failed to load library dependency: ${lib}. Skipping over it.`, e);
+        }
+      }
+
+      this.state.phase = 'Loading Third Party Assets';
+      for (const tp of (filesData.thirdParty || [])) {
+        try {
+          const url = new URL(tp, absoluteBase).href;
+          if (url.endsWith('.css')) await this.loadCss(url);
+          else await this.loadClassFile(url);
+        } catch (e) {
+          console.error(`[RecursiLoader] Failed to load third party asset: ${tp}. Skipping over it.`, e);
+        }
+      }
+
+      this.state.phase = 'Loading Local Supporting Classes';
+      for (const loc of (filesData.local || [])) {
+        try {
+          const url = new URL(loc, absoluteBase).href;
+          if (url.endsWith('.css')) await this.loadCss(url);
+          else await this.loadClassFile(url);
+        } catch (e) {
+          console.error(`[RecursiLoader] Failed to load local supporting class: ${loc}. Skipping over it.`, e);
+        }
+      }
     }
 }
 

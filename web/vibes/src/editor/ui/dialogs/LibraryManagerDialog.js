@@ -42,7 +42,18 @@ class LibraryManagerDialog {
     }
   }
 
-  async _fetchCatalog() {    const catalogPath = "/vibes/src/tools/browser/project-catalog.json";    const vfs = await this._libraryDialogGetVfs();    if (vfs && typeof vfs.readFile === "function") {      try {        const text = await vfs.readFile(catalogPath, {          nullOnMissing: true        });        const parsed = this._libraryDialogParseCatalogText(text, catalogPath);        if (parsed) {          return parsed;        }      } catch (error) {        this._libraryDialogLogReadFallback("vfs.readFile", catalogPath, error);      }    }    if (this.app?.commands && typeof this.app.commands.fetchFileContentForApp === "function") {      try {        const result = await this.app.commands.fetchFileContentForApp(catalogPath);        const text = typeof result === "string" ? result : result?.code || result?.content || null;        const parsed = this._libraryDialogParseCatalogText(text, catalogPath);        if (parsed) {          return parsed;        }      } catch (error) {        this._libraryDialogLogReadFallback("commands.fetchFileContentForApp", catalogPath, error);      }    }    try {      const res = await fetch(catalogPath + "?_=" + Date.now());      if (!res.ok) {        throw new Error("Static catalog fetch failed: HTTP " + res.status);      }      const text = await res.text();      const parsed = this._libraryDialogParseCatalogText(text, catalogPath);      if (parsed) {        return parsed;      }    } catch (error) {      this._libraryDialogLogReadFallback("static fetch", catalogPath, error);    }    return [];  }
+  async _fetchCatalog() {
+      if (typeof ProjectCatalogCapsule === 'undefined') {
+        const app = this.app || window.projectApp || window._dev_projectEditorInstance;
+        if (app && typeof app._loadClassicScriptOnce === 'function') {
+          await app._loadClassicScriptOnce('/vibes/src/tools/browser/ProjectCatalogCapsule.js');
+        }
+      }
+      if (typeof ProjectCatalogCapsule !== 'undefined') {
+        return ProjectCatalogCapsule.sharedLibraryFiles();
+      }
+      return [];
+    }
 
   _isInProject(libName) {
     const goldenPath = `/library/${libName}`;

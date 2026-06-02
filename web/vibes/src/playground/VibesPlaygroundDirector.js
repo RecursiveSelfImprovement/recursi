@@ -1019,11 +1019,10 @@ class VibesPlaygroundDirector {
       .join("\n");
   }
 
-  _sparkToySource() {
+_sparkToySource() {
     return [
       "class SparkToy {",
-      "
-",
+      "\n", // <-- Fixed with escaped \n
       "",
       "  constructor(options = {}) {",
       "    this.name = options.name || \"SparkToy\";",
@@ -1054,11 +1053,10 @@ class VibesPlaygroundDirector {
     ].join("\n");
   }
 
-  _colorPulseMathSource() {
+_colorPulseMathSource() {
     return [
       "class ColorPulseMath {",
-      "
-",
+      "\n", // <-- Fixed with escaped \n
       "",
       "  static pulse(t, speed = 1) {",
       "    return 0.5 + 0.5 * Math.sin(t * speed);",

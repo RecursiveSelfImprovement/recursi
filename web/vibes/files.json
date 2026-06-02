@@ -119,6 +119,7 @@
     "src/playground/RepoWalkerSkillsCapsule.js",
     "src/editor/ui/debug/ReportManager.js",
     "src/tools/runner/RunInPageRunner.js",
+    "src/tools/browser/NativeProjectBrowser.js",
     "src/playground/SystemMonitorWidget.js",
     "src/playground/TreeWalkerPlaygroundScripts.js",
     "src/protocol/UnifiedWriteCoordinator.js",
@@ -139,5 +140,6 @@
     "SplitButton.js",
     "CodeMirrorWidget.js"
   ],
-  "thirdParty": []
+  "thirdParty": [],
+  "bundle": "dist/vibes-bundle.js"
 }

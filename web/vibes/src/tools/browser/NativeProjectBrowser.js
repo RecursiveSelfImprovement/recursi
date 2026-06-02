@@ -45,15 +45,16 @@ class NativeProjectBrowser {
     }
 
     async _fetchCatalog() {
-      // Use the static capsule if available for instant loading
-      if (typeof ProjectCatalogCapsule !== 'undefined') {
-         return ProjectCatalogCapsule.getCatalog();
+      if (typeof ProjectCatalogCapsule === 'undefined') {
+        const app = this.app || window.projectApp || window._dev_projectEditorInstance;
+        if (app && typeof app._loadClassicScriptOnce === 'function') {
+          await app._loadClassicScriptOnce('/vibes/src/tools/browser/ProjectCatalogCapsule.js');
+        }
       }
-      
-      // Fallback to fetch
-      const res = await fetch('/vibes/src/tools/browser/project-catalog.json?t=' + Date.now());
-      if (!res.ok) throw new Error('Failed to fetch project-catalog.json');
-      return await res.json();
+      if (typeof ProjectCatalogCapsule !== 'undefined') {
+        return ProjectCatalogCapsule.getCatalog();
+      }
+      return {};
     }
 
     _renderLayout() {
@@ -142,6 +143,7 @@ class NativeProjectBrowser {
         };
         actions.appendChild(addBtn);
       } else {
+        const projectDir = project.directory || project.name;
         let target = disableStatic ? 'tab' : 'window'; 
         let hasEdits = false;
 
@@ -154,7 +156,7 @@ class NativeProjectBrowser {
             openBtn.textContent = 'Preview';
             openBtn.onclick = (e) => {
               e.stopPropagation();
-              window.open(`/${project.name}/`, '_blank');
+              window.open(`/${projectDir}/`, '_blank');
             };
             actions.appendChild(openBtn);
             return;
@@ -172,33 +174,30 @@ class NativeProjectBrowser {
             return;
           }
 
-          // Main Action Button (reverted label back to Open as requested)
           const openBtn = document.createElement('button');
           openBtn.className = 'card-action-btn primary action-main';
           openBtn.textContent = 'Open';
           openBtn.onclick = (e) => {
             e.stopPropagation();
             if (disableStatic || target === 'tab') {
-              const url = `/${project.name}/` + (hasEdits ? '?userEdits=true' : '');
+              const url = `/${projectDir}/` + (hasEdits ? '?userEdits=true' : '');
               window.open(url, '_blank');
             } else {
-              this._handleEditProject(project.name);
+              this._handleEditProject(projectDir);
             }
           };
           actions.appendChild(openBtn);
 
-          // Fork / Save to Disk Button
           const forkBtn = document.createElement('button');
           forkBtn.className = 'card-action-btn secondary action-fork';
           forkBtn.textContent = 'Fork / Save to Disk';
           forkBtn.style.marginTop = '4px';
           forkBtn.onclick = (e) => {
             e.stopPropagation();
-            this.app.actionHandler.handleForkAndSaveToDisk(project.name);
+            this.app.actionHandler.handleForkAndSaveToDisk(projectDir);
           };
           actions.appendChild(forkBtn);
 
-          // Location Toggle Group
           if (!disableStatic) {
             const locGroup = document.createElement('div');
             locGroup.className = 'toggle-group';
@@ -221,8 +220,7 @@ class NativeProjectBrowser {
 
         renderControls();
 
-        // Check IDB asynchronously
-        this._checkIfProjectHasEdits(project.name).then(edits => {
+        this._checkIfProjectHasEdits(projectDir).then(edits => {
           if (edits) hasEdits = true;
         });
       }
@@ -239,15 +237,16 @@ class NativeProjectBrowser {
       }
 
       card.onclick = () => {
+        const projectDir = project.directory || project.name;
         if (isSharedFile && !this.existingLibs.has(project.name)) {
           this._handleAddSharedLib(project, actions.querySelector('.add'));
         } else if (isSelfEditor) {
           this._handleSelfEditorWarning(project);
         } else if (!isViewOnly && !isSharedFile) {
           if (disableStatic) {
-            window.open(`/${project.name}/`, '_blank');
+            window.open(`/${projectDir}/`, '_blank');
           } else {
-            this._handleEditProject(project.name);
+            this._handleEditProject(projectDir);
           }
         }
       };

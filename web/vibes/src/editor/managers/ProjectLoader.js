@@ -642,40 +642,51 @@ async loadStaticProjectFromServerFiles() {
       return null;
     }
 
-  async _calculateInMemoryMetadata() {
+  async _calculateInMemoryMetadata(fileMap = null) {
       console.log('[ProjectLoader] Calculating metadata from VFS...');
       const metadata = {};
       const docPathMap = new Map();
 
       const allPaths = new Set();
-      if (this.app.vfs) {
-        const vfsFiles = await this.app.vfs.listFiles({ includeStatic: false });
-        vfsFiles.forEach((p) => allPaths.add(p));
-      }
-      if (this.app.inMemoryFileStore) {
-        for (const p of this.app.inMemoryFileStore.keys()) allPaths.add(p);
+      if (fileMap) {
+        for (const p of fileMap.keys()) allPaths.add(p);
+      } else {
+        if (this.app.vfs) {
+          const vfsFiles = await this.app.vfs.listFiles({ includeStatic: false });
+          vfsFiles.forEach((p) => allPaths.add(p));
+        }
+        if (this.app.inMemoryFileStore) {
+          for (const p of this.app.inMemoryFileStore.keys()) allPaths.add(p);
+        }
+
+        const manifest = await this._fetchStaticManifest(this.app.projectName);
+        if (manifest) {
+          [
+            ...(manifest.js || []),
+            ...(manifest.css || []),
+            ...(manifest.html || []),
+            ...(manifest.other || []),
+          ].forEach((i) => {
+            if (i.path) allPaths.add(i.path);
+          });
+        }
       }
 
-      const manifest = await this._fetchStaticManifest(this.app.projectName);
-      if (manifest) {
-        [
-          ...(manifest.js || []),
-          ...(manifest.css || []),
-          ...(manifest.html || []),
-          ...(manifest.other || []),
-        ].forEach((i) => {
-          if (i.path) allPaths.add(i.path);
-        });
-      }
+      const isDev = window.location.hostname === 'localhost' || 
+                    window.location.hostname === '127.0.0.1' || 
+                    window.location.search.includes('dev=true') || 
+                    window.location.search.includes('useDB=true');
 
       for (const goldenPath of allPaths) {
         let content = null;
-        if (
+        if (fileMap && fileMap.has(goldenPath)) {
+          content = fileMap.get(goldenPath);
+        } else if (
           this.app.inMemoryFileStore &&
           this.app.inMemoryFileStore.has(goldenPath)
         ) {
           content = this.app.inMemoryFileStore.get(goldenPath);
-        } else if (this.app.vfs) {
+        } else if (this.app.vfs && isDev) { // Only fetch from VFS on dev (localhost)
           try {
             content = await this.app.vfs.readFile(goldenPath, {
               nullOnMissing: true,

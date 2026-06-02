@@ -253,40 +253,36 @@ class AppActionHandler {
   }
 
   async handlePushToRunner(directPayload = null) {
-        const projectName = this.app.sourceProjectName || this.app.projectName;
-        if (projectName === 'vibes') {
-          console.log(
-            '[AppActionHandler] 🧠 Self-detection: Vibes is editing itself - runner preview suppressed. Use Hot Patch or reload.'
-          );
-          this.app.uiManager.setStatus(
-            'Vibes does not preview itself - use 🔥 Hot Patch or reload.',
-            false,
-            6000
-          );
-          return;
-        }
+      const projectName = this.app.sourceProjectName || this.app.projectName;
+      if (projectName === 'vibes') {
+        console.log(
+          '[AppActionHandler] 🧠 Self-detection: Vibes is editing itself - runner preview suppressed. Use Hot Patch or reload.'
+        );
+        this.app.uiManager.setStatus(
+          'Vibes does not preview itself - use 🔥 Hot Patch or reload.',
+          false,
+          6000
+        );
+        return;
+      }
 
-        this.app.uiManager.setStatus('Launching Native In-Window Runner...');
+      this.app.uiManager.setStatus('Launching Native In-Window Runner...');
 
-        if (typeof InWindowScriptInjector === 'undefined') {
-          await this.app._loadClassicScriptOnce('/vibes/src/tools/runner/InWindowScriptInjector.js');
+      if (typeof InWindowScriptInjector !== 'undefined') {
+        const injector = new InWindowScriptInjector(this.app, { projectName });
+        try {
+          if (this.app.activeRunnerInjector) this.app.activeRunnerInjector.destroy();
+          await injector.launch();
+          this.app.activeRunnerInjector = injector;
+          this.app.activeRunnerProject = projectName;
+          if (this.app.emit) this.app.emit('runner:started', projectName);
+          this.app.uiManager.setStatus('In-Window Runner launched successfully.');
+        } catch (error) {
+          this.app.uiManager.setStatus(`Live Preview Failed: ${error.message}`, true);
         }
-
-        if (typeof InWindowScriptInjector !== 'undefined') {
-          const injector = new InWindowScriptInjector(this.app, { projectName });
-          try {
-            if (this.app.activeRunnerInjector) this.app.activeRunnerInjector.destroy();
-            await injector.launch();
-            this.app.activeRunnerInjector = injector;
-            this.app.activeRunnerProject = projectName;
-            if (this.app.emit) this.app.emit('runner:started', projectName);
-            this.app.uiManager.setStatus('In-Window Runner launched successfully.');
-          } catch (error) {
-            this.app.uiManager.setStatus(`Live Preview Failed: ${error.message}`, true);
-          }
-        } else {
-          this.app.uiManager.setStatus('InWindowScriptInjector failed to load.', true);
-        }
+      } else {
+        this.app.uiManager.setStatus('InWindowScriptInjector failed to load.', true);
+      }
     }
 
   focusBuildPromptTab() {
@@ -1555,31 +1551,24 @@ class AppActionHandler {
     }
 
   async handleRunAppFromDisk(node) {
-        if (!node || !node.id) return;
-        this.app.uiManager.setStatus(`Launching ${node.name} from disk...`);
+      if (!node || !node.id) return;
+      this.app.uiManager.setStatus(`Launching ${node.name} from disk...`);
 
-        if (typeof InWindowScriptInjector === 'undefined') {
-          await this.app._loadClassicScriptOnce('/vibes/src/tools/runner/InWindowScriptInjector.js');
+      if (typeof InWindowScriptInjector !== 'undefined') {
+        const injector = new InWindowScriptInjector(this.app, { filesJsonPath: node.id, projectName: node.name });
+        try {
+          if (this.app.activeRunnerInjector) this.app.activeRunnerInjector.destroy();
+          await injector.launch();
+          this.app.activeRunnerInjector = injector;
+          this.app.activeRunnerProject = node.name;
+          if (this.app.emit) this.app.emit('runner:started', node.name);
+          this.app.uiManager.setStatus('In-Window Runner launched successfully from manifest.');
+        } catch (error) {
+          this.app.uiManager.setStatus(`Live Preview Failed: ${error.message}`, true);
         }
-        if (typeof RunInPageRunner === 'undefined') {
-          await this.app._loadClassicScriptOnce('/vibes/src/tools/runner/RunInPageRunner.js');
-        }
-
-        if (typeof InWindowScriptInjector !== 'undefined') {
-          const injector = new InWindowScriptInjector(this.app, { filesJsonPath: node.id, projectName: node.name });
-          try {
-            if (this.app.activeRunnerInjector) this.app.activeRunnerInjector.destroy();
-            await injector.launch();
-            this.app.activeRunnerInjector = injector;
-            this.app.activeRunnerProject = node.name;
-            if (this.app.emit) this.app.emit('runner:started', node.name);
-            this.app.uiManager.setStatus('In-Window Runner launched successfully from manifest.');
-          } catch (error) {
-            this.app.uiManager.setStatus(`Live Preview Failed: ${error.message}`, true);
-          }
-        } else {
-          this.app.uiManager.setStatus('InWindowScriptInjector failed to load.', true);
-        }
+      } else {
+        this.app.uiManager.setStatus('InWindowScriptInjector failed to load.', true);
+      }
     }
 
   async handleForkAndSaveToDisk(templateName) {
@@ -1756,9 +1745,6 @@ class AppActionHandler {
           }, 500);
         }
 
-        if (typeof InWindowScriptInjector === 'undefined') {
-          await this.app._loadClassicScriptOnce('/vibes/src/tools/runner/InWindowScriptInjector.js');
-        }
         if (typeof InWindowScriptInjector !== 'undefined') {
           const injector = new InWindowScriptInjector(this.app, { projectName: cleanNewName });
           await injector.launch();
@@ -2004,5 +1990,54 @@ class AppActionHandler {
       } finally {
         this.app.uiManager.setLoadingState(false);
       }
+    }
+
+  handleViewClassLogs() {
+      const text = globalThis.__classRegistrationLogger?.getFormattedText() || 'No logs found.';
+      
+      const textarea = makeElement('textarea', {
+        style: {
+          width: '100%',
+          height: '320px',
+          backgroundColor: '#090d16',
+          color: '#38bdf8',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          padding: '12px',
+          border: '1px solid #1e293b',
+          borderRadius: '6px',
+          boxSizing: 'border-box',
+          resize: 'none',
+          outline: 'none'
+        },
+        readOnly: true
+      });
+      
+      // Explicitly set the text content directly on the textarea property
+      textarea.value = text;
+
+      const content = makeElement('div', { style: { display: 'flex', flexDirection: 'column', gap: '10px', padding: '5px' } }, [
+        textarea
+      ]);
+
+      const dialog = UITools.makeDialog({
+        title: '📋 Global Class Registration Logs',
+        content: content,
+        contentElement: content,
+        width: '600px',
+        buttons: [
+          {
+            label: 'Clear Logs',
+            className: 'danger',
+            onClick: () => {
+              globalThis.__classRegistrationLogger?.clear();
+              textarea.value = globalThis.__classRegistrationLogger?.getFormattedText() || 'No logs found.';
+              this.app.uiManager.setStatus('Class registration logs cleared.');
+              return false;
+            }
+          },
+          { label: 'Close' }
+        ]
+      });
     }
 }

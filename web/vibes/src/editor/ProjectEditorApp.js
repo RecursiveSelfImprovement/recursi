@@ -766,6 +766,28 @@ class ProjectEditorApp {
         window._dev_projectEditorInstance = this;
       }
       
+      // Initialize the Global Class Registration Logger
+      if (!globalThis.__classRegistrationLogger) {
+        globalThis.__classRegistrationLogger = {
+          logs: [],
+          log(className, type) {
+            this.logs.push({
+              className,
+              type,
+              timestamp: new Date().toLocaleTimeString()
+            });
+            console.log(`[Class Logger] Registered ${className} as global (${type})`);
+          },
+          clear() {
+            this.logs = [];
+          },
+          getFormattedText() {
+            if (this.logs.length === 0) return 'No classes registered globally yet.';
+            return this.logs.map(l => `[${l.timestamp}] Class "${l.className}" registered as global (Source: ${l.type})`).join('\n');
+          }
+        };
+      }
+
       if (!isChild) {
         window.injectAllFooters = async () => {
           if (this.commands && this.commands.injectMetadataFooters) {
@@ -855,178 +877,20 @@ class ProjectEditorApp {
     return this._historyManager;
   }
 
-  async _getProjectFilesManagerClassAsync() {
-    await this._ensureProjectFilesManagerScriptsLoaded();
-
-    const ProjectFilesManager = this._getGlobalLexicalClassByName(
-      'ProjectFilesManager'
-    );
-
-    if (typeof ProjectFilesManager === 'function') {
-      console.warn(
-        '[ProjectEditorApp] Using ProjectFilesManager as the primary ProjectFilesManager.'
-      );
-      return ProjectFilesManager;
+  _getProjectFilesManagerClassAsync() {
+      // Resolve the globally available class immediately
+      return Promise.resolve(ProjectFilesManager);
     }
 
-    throw new Error(
-      'ProjectFilesManager could not be loaded. The legacy ProjectFilesManager fallback has been removed from the primary app path.'
-    );
-  }
+  
 
-  _projectFilesManager2ScriptPaths() {
-    return [
-      '/vibes/src/editor/ui/fileTree/ProjectFileTreeDataBuilder.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesMetadataAnalyzer.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFolderMetaCapsuleAttacher.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesVisibilityCoordinator.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesPromptBundleBuilder.js',
-      '/vibes/src/editor/ui/fileTree/ProjectVisibilitySetCapsuleReader.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFileTreeRegistry.js',
-      '/vibes/src/editor/ui/fileTree/ProjectBrowserWebRootOpener.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFloatingTreeLauncher.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFloatingExternalEditor.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFloatingTreeStoreBuilder.js',
-      '/vibes/src/editor/ui/fileTree/ProjectVibesProjectFloatingStore.js',
-      '/vibes/src/editor/ui/fileTree/ProjectVisibleNodeRunnerTools.js',
-      '/vibes/src/editor/ui/fileTree/ProjectVisibilityToolbarTools.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesSearchController.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesTreeOperations.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesDialogActions.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesPromptSizeEstimator.js',
-      '/vibes/src/editor/ui/fileTree/ProjectWorkspaceRootOperations.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesEditorBridge.js',
-      '/vibes/src/editor/ui/fileTree/ProjectVisibilitySetFilterController.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFloatingTreeStoreDialogController.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesManagerBreakdownHelperFactory.js',
-      '/vibes/src/editor/ui/fileTree/ProjectFilesManager.js',
-    ];
-  }
+  
 
-  _getGlobalLexicalClassByName(className) {
-    if (!className) return null;
+  
 
-    try {
-      const value = Function(
-        'className',
-        "try { return eval('typeof ' + className) !== 'undefined' ? eval(className) : null; } catch (error) { return null; }"
-      )(className);
+  
 
-      if (typeof value === 'function') {
-        try {
-          globalThis[className] = value;
-          if (typeof window !== 'undefined') {
-            window[className] = value;
-          }
-          globalThis.__vibesGlobalScriptClasses =
-            globalThis.__vibesGlobalScriptClasses || new Set();
-          globalThis.__vibesGlobalScriptClasses.add(className);
-        } catch (error) {}
-        return value;
-      }
-    } catch (error) {}
-
-    try {
-      const value = globalThis[className];
-      if (typeof value === 'function') {
-        if (typeof window !== 'undefined' && !window[className]) {
-          window[className] = value;
-        }
-        return value;
-      }
-    } catch (error) {}
-
-    return null;
-  }
-
-  _classicScriptAlreadyPresent(src) {
-    const absolute = new URL(src, document.baseURI).href;
-
-    return Array.from(document.scripts).some((script) => {
-      if (script.src === absolute || script.src.endsWith(src)) return true;
-      // Fix for recursi.js bootloader double-loading prevention
-      if (script.dataset && script.dataset.recursiSrc) {
-        const recursiAbs = new URL(script.dataset.recursiSrc, document.baseURI)
-          .href;
-        if (recursiAbs === absolute || script.dataset.recursiSrc.endsWith(src))
-          return true;
-      }
-      return false;
-    });
-  }
-
-  _loadClassicScriptOnce(src) {
-    if (this._classicScriptAlreadyPresent(src)) {
-      this._exposeClassicScriptGlobal(src);
-      return Promise.resolve();
-    }
-
-    return new Promise((resolve, reject) => {
-      const el = document.createElement('script');
-      el.src = src;
-
-      el.onload = () => {
-        const exposure = this._exposeClassicScriptGlobal(src);
-
-        if (exposure.ok) {
-          console.log('[Loader] Globalized: ' + exposure.className);
-        } else {
-          console.warn('[Loader] Could not globalize script class:', exposure);
-        }
-
-        resolve();
-      };
-
-      el.onerror = () => reject(new Error('Script load failed: ' + src));
-      document.head.appendChild(el);
-    });
-  }
-
-  async _ensureProjectFilesManagerScriptsLoaded() {
-    if (this._projectFilesManagerScriptsLoaded) {
-      return {
-        ok: true,
-        cached: true,
-      };
-    }
-
-    const loaded = [];
-
-    for (const src of this._projectFilesManager2ScriptPaths()) {
-      const result = await this._loadClassicScriptOnce(src);
-      loaded.push(result);
-    }
-
-    const requiredClasses = [
-      'ProjectFileTreeDataBuilder',
-      'ProjectFilesMetadataAnalyzer',
-      'ProjectFolderMetaCapsuleAttacher',
-      'ProjectFilesVisibilityCoordinator',
-      'ProjectFilesPromptBundleBuilder',
-      'ProjectVisibilitySetCapsuleReader',
-      'ProjectFileTreeRegistry',
-      'ProjectFilesManagerBreakdownHelperFactory',
-      'ProjectFilesManager',
-    ];
-
-    const missing = requiredClasses.filter((className) => {
-      return !this._getGlobalLexicalClassByName(className);
-    });
-
-    if (missing.length) {
-      throw new Error(
-        'ProjectFilesManager scripts loaded but required classes are unavailable: ' +
-          missing.join(', ')
-      );
-    }
-
-    this._projectFilesManagerScriptsLoaded = true;
-
-    return {
-      ok: true,
-      loaded,
-    };
-  }
+  
 
   _exposeDevGlobals(reason = 'unknown') {
       const isChild = window._dev_projectEditorInstance && window._dev_projectEditorInstance !== this;
@@ -1157,26 +1021,12 @@ class ProjectEditorApp {
 
       this._initComms();
 
-      try {
-        await this._loadClassicScriptOnce(
-          '/vibes/src/editor/comms/VibesPatchStore.js'
-        );
-        await this._loadClassicScriptOnce(
-          '/vibes/src/editor/comms/PatchManager.js'
-        );
-        window.VibesPatchStore =
-          typeof VibesPatchStore !== 'undefined' ? VibesPatchStore : null;
-        window.PatchManager =
-          typeof PatchManager !== 'undefined' ? PatchManager : null;
-        if (!this.patchManager && window.PatchManager) {
-          this.patchManager = new window.PatchManager(this);
-          await this.patchManager.init();
-        }
-      } catch (e) {
-        console.warn(
-          'Failed to load PatchManager, continuing without patches.',
-          e
-        );
+      // CLEANUP: No more dynamic loading here.
+      window.VibesPatchStore = typeof VibesPatchStore !== 'undefined' ? VibesPatchStore : null;
+      window.PatchManager = typeof PatchManager !== 'undefined' ? PatchManager : null;
+      if (!this.patchManager && window.PatchManager) {
+        this.patchManager = new window.PatchManager(this);
+        await this.patchManager.init();
       }
 
       this.appearanceManager.notifySubscribers();
@@ -1227,8 +1077,24 @@ class ProjectEditorApp {
       }
 
       try {
-        await this._loadClassicScriptOnce('/LogoExperiments/js/EmberLogo.js');
-        if (typeof EmberLogo !== 'undefined') {
+        const startupShell = document.getElementById('startup-logo-shell');
+        const overlay = document.getElementById('startup-overlay');
+
+        if (startupShell && window.vibesStartupLogo) {
+          this.emberLogo = window.vibesStartupLogo;
+          
+          // Clear the 1.4s transition to prevent conflicts with JS positioning/glide
+          startupShell.style.transition = 'none';
+          
+          this.emberLogo.glideToHeader('450px', '2px', 0.55);
+
+          if (overlay) {
+            overlay.style.opacity = '0';
+            setTimeout(() => {
+              overlay.remove();
+            }, 1000);
+          }
+        } else if (typeof EmberLogo !== 'undefined') {
           EmberLogo._loadGoogleFont();
 
           setTimeout(() => {
@@ -1241,6 +1107,7 @@ class ProjectEditorApp {
               emberSpeedMultiplier: 0.3,
               emberSizeMultiplier: 0.4,
               bgOpacity: 0.0,
+              displaySubtitle: false,
             });
             if (this.emberLogo._shell) {
               this.emberLogo._shell.style.position = 'absolute';
@@ -1277,13 +1144,6 @@ class ProjectEditorApp {
       }
       console.log('[ProjectEditorApp] runProjectInWindow:', projectName);
 
-      await this._loadClassicScriptOnce(
-        '/vibes/src/tools/runner/InWindowScriptInjector.js'
-      );
-      await this._loadClassicScriptOnce(
-        '/vibes/src/tools/runner/RunInPageRunner.js'
-      );
-
       if (typeof InWindowScriptInjector === 'undefined') {
         console.error('[ProjectEditorApp] InWindowScriptInjector not loaded');
         return;
@@ -1315,32 +1175,7 @@ class ProjectEditorApp {
       return '## Boot Lifecycle\n\nThe app initialization is driven by `ProjectLoader`, which reads URL parameters (static mode, server mode) to determine the data source, mounts the appropriate `VirtualFileSystem`, and brings up the initial layout.';
     }
 
-  _exposeClassicScriptGlobal(src) {
-    const clean = String(src || '')
-      .split('?')[0]
-      .split('#')[0];
-    const fileName = clean.split('/').pop() || '';
-    const className = fileName.replace(/\.js$/i, '');
-
-    if (!className) {
-      return {
-        ok: false,
-        reason: 'no-class-name',
-        src,
-      };
-    }
-
-    const value = this._getGlobalLexicalClassByName(className);
-
-    return {
-      ok: typeof value === 'function',
-      src,
-      className,
-      globalType: typeof globalThis[className],
-      windowType:
-        typeof window !== 'undefined' ? typeof window[className] : 'undefined',
-    };
-  }
+  
 
   setProtocolMode(mode) {
     this.settings.protocolMode = mode;
@@ -1560,5 +1395,47 @@ ProjectEditorApp is the master dependency injection container and state coordina
       } finally {
         this.app.uiManager.setLoadingState(false);
       }
+    }
+
+  _getGlobalLexicalClassByName(className) {
+      if (!className) return null;
+
+      try {
+        const value = Function(
+          'className',
+          "try { return eval('typeof ' + className) !== 'undefined' ? eval(className) : null; } catch (error) { return null; }"
+        )(className);
+
+        if (typeof value === 'function') {
+          try {
+            globalThis[className] = value;
+            if (typeof window !== 'undefined') {
+              window[className] = value;
+            }
+            
+            // Log global class registration
+            if (globalThis.__classRegistrationLogger && typeof globalThis.__classRegistrationLogger.log === 'function') {
+              globalThis.__classRegistrationLogger.log(className, 'separate');
+            }
+
+            globalThis.__vibesGlobalScriptClasses =
+              globalThis.__vibesGlobalScriptClasses || new Set();
+            globalThis.__vibesGlobalScriptClasses.add(className);
+          } catch (error) {}
+          return value;
+        }
+      } catch (error) {}
+
+      try {
+        const value = globalThis[className];
+        if (typeof value === 'function') {
+          if (typeof window !== 'undefined' && !window[className]) {
+            window[className] = value;
+          }
+          return value;
+        }
+      } catch (error) {}
+
+      return null;
     }
 }

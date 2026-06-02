@@ -1,0 +1,19 @@
+{
+  "meta": "Managed by LLM",
+  "main": [
+    "js/AlphaChannelMagic.js"
+  ],
+  "local": [
+    "js/logic/BackgroundEffects.js",
+    "js/logic/CanvasUtils.js",
+    "js/logic/ChunkedCanvasProcessor.js",
+    "js/logic/ColorToAlphaProcessor.js",
+    "js/logic/Interpolator.js",
+    "js/logic/SimplifiedHSV.js",
+    "js/ui/CompositeBuilder.js",
+    "js/ui/CropTool.js",
+    "js/ui/ImageProcessorUI.js"
+  ],
+  "library": [],
+  "thirdParty": []
+}

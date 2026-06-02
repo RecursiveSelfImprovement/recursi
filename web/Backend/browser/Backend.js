@@ -165,6 +165,9 @@ class Backend {
         transition: background-color 0.15s, opacity 0.15s;
         text-align: center;
       }
+      .btn-bar .btn {
+         min-width: 120px;
+      }
       .btn-primary { background-color: #0ea5e9; color: #fff; }
       .btn-primary:hover { background-color: #0284c7; }
       .btn-success { background-color: #10b981; color: #fff; }
@@ -243,7 +246,6 @@ class Backend {
         background-color: #1e293b;
         border-radius: 10px;
         padding: 20px;
-        /* No hardcoded height, page scrolls infinitely downward as requested */
       }
       .file-card {
         background-color: #0f172a;
@@ -286,7 +288,6 @@ class Backend {
       .btn-delete { background-color: #7f1d1d; color: #fecaca; }
       .btn-delete:hover { background-color: #991b1b; }
 
-      /* Custom scrollbars to match dark theme */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -347,6 +348,8 @@ class Backend {
       makeElement('div', { className: 'btn-bar' }, [
         makeElement('button', { className: 'btn btn-primary', onclick: () => this.checkHealth() }, 'Health Check'),
         makeElement('button', { className: 'btn btn-primary', onclick: () => this.fetchProjects() }, 'Get Projects'),
+        makeElement('button', { className: 'btn btn-secondary', onclick: () => this.compileBundle('vibes') }, 'Compile Bundle'),
+        makeElement('button', { className: 'btn btn-secondary', onclick: () => this.deployBundle('vibes') }, 'Deploy Bundle'),
         makeElement('button', { className: 'btn btn-success', onclick: () => this.deployMainSite() }, 'Deploy Main'),
         makeElement('button', { className: 'btn btn-success', onclick: () => this.deployComments() }, 'Deploy Comments'),
         makeElement('button', { className: 'btn btn-warning', style: { width: '100%', marginTop: '5px' }, onclick: () => this.runFullDeployFlow() }, 'Run Full Deploy Flow')
@@ -355,10 +358,10 @@ class Backend {
     sideStack.appendChild(this.deployPanel);
 
     // Form B: Disk Scanner Panel
-    this.dirInput = makeElement('input', { type: 'text', value: '/Users/rob' }); // default to macOS user directory as requested
+    this.dirInput = makeElement('input', { type: 'text', value: '/Users/rob' });
     this.sizeInput = makeElement('input', { type: 'number', value: '50' });
     this.moveTargetInput = makeElement('input', { type: 'text', value: '', placeholder: 'Target path' });
-    this.skipDirsInput = makeElement('textarea', {}, 'node_modules, .git, .cache, Library, System, Applications, .Trash'); // added os dirs
+    this.skipDirsInput = makeElement('textarea', {}, 'node_modules, .git, .cache, Library, System, Applications, .Trash');
     this.skipHiddenCheck = makeElement('input', { type: 'checkbox', checked: true });
 
     this.scannerPanel = makeElement('div', { className: 'panel-box', style: { display: 'none' } }, [
@@ -375,8 +378,8 @@ class Backend {
     ]);
     sideStack.appendChild(this.scannerPanel);
 
-    // Logs Container (placed on the LEFT below the active app form, as requested)
-    this.logConsole = makeElement('pre', { className: 'log-panel' }, 'Console log active.\n');
+    // Logs Container
+    this.logConsole = makeElement('pre', { className: 'log-panel' }, 'Console log active.');
     const logActionRow = makeElement('div', { className: 'log-action-row' }, [
       makeElement('span', { style: { fontSize: '10px', color: '#64748b', fontWeight: 'bold' } }, 'TELEMETRY'),
       makeElement('div', { style: { display: 'flex', gap: '5px' } }, [
@@ -400,8 +403,8 @@ class Backend {
     // Right Column Area
     const resultsArea = makeElement('div', { className: 'results-area' });
 
-    // Absolute start server prompt at the top right
-    const terminalPrompt = "node /Users/rob/src/recursi/web/Backend/server/Starter.js";
+    // Absolute start server prompt
+    const terminalPrompt = "node /Users/rob/source/recursi/web/Backend/server/Starter.js";
     this.terminalPromptBox = makeElement('div', { className: 'terminal-prompt-box' }, [
       makeElement('div', {}, [
         makeElement('span', { style: { fontSize: '10px', fontWeight: 'bold', color: '#94a3b8', display: 'block', marginBottom: '3px' } }, 'LAUNCH BACKEND IN TERMINAL (ABSOLUTE PATH):'),
@@ -417,7 +420,7 @@ class Backend {
     ]);
     resultsArea.appendChild(this.terminalPromptBox);
 
-    // Results container (unconstrained height, scrolling infinitely downward)
+    // Results container
     this.resultsWrapper = makeElement('div', { className: 'results-container' }, [
       makeElement('div', { style: { padding: '40px', color: '#64748b', textAlign: 'center' } }, 'No operations run yet.')
     ]);
@@ -452,8 +455,6 @@ class Backend {
   clearLog() {
     this.logConsole.textContent = '';
   }
-
-  // --- Remote task dispatcher ---
 
   async runRemote(serverFn, params = {}) {
     const response = await fetch('http://localhost:8000/run', {
@@ -492,8 +493,6 @@ class Backend {
     };
   }
 
-  // --- Deployer Operations ---
-
   async checkHealth() {
     try {
       const data = await this.runRemote(async (env) => {
@@ -515,7 +514,7 @@ class Backend {
       });
       this.projects = data.result || [];
       this.renderProjectsList();
-      this.appendLog(`Fetched ${this.projects.length} repository projects.`);
+      this.appendLog(`Fetched s${this.projects.length} repository projects.`);
     } catch(e) {
       this.appendLog("Failed to fetch projects: " + e.message);
     }
@@ -548,7 +547,6 @@ class Backend {
       const data = await this.runRemote(async (env) => {
         const DeployerClass = await env.getClass('MainSiteDeployer');
         
-        // Fully assembled dependencies injected properly to avoid undefined.create error
         const deps = {
           fs: env.fsPromises,
           fsSync: env.fs,
@@ -620,18 +618,128 @@ class Backend {
     }
   }
 
+  async compileBundle(projectName = 'vibes') {
+    this.appendLog(`Compiling external bundle for ${projectName} outside the repository...`);
+    try {
+      const data = await this.runRemote(async (env) => {
+        const fs = env.require('fs');
+        const path = env.require('path');
+        
+        env.log(`[Server-Diagnostic] projectRoot: ${env.options.projectRoot}`);
+        env.log(`[Server-Diagnostic] webRoot: ${env.options.webRoot}`);
+
+        const serverAppDir = path.join(env.options.webRoot, 'Backend', 'server');
+
+        const searchPaths = [
+          path.join(serverAppDir, 'ProjectBundler.js'),
+          path.join(serverAppDir, 'utils', 'ProjectBundler.js'),
+          path.join(serverAppDir, 'apps/BigFileFinder', 'ProjectBundler.js'),
+          path.join(serverAppDir, 'apps/DeployRecursi', 'ProjectBundler.js')
+        ];
+
+        env.log("[Server-Diagnostic] Checking ProjectBundler.js locations:");
+        searchPaths.forEach(p => {
+          const exists = fs.existsSync(p);
+          env.log(`  Path: ${p} | Exists: ${exists}`);
+          if (exists) {
+            const content = fs.readFileSync(p, 'utf8');
+            env.log(`    - Has generateExternalBundle: ${content.includes('generateExternalBundle')}`);
+            env.log(`    - Has deployExternalBundle: ${content.includes('deployExternalBundle')}`);
+            const stat = fs.statSync(p);
+            env.log(`    - mtimeMs: ${stat.mtimeMs}`);
+          }
+        });
+
+        if (global.classCache && global.classCache['ProjectBundler']) {
+          env.log(`[Server-Diagnostic] classCache['ProjectBundler'] found in memory.`);
+          env.log(`    - Cached mtime: ${global.classCache['ProjectBundler'].mtime}`);
+          const cachedClass = global.classCache['ProjectBundler'].Class;
+          env.log(`    - Cached methods: ${Object.getOwnPropertyNames(cachedClass)}`);
+        } else {
+          env.log(`[Server-Diagnostic] classCache['ProjectBundler'] is NOT currently cached.`);
+        }
+
+        const BundlerClass = await env.getClass('ProjectBundler');
+        env.log(`[Server-Diagnostic] Loaded BundlerClass type: ${typeof BundlerClass}`);
+        if (BundlerClass) {
+          env.log(`[Server-Diagnostic] Loaded BundlerClass methods: ${Object.getOwnPropertyNames(BundlerClass)}`);
+        }
+
+        const res = await BundlerClass.generateExternalBundle(
+          env.params.projectName,
+          env.options.webRoot,
+          env.options.projectRoot,
+          env.fsPromises,
+          env.path,
+          env.os
+        );
+        return res;
+      }, { projectName });
+
+      if (data.success && data.result) {
+        this.appendLog(`✅ Bundle generated outside repo: ${data.result.destPath} (${(data.result.sizeBytes / 1024).toFixed(1)} KB)`);
+      } else {
+        this.appendLog(`✖ Bundle generation failed: ` + data.error);
+      }
+    } catch (e) {
+      this.appendLog(`Bundling failed: ${e.message}`);
+    }
+  }
+
+  async deployBundle(projectName = 'vibes') {
+      this.appendLog(`Moving compiled external bundle for ${projectName} into the repository...`);
+      try {
+        const data = await this.runRemote(async (env) => {
+          const fs = env.require('fs');
+          const path = env.require('path');
+
+          const BundlerClass = await env.getClass('ProjectBundler');
+          const SftpHelper = await env.getClass('SftpHelper');
+          const SftpClient = env.SftpClient;
+          const DeployConfig = await env.getClass('DeployConfig');
+          const pathToFileURL = env.pathToFileURL;
+
+          const deps = {
+            DeployConfig,
+            SftpHelper,
+            SftpClient,
+            pathToFileURL,
+            fsSync: env.fsSync
+          };
+
+          const res = await BundlerClass.deployExternalBundle(
+            env.params.projectName,
+            env.options.webRoot,
+            env.options.projectRoot,
+            env.fsPromises,
+            env.path,
+            deps
+          );
+          return res;
+        }, { projectName });
+
+        if (data.success && data.result) {
+          this.appendLog(`✅ Bundle deployed remotely: ${data.result.remoteDestPath}`);
+        } else {
+          this.appendLog(`✖ Bundle deployment failed: ` + data.error);
+        }
+      } catch (e) {
+        this.appendLog(`Deployment failed: ${e.message}`);
+      }
+    }
+
   async runFullDeployFlow() {
     this.appendLog("=== STARTING FULL DEPLOYMENT FLOW ===");
     await this.checkHealth();
     await this.fetchProjects();
+    await this.compileBundle('vibes');
+    await this.deployBundle('vibes');
     await this.deployMainSite();
     if (this.commentsCheck.checked) {
       await this.deployComments();
     }
     this.appendLog("=== FULL DEPLOYMENT FLOW COMPLETE ===");
   }
-
-  // --- Searcher Operations ---
 
   async startScan() {
     if (!this.serverActive || this.isScanning) return;
@@ -644,7 +752,7 @@ class Backend {
     const skipHidden = this.skipHiddenCheck.checked;
     const targetDir = this.moveTargetInput.value.trim();
 
-    this.appendLog(`Triggering big file scan starting at: ${directory}...`);
+    this.appendLog(`Triggering big file scan starting at: s${directory}...`);
 
     try {
       await this.runRemote(async (env) => {
@@ -754,7 +862,7 @@ class Backend {
 
       const actionCell = makeElement('div', { className: 'mini-btn-stack' });
       if (isDeleted) {
-        actionCell.appendChild(makeElement('span', { style: { color: '#ef4444', fontSize: '10px', fontWeight: 'bold', textAlign: 'center' } }, 'DELETED'));
+        actionCell.appendChild(makeElement('span', { style: { color: '#ef4444', fontSize: '10px', fontStyle: 'bold', textAlign: 'center' } }, 'DELETED'));
       } else {
         if (isVideo) {
           actionCell.appendChild(makeElement('button', { className: 'btn-mini btn-play', onclick: () => this.playVideo(file.path, fileName) }, 'Play'));
