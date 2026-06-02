@@ -1,4 +1,3 @@
-
 class FrontPage {
   constructor() {
       this.commentsApp = null;
@@ -64,17 +63,9 @@ class FrontPage {
   _buildHeroOverlay() {
       const overlay = makeElement('div', { className: 'hero-text-overlay' });
       const inner = makeElement('div', { className: 'hero-text-inner' });
-      inner.append(this._buildHeroBadge(), this._buildHeroTagline());
+      inner.append(this._buildHeroTagline(), this._buildVideoButton());
       overlay.appendChild(inner);
       return overlay;
-    }
-
-  _buildHeroBadge() {
-      return makeElement(
-        'div',
-        { className: 'coming-soon-badge' },
-        'Coming Soon'
-      );
     }
 
   _buildHeroTagline() {
@@ -83,10 +74,16 @@ class FrontPage {
       return tagline;
     }
 
+  _buildVideoButton() {
+      const btn = makeElement('button', { className: 'hero-video-btn' });
+      btn.innerHTML = `<span class="video-btn-icon">▶</span><span class="video-btn-label">Watch the Demo</span>`;
+      btn.onclick = () => this._openVideoModal();
+      return btn;
+    }
+
   _buildManifestoSection() {
       const div = makeElement('div', { className: 'manifesto fade-up' });
       this._appendManifestoParagraphs(div);
-      div.appendChild(this._buildManifestoSignature());
       return div;
     }
 
@@ -96,52 +93,6 @@ class FrontPage {
         p.innerHTML = para;
         container.appendChild(p);
       }
-    }
-
-  _buildManifestoSignature() {
-      const scratchy = makeElement('div', { className: 'scratchy-note' });
-      scratchy.innerHTML = '- scratchy<br>';
-
-      const paw = makeElement(
-        'span',
-        { className: 'paw-print', title: 'Boop the intern' },
-        '🐾'
-      );
-
-      paw.onclick = (e) => {
-        let boops = parseInt(
-          localStorage.getItem('recursi_scratchy_boops') || '0',
-          10
-        );
-        boops++;
-        localStorage.setItem('recursi_scratchy_boops', boops.toString());
-
-        const floater = makeElement(
-          'div',
-          { className: 'boop-floater' },
-          boops + ' boop' + (boops > 1 ? 's' : '') + '!'
-        );
-        floater.style.left = e.clientX + 'px';
-        floater.style.top = e.clientY - 20 + 'px';
-        
-        // Scope to rootElement container to ensure sandboxed layout containment
-        if (this.rootElement) {
-          this.rootElement.appendChild(floater);
-        } else {
-          document.body.appendChild(floater);
-        }
-
-        if (navigator.vibrate) {
-          try {
-            navigator.vibrate(30);
-          } catch (err) {}
-        }
-
-        setTimeout(() => floater.remove(), 1200);
-      };
-
-      scratchy.appendChild(paw);
-      return scratchy;
     }
 
   _buildProjectsSection() {
@@ -212,12 +163,6 @@ class FrontPage {
       return card;
     }
 
-  _buildProjectIcon(p) {
-      const icon = makeElement('div', { className: 'project-icon' });
-      icon.innerHTML = p.icon;
-      return icon;
-    }
-
   _buildProjectInfo(p) {
       const info = makeElement('div', { className: 'project-info' });
       const h3 = makeElement('h3');
@@ -276,7 +221,7 @@ class FrontPage {
       return makeElement(
         'p',
         { className: 'merch-disclaimer' },
-        '[ Inventory currently unavailable. The intern chewed the stock. ]'
+        FrontPageContent.merchDisclaimerText()
       );
     }
 
@@ -327,8 +272,7 @@ class FrontPage {
 
   _buildFooterCopyright() {
       const p = makeElement('p');
-      p.innerHTML =
-        '&copy; 2026 Scratchy &amp; Friends. All recursions reserved. 🐾';
+      p.innerHTML = FrontPageContent.footerCopyright();
       return p;
     }
 
@@ -340,7 +284,6 @@ class FrontPage {
         this._buildLightboxInfo()
       );
 
-      // Track bound reference to allow removal during teardown
       this._lightboxKeydownHandler = (e) => {
         if (e.key === 'Escape') this._closeLightbox();
       };
@@ -373,7 +316,7 @@ class FrontPage {
         makeElement('div', { className: 'lightbox-name', id: 'lb-name' }),
         makeElement('div', { className: 'lightbox-desc', id: 'lb-desc' }),
         makeElement('div', { className: 'lightbox-price', id: 'lb-price' }),
-        makeElement('div', { className: 'lightbox-soldout' }, 'Out of Stock')
+        makeElement('div', { className: 'lightbox-soldout' }, FrontPageContent.soldOutText())
       );
       return info;
     }
@@ -395,6 +338,27 @@ class FrontPage {
       document.body.style.overflow = '';
     }
 
+  _openVideoModal() {
+      // Video modal placeholder — wire up real video URL here
+      const overlay = makeElement('div', { className: 'video-modal-overlay' });
+      const box = makeElement('div', { className: 'video-modal-box' });
+      const close = makeElement('button', { className: 'video-modal-close' }, '×');
+      const placeholder = makeElement('div', { className: 'video-modal-placeholder' });
+      placeholder.innerHTML = `<span class="video-placeholder-icon">▶</span><p>Demo video coming soon</p>`;
+
+      close.onclick = () => overlay.remove();
+      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
+
+      box.append(close, placeholder);
+      overlay.appendChild(box);
+
+      if (this.rootElement) {
+        this.rootElement.appendChild(overlay);
+      } else {
+        document.body.appendChild(overlay);
+      }
+    }
+
   _initScrollAnimations() {
       this.scrollObserver = new IntersectionObserver(
         (entries) => {
@@ -412,7 +376,6 @@ class FrontPage {
       if (!root) return;
 
       try {
-        // Comments is loaded by files.json and registered in the global scope
         if (typeof Comments !== 'undefined') {
           this.commentsApp = new Comments();
           this.commentsApp.init(root, {
@@ -488,7 +451,6 @@ class FrontPage {
       return this;
     }
 
-
   destroy() {
       if (this._lightboxKeydownHandler) {
         document.removeEventListener('keydown', this._lightboxKeydownHandler);
@@ -510,4 +472,3 @@ class FrontPage {
       this.rootElement = null;
     }
 }
-

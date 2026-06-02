@@ -1,4 +1,3 @@
-
 class FrontPageStyles {
   static init() {
     applyCss(this.css());
@@ -437,5 +436,121 @@ class FrontPageStyles {
     `;
   }
 
+
+// FrontPageStyles additions — patch these into FrontPageStyles.js
+// Add cssVideoButton() and cssVideoModal() as new static methods,
+// then include them in the css() return array.
+
+// 1.  In css(), change the cssHero() call block to remove the coming-soon badge
+//     styles (the .coming-soon-badge rule and its @keyframes pulse-glow can stay
+//     for now since they're harmless if unused, or remove them for cleanliness).
+
+// 2.  Add the two new methods below and call them from css():
+
+static cssVideoButton() {
+  return `
+    .hero-video-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.65rem;
+      margin-top: 1.4rem;
+      padding: 0.65em 1.6em;
+      background: rgba(255, 106, 0, 0.12);
+      border: 1px solid rgba(255, 106, 0, 0.5);
+      border-radius: 40px;
+      color: var(--neon-orange);
+      font-family: 'Orbitron', sans-serif;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      cursor: pointer;
+      text-shadow: var(--glow-orange);
+      box-shadow: 0 0 18px rgba(255, 106, 0, 0.18), inset 0 0 12px rgba(255, 106, 0, 0.06);
+      transition: all 0.25s ease;
+    }
+    .hero-video-btn:hover {
+      background: rgba(255, 106, 0, 0.22);
+      border-color: rgba(255, 106, 0, 0.8);
+      box-shadow: var(--glow-orange), inset 0 0 18px rgba(255, 106, 0, 0.1);
+      transform: translateY(-1px);
+    }
+    .video-btn-icon {
+      font-size: 0.9rem;
+      line-height: 1;
+    }
+  `;
 }
 
+static cssVideoModal() {
+  return `
+    .video-modal-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 10001;
+      background: rgba(5, 5, 10, 0.92);
+      backdrop-filter: blur(16px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: fadeIn 0.25s ease;
+    }
+    .video-modal-box {
+      position: relative;
+      width: min(860px, 92vw);
+      aspect-ratio: 16 / 9;
+      background: rgba(15, 15, 25, 0.9);
+      border: 1px solid rgba(255, 106, 0, 0.25);
+      border-radius: 12px;
+      box-shadow: 0 0 80px rgba(255, 106, 0, 0.12), 0 40px 80px rgba(0,0,0,0.6);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .video-modal-close {
+      position: absolute;
+      top: 0.75rem;
+      right: 1rem;
+      background: rgba(0,0,0,0.5);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 50%;
+      width: 36px;
+      height: 36px;
+      font-size: 1.3rem;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 10002;
+      transition: color 0.2s, border-color 0.2s;
+      line-height: 1;
+      padding-bottom: 2px;
+    }
+    .video-modal-close:hover {
+      color: var(--neon-orange);
+      border-color: rgba(255, 106, 0, 0.4);
+    }
+    .video-modal-placeholder {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+      color: var(--text-muted);
+    }
+    .video-placeholder-icon {
+      font-size: 3rem;
+      color: var(--neon-orange);
+      opacity: 0.4;
+    }
+    .video-modal-placeholder p {
+      font-family: 'Fira Code', monospace;
+      font-size: 0.8rem;
+      letter-spacing: 0.1em;
+      opacity: 0.5;
+    }
+  `;
+}
+  
+}

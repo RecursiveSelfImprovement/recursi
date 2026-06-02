@@ -1,30 +1,28 @@
 class FrontPageContent {
   static heroTaglineLine1() {
-    return `<strong>recursi</strong> is a <em>highly optimized</em>, recursively self-improving environment for building with AI.<br>`;
+    return `<strong>recursi</strong> is a <em>recursive</em>, self-improving environment for building with AI.<br>`;
   }
 
   static heroTaglineLine2() {
-    return `Built for web apps, dynamic tools, and fast human-in-the-loop collaboration. <em>It gets better by building better versions of itself.</em>`;
+    return `Fast, visual, human-in-the-loop — and the whole thing was built by building itself. <em>Vibes built Vibes.</em>`;
   }
 
   static heroTagline() {
     return this.heroTaglineLine1() + this.heroTaglineLine2();
   }
 
+  // ─── Manifesto ────────────────────────────────────────────────────────────
+
   static manifesto1() {
-    return `Two tools, one evolving system: <strong>you stay in the conversation</strong>. The AI does the heavy lifting, but you stay close to the structure, shape the big picture, and keep your hands on the wheel. This is optimized augmentation, not push-a-button automation.`;
+    return `<strong>Vibes</strong> is the heart of recursi — a structured, visual vibe-coding environment where you stay in the conversation while AI does the heavy lifting. It builds dynamic web pages out of small composable functions that can be revised cleanly, surgically, without trashing everything around them. <em>It built itself. That's not a metaphor.</em>`;
   }
 
   static manifesto2() {
-    return `<strong>Vibes</strong> is the structured side — visual, project-focused, and especially good at building dynamic web pages out of small composable functions that AI can revise surgically without trashing everything around them.`;
+    return `The rest of recursi is the ecosystem that grew around it: a legendary element inspector reborn, a YouTube playlist and music environment unlike anything else, a kid-friendly Scratch coding tool, a notebook for turning chatbot output into something you actually keep. All of it built fast, in the loop, with a human shaping every decision.`;
   }
 
   static manifesto3() {
-    return `<strong>YOLO</strong> is the unrestricted side — full filesystem access, live code execution, self-modification, running locally because it has to. It is powerful on its own, but the real story is that Vibes and YOLO increasingly help build and improve each other.`;
-  }
-
-  static manifesto4() {
-    return `The result is fast, unusually efficient, sometimes weird, and open to people who would never start with an API key and a billing dashboard. Kids, artists, tinkerers, non-coders, serious builders — all welcome.`;
+    return `This is <strong>optimized augmentation</strong> — not push-a-button automation, not raw API plumbing. You stay close, you stay curious, and the tooling amplifies everything you bring to it. Wide open to kids, artists, tinkerers, and anyone who would never start with a billing dashboard.`;
   }
 
   static manifesto() {
@@ -32,60 +30,31 @@ class FrontPageContent {
       this.manifesto1(),
       this.manifesto2(),
       this.manifesto3(),
-      this.manifesto4(),
     ];
   }
+
+  // ─── SVG placeholder ──────────────────────────────────────────────────────
 
   static svgPlaceholder(color) {
     return `<svg viewBox="0 0 50 50" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="25" cy="25" r="20" fill="none" stroke="${color}" stroke-width="2"/></svg>`;
   }
 
-  static projectMarkdownNotebook() {
+  // ─── Projects ─────────────────────────────────────────────────────────────
+
+  static projectVibes() {
     return this.project({
-      href: '/MarkdownNotebook/',
-      icon: this.svgPlaceholder('#3b82f6'),
-      image: 'markdownNotebook.png',
+      href: '/vibes/',
+      icon: this.svgPlaceholder('#39ff14'),
+      image: 'vibes.png',
       imageSide: 'left',
       imageWidthPct: 28,
       imageHoverScale: 1.22,
       imageAlignY: 'center',
       imageObjectPosition: 'center center',
-      name: 'Markdown Notebook',
-      desc: 'A notebook that fills in missing pieces of today’s chatbot web interfaces — paste rich text from AI or the web, clean it to Markdown, edit either view, and save a single HTML file you still own.',
-      featured: true,
-    });
-  }
-
-  static projectScratchy() {
-    return this.project({
-      href: '/Scratchy/',
-      icon: this.svgPlaceholder('#ff8c1a'),
-      image: 'scratchy.svg',
-      imageSide: 'right',
-      imageWidthPct: 28,
-      imageHoverScale: 1.22,
-      imageAlignY: 'center',
-      imageObjectPosition: 'center center',
-      name: 'Scratchy',
-      desc: 'A playful local coding environment for Scratch. Drop in a .sb3, describe what you want, and Scratchy applies surgical patches instead of starting over. No accounts, no API keys, no cloud.',
-      featured: true,
-    });
-  }
-
-  static projectAardvarkBookmarklet() {
-    return this.project({
-      href: 'http://localhost:7001/aardvarkBookmarklet/',
-      icon: this.svgPlaceholder('#00e5ff'),
-      image: 'vark.png',
-      imageSide: 'left',
-      imageWidthPct: 28,
-      imageHoverScale: 1.34,
-      imageOverlapPct: 0,
-      imageBottomOffsetPct: 0,
-      imageAlignY: 'center',
-      imageObjectPosition: 'center center',
-      name: 'Aardvark Bookmarklet',
-      desc: 'The legendary element inspector reborn — hover over anything, hit R to remove it, W to go wider, U to undo. One bookmarklet, works on any page, no extension needed.',
+      name: 'Recursive Vibes',
+      tag: 'live',
+      tagClass: 'tag-live',
+      desc: 'The vibe-coding environment at the center of recursi — visual, structured, and extraordinary at building dynamic pages from composable functions. It built itself. Seriously.',
       featured: true,
     });
   }
@@ -102,58 +71,81 @@ class FrontPageContent {
       imageBottomOffsetPct: 0,
       imageAlignY: 'center',
       imageObjectPosition: 'center center',
-      name: 'Aardvark',
-      tag: 'beta preview',
-      tagClass: 'tag-demo',
-      desc: 'A browser extension that turns YouTube into a personal music-and-learning environment — clean playback, parent-friendly playlists, a full 3D piano with synchronized piano rolls, SVG tools, dictation, and more.',
-      featured: false,
+      name: 'Aardvark Extension',
+      tag: 'live',
+      tagClass: 'tag-live',
+      desc: 'A browser extension and YouTube playlist environment — clean playback, curated playlists, a full 3D piano with synchronized piano rolls, SVG tools, dictation, and more. The original Aardvark helped inspire Firebug. This one goes further.',
+      featured: true,
     });
   }
 
-  static projectVibes() {
+  static projectMarkdownNotebook() {
     return this.project({
-      href: '/vibes/',
-      icon: this.svgPlaceholder('#39ff14'),
-      image: 'vibes.png',
+      href: '/MarkdownNotebook/',
+      icon: this.svgPlaceholder('#3b82f6'),
+      image: 'markdownNotebook.png',
       imageSide: 'left',
       imageWidthPct: 28,
       imageHoverScale: 1.22,
       imageAlignY: 'center',
       imageObjectPosition: 'center center',
-      name: 'Vibes',
-      desc: 'The structured side of Recursi — visual, project-focused, and excellent at building dynamic pages from composable functions that can be revised cleanly instead of rewritten as one giant blob.',
+      name: 'Markdown Notebook',
+      tag: 'live',
+      tagClass: 'tag-live',
+      desc: 'Paste rich text from AI or the web, clean it to Markdown, edit either view, save one HTML file you actually own. Fills in the gap that every chatbot interface leaves wide open.',
       featured: false,
     });
   }
 
-  static projectYolo() {
+  static projectScratchy() {
     return this.project({
-      href: '/yolo/',
-      icon: this.svgPlaceholder('#ff6a00'),
-      image: 'yolo.png',
+      href: '/Scratchy/',
+      icon: this.svgPlaceholder('#ff8c1a'),
+      image: 'scratchy.svg',
       imageSide: 'right',
       imageWidthPct: 28,
-      imageHoverScale: 1.3,
+      imageHoverScale: 1.22,
+      imageAlignY: 'center',
+      imageObjectPosition: 'center center',
+      name: 'Scratchy',
+      tag: 'live',
+      tagClass: 'tag-live',
+      desc: 'A playful local AI coding environment for Scratch — built by a dog, naturally. Drop in a .sb3, describe what you want, and Scratchy applies surgical patches instead of starting over. No accounts, no keys, no cloud.',
+      featured: false,
+    });
+  }
+
+  static projectAardvarkBookmarklet() {
+    return this.project({
+      href: '/aardvarkBookmarklet/',
+      icon: this.svgPlaceholder('#00e5ff'),
+      image: 'vark.png',
+      imageSide: 'left',
+      imageWidthPct: 28,
+      imageHoverScale: 1.34,
       imageOverlapPct: 0,
       imageBottomOffsetPct: 0,
       imageAlignY: 'center',
       imageObjectPosition: 'center center',
-      name: 'YOLO',
-      desc: 'The unrestricted side — full filesystem access, live code execution, self-modification, and deep local control. Not the opposite of Vibes so much as its wilder counterpart in the same evolving system.',
+      name: 'Aardvark Bookmarklet',
+      tag: 'live',
+      tagClass: 'tag-live',
+      desc: 'The legendary element inspector reborn — hover anything, hit R to remove it, W to widen, U to undo. One bookmarklet, any page, no extension required.',
       featured: false,
     });
   }
 
   static projects() {
     return [
+      this.projectVibes(),
+      this.projectAardvark(),
       this.projectMarkdownNotebook(),
       this.projectScratchy(),
       this.projectAardvarkBookmarklet(),
-      this.projectAardvark(),
-      this.projectVibes(),
-      this.projectYolo(),
     ];
   }
+
+  // ─── Merch ────────────────────────────────────────────────────────────────
 
   static merchTshirt() {
     return {
@@ -173,7 +165,7 @@ class FrontPageContent {
       full: 'keychain.png',
       name: 'Keychain',
       price: '$12.99',
-      desc: 'Clip the recursi logo to your keys so you can think about recursion every time you lock your front door.',
+      desc: 'An AI designed this keychain. Then it revised the keychain. Then it revised the revision. We eventually had to stop it. You\'re holding the final commit.',
     };
   }
 
@@ -206,7 +198,7 @@ class FrontPageContent {
       full: 'signOnTable.jpg',
       name: 'Desktop Sign',
       price: '$89.99',
-      desc: 'A tasteful desktop-sized neon sign for your workbench, streaming setup, or the altar where you pray to the demo gods.',
+      desc: 'A tasteful desktop neon sign for your workbench, streaming setup, or wherever you make offerings to the demo gods.',
     };
   }
 
@@ -232,6 +224,32 @@ class FrontPageContent {
     ];
   }
 
+  // ─── Lightbox sold-out text ────────────────────────────────────────────────
+
+  static soldOutText() {
+    return 'Physically nonexistent · AI-verified unavailable';
+  }
+
+  // ─── Merch disclaimer ─────────────────────────────────────────────────────
+
+  static merchDisclaimerText() {
+    return '[ These items were designed by an AI and do not exist. We think that\'s sort of the point. ]';
+  }
+
+  // ─── Footer ───────────────────────────────────────────────────────────────
+
+  static footerCopyright() {
+    return '&copy; 2026 Rob Brown &amp; Scratchy the Cyber Dog. All recursions reserved.';
+  }
+
+  // ─── Scratchy tagline (used in Scratchy card / elsewhere) ─────────────────
+
+  static scratchyTagline() {
+    return 'A playful local environment for Scratch — built by a dog.';
+  }
+
+  // ─── Helper ───────────────────────────────────────────────────────────────
+
   static project(data) {
     const comingSoon = !!data.comingSoon;
     return {
@@ -251,6 +269,4 @@ class FrontPageContent {
       ...data,
     };
   }
-
 }
-
