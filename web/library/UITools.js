@@ -156,7 +156,6 @@ class UITools {
     }
     UITools._getState().wheelLockedWidget = widget;
 
-    // This null check was missing, causing a hard crash when clicking ANY slider
     if (widget) {
       widget._dockedEl?.classList.add('uw-wheel-locked');
       widget._floatEl?.classList.add('uw-wheel-locked');
@@ -164,106 +163,104 @@ class UITools {
   }
 
   constructor(rawOpts = {}) {
-      this._id = 'uw' + Math.random().toString(36).slice(2, 9);
-      this._mode = rawOpts._uiMode || 'dialog';
+    this._id = 'uw' + Math.random().toString(36).slice(2, 9);
+    this._mode = rawOpts._uiMode || 'dialog';
 
-      const defaults = {
-        title: this._mode === 'widget' ? 'Widget' : 'Dialog',
-        color: [100, 180, 255],
-        position: null,
-        stateId: null,
-        parent: null,
-        midiCC: null,
-        compact: false,
-        onClose: null,
-        onMove: null,
-        onResize: null,
-        onGeometryChange: null,
-        content: null,
-        contentElement: null,
-        contentHTML: null,
-        customHeaderControls: null,
-        buttons: [],
-        width: '520px',
-        height: 'auto',
-        minWidth: 160,
-        minHeight: 80,
-        allowMaximize: true,
-        allowMinimize: true,
-        allowTransparency: false,
-        noPadding: false,
-        titleBarAtBottom: false,
-        transparent: false,
-        size: null,
-        type: 'toggle',
-        label: 'Control',
-        value: null,
-        min: 0,
-        max: 1,
-        step: 0.01,
-        selectOptions: [],
-        placeholder: '',
-        onChange: null,
-        env: null,
-        appendTo: null,
-      };
+    const defaults = {
+      title: this._mode === 'widget' ? 'Widget' : 'Dialog',
+      color: [100, 180, 255],
+      position: null,
+      stateId: null,
+      parent: null,
+      midiCC: null,
+      compact: false,
+      onClose: null,
+      onMove: null,
+      onResize: null,
+      onGeometryChange: null,
+      content: null,
+      contentElement: null,
+      contentHTML: null,
+      customHeaderControls: null,
+      buttons: [],
+      width: '520px',
+      height: 'auto',
+      minWidth: 160,
+      minHeight: 80,
+      allowMaximize: true,
+      allowMinimize: true,
+      allowTransparency: false,
+      noPadding: false,
+      titleBarAtBottom: false,
+      transparent: false,
+      size: null,
+      type: 'toggle',
+      label: 'Control',
+      value: null,
+      min: 0,
+      max: 1,
+      step: 0.01,
+      selectOptions: [],
+      placeholder: '',
+      onChange: null,
+      env: null,
+      appendTo: null,
+    };
 
-      this.options = { ...defaults, ...rawOpts };
+    this.options = { ...defaults, ...rawOpts };
 
-      this.env = this.options.env || null;
-      this.container =
-        this.env?.container || this.options.appendTo || document.body;
+    this.env = this.options.env || null;
+    this.container =
+      this.env?.container || this.options.appendTo || document.body;
 
-      // Safe size parsing that prevents 'autopx' corruptions
-      if (Array.isArray(this.options.size)) {
-        const [w, h] = this.options.size;
-        if (w != null) this.options.width = typeof w === 'number' ? `${w}px` : String(w);
-        if (h != null) this.options.height = typeof h === 'number' ? `${h}px` : String(h);
-      }
-
-      // Map contentElement and HTML string inputs correctly to the content holder
-      if (this.options.contentElement)
-        this.options.content = this.options.contentElement;
-      if (this.options.contentHTML)
-        this.options.content = UITools._el('div', {
-          innerHTML: this.options.contentHTML,
-        });
-
-      this.callback = this.options.onGeometryChange;
-
-      this._maximized = false;
-      this._minimized = false;
-      this._floating = false;
-      this._midiArmed = false;
-      this._value = this.options.value ?? this._defaultVal();
-      this._children = [];
-      this._connTimer = null;
-      this._dragSt = null;
-      this._resizeSt = null;
-      this._preMaxSt = null;
-      this._preMinH = null;
-      this._restored = false;
-      this._floatPos = { x: 300, y: 200 };
-      this._isSnapped = false;
-
-      this.element = null;
-      this.header = null;
-      this.contentElement = null;
-      this.footer = null;
-      this._sizers = [];
-      this._dockedCtr = null;
-      this._dockedEl = null;
-      this._placeholderEl = null;
-      this._floatEl = null;
-
-      UITools._getState().all.push(this);
-      if (this.options.parent instanceof UITools)
-        this.options.parent._children.push(this);
-
-      UITools._applyStyles();
-      UITools._initGlobalListeners();
-      this._build();
+    if (Array.isArray(this.options.size)) {
+      const [w, h] = this.options.size;
+      if (w != null) this.options.width = typeof w === 'number' ? `${w}px` : String(w);
+      if (h != null) this.options.height = typeof h === 'number' ? `${h}px` : String(h);
     }
+
+    if (this.options.contentElement)
+      this.options.content = this.options.contentElement;
+    if (this.options.contentHTML)
+      this.options.content = UITools._el('div', {
+        innerHTML: this.options.contentHTML,
+      });
+
+    this.callback = this.options.onGeometryChange;
+
+    this._maximized = false;
+    this._minimized = false;
+    this._floating = false;
+    this._midiArmed = false;
+    this._value = this.options.value ?? this._defaultVal();
+    this._children = [];
+    this._connTimer = null;
+    this._dragSt = null;
+    this._resizeSt = null;
+    this._preMaxSt = null;
+    this._preMinH = null;
+    this._restored = false;
+    this._floatPos = { x: 300, y: 200 };
+    this._isSnapped = false;
+
+    this.element = null;
+    this.header = null;
+    this.contentElement = null;
+    this.footer = null;
+    this._sizers = [];
+    this._dockedCtr = null;
+    this._dockedEl = null;
+    this._placeholderEl = null;
+    this._floatEl = null;
+
+    UITools._getState().all.push(this);
+    if (this.options.parent instanceof UITools)
+      this.options.parent._children.push(this);
+
+    UITools._applyStyles();
+    UITools._initGlobalListeners();
+    this._build();
+  }
 
   set content(v) {
     this.setContent(v);
@@ -278,123 +275,143 @@ class UITools {
     else this._buildWidgetDocked();
   }
 
-  _buildDialog() {
-      const o = this.options;
-      const compact = o.compact;
-
-      const btnNodes = [];
-      if (o.allowTransparency)
-        btnNodes.push(this._utilBtn('◑', 'Transparency', () => this.toggleTransparency()));
-      if (o.allowMinimize)
-        btnNodes.push(this._utilBtn('▁', 'Minimize', () => this.toggleMinimize()));
-      if (o.allowMaximize)
-        btnNodes.push(this._utilBtn('⊙', 'Maximize', () => this.toggleMaximize()));
-      btnNodes.push(this._closeBtn());
-
-      const ctrls = UITools._el('div', { className: 'uw-controls' }, btnNodes);
-
-      const headerChildren = [];
-      if (!compact)
-        headerChildren.push(UITools._el('div', { className: 'uw-swipe-hint' }));
-      headerChildren.push(
-        UITools._el('span', { className: 'uw-title' }, o.title)
-      );
-
-      if (o.customHeaderControls) {
-        headerChildren.push(o.customHeaderControls);
-      }
-
-      headerChildren.push(ctrls);
-
-      this.header = UITools._el(
-        'div',
-        { className: `uw-header${compact ? ' uw-header-compact' : ''}` },
-        headerChildren
-      );
-
-      this.contentElement = UITools._el('div', { className: 'uw-content' });
-      if (o.noPadding) this.contentElement.style.padding = '0';
-      
-      if (o.content instanceof Node) this.contentElement.appendChild(o.content);
-      else if (typeof o.content === 'string')
-        this.contentElement.innerHTML = o.content;
-
-      this._sizers = this._makeCorners();
-
-      this.element = UITools._el(
-        'div',
-        { className: 'uw-dialog' },
-        this.header,
-        this.contentElement,
-        ...this._sizers
-      );
-
-      this.element.addEventListener('mousedown', () => this.bringToFront(), {
-        capture: true,
-        passive: true,
-      });
-      this.element.addEventListener('touchstart', () => this.bringToFront(), {
-        capture: true,
-        passive: true,
-      });
-
-      if (o.transparent) this.element.classList.add('uw-transparent');
-      if (o.titleBarAtBottom) this.element.classList.add('uw-title-bottom');
-      if (compact) this.element.classList.add('uw-dialog-compact');
-
-      if (o.buttons?.length) this._buildFooter();
-
-      this._setZ();
-      this._restoreState();
-
-      const isHiddenMode = UITools.creationVisibilityMode === 'hidden';
-      this.element.style.opacity = isHiddenMode ? '0.01' : '0';
-      this.element.style.transform = isHiddenMode ? 'none' : 'scale(0.92)';
-
-      if (!this._restored) {
-        this.element.style.width = o.width;
-        this.element.style.height = o.height;
-        if (o.position) {
-          this.element.style.left = `${o.position[0]}px`;
-          this.element.style.top = `${o.position[1]}px`;
-        } else {
-          this._smartDialogPos();
-        }
-      }
-
-      this._listenDragDialog();
-      this._listenResizeDialog();
-      UITools._getState().activeCount++;
-
-      this.container.appendChild(this.element);
-
-      if (
-        this.env ||
-        this.container !== document.body ||
-        (this.container &&
-          this.container.className &&
-          this.container.className.includes('vibes'))
-      ) {
-        this.element.style.position = 'absolute';
-      }
-
-      this._setupLifecycleObserver();
-      this._softClamp();
-      if (this.callback) this.triggerCallback();
-
-      if (!isHiddenMode) {
-        void this.element.offsetHeight;
-        this.element.style.transition = 'opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
-        this.element.style.opacity = '1';
-        this.element.style.transform = 'none';
-
-        setTimeout(() => {
-          if (this.element) {
-             this.element.style.transition = '';
-          }
-        }, 250);
+  _getEffectiveSafeArea() {
+    const s = { ...UITools._getState().safe };
+    let lPanel = null;
+    let rPanel = null;
+    if (typeof SidePanel !== 'undefined' && typeof SidePanel.getInstances === 'function') {
+      const instances = SidePanel.getInstances();
+      if (instances) {
+        lPanel = instances.left;
+        rPanel = instances.right;
       }
     }
+    if (lPanel && lPanel.element && lPanel.isOpen && this.element && this.element.contains(lPanel.element)) {
+      s.left = 0;
+    }
+    if (rPanel && rPanel.element && rPanel.isOpen && this.element && this.element.contains(rPanel.element)) {
+      s.right = 0;
+    }
+    return s;
+  }
+
+  _buildDialog() {
+    const o = this.options;
+    const compact = o.compact;
+
+    const btnNodes = [];
+    if (o.allowTransparency)
+      btnNodes.push(this._utilBtn('◑', 'Transparency', () => this.toggleTransparency()));
+    if (o.allowMinimize)
+      btnNodes.push(this._utilBtn('▁', 'Minimize', () => this.toggleMinimize()));
+    if (o.allowMaximize)
+      btnNodes.push(this._utilBtn('⊙', 'Maximize', () => this.toggleMaximize()));
+    btnNodes.push(this._closeBtn());
+
+    const ctrls = UITools._el('div', { className: 'uw-controls' }, btnNodes);
+
+    const headerChildren = [];
+    if (!compact)
+      headerChildren.push(UITools._el('div', { className: 'uw-swipe-hint' }));
+    headerChildren.push(
+      UITools._el('span', { className: 'uw-title' }, o.title)
+    );
+
+    if (o.customHeaderControls) {
+      headerChildren.push(o.customHeaderControls);
+    }
+
+    headerChildren.push(ctrls);
+
+    this.header = UITools._el(
+      'div',
+      { className: `uw-header${compact ? ' uw-header-compact' : ''}` },
+      headerChildren
+    );
+
+    this.contentElement = UITools._el('div', { className: 'uw-content' });
+    if (o.noPadding) this.contentElement.style.padding = '0';
+    
+    if (o.content instanceof Node) this.contentElement.appendChild(o.content);
+    else if (typeof o.content === 'string')
+      this.contentElement.innerHTML = o.content;
+
+    this._sizers = this._makeCorners();
+
+    this.element = UITools._el(
+      'div',
+      { className: 'uw-dialog' },
+      this.header,
+      this.contentElement,
+      ...this._sizers
+    );
+
+    this.element.addEventListener('mousedown', () => this.bringToFront(), {
+      capture: true,
+      passive: true,
+    });
+    this.element.addEventListener('touchstart', () => this.bringToFront(), {
+      capture: true,
+      passive: true,
+    });
+
+    if (o.transparent) this.element.classList.add('uw-transparent');
+    if (o.titleBarAtBottom) this.element.classList.add('uw-title-bottom');
+    if (compact) this.element.classList.add('uw-dialog-compact');
+
+    if (o.buttons?.length) this._buildFooter();
+
+    this._setZ();
+    this._restoreState();
+
+    const isHiddenMode = UITools.creationVisibilityMode === 'hidden';
+    this.element.style.opacity = isHiddenMode ? '0.01' : '0';
+    this.element.style.transform = isHiddenMode ? 'none' : 'scale(0.92)';
+
+    if (!this._restored) {
+      this.element.style.width = o.width;
+      this.element.style.height = o.height;
+      if (o.position) {
+        this.element.style.left = `${o.position[0]}px`;
+        this.element.style.top = `${o.position[1]}px`;
+      } else {
+        this._smartDialogPos();
+      }
+    }
+
+    this._listenDragDialog();
+    this._listenResizeDialog();
+    UITools._getState().activeCount++;
+
+    this.container.appendChild(this.element);
+
+    if (
+      this.env ||
+      this.container !== document.body ||
+      (this.container &&
+        this.container.className &&
+        this.container.className.includes('vibes'))
+    ) {
+      this.element.style.position = 'absolute';
+    }
+
+    this._setupLifecycleObserver();
+    this._softClamp();
+    if (this.callback) this.triggerCallback();
+
+    if (!isHiddenMode) {
+      void this.element.offsetHeight;
+      this.element.style.transition = 'opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+      this.element.style.opacity = '1';
+      this.element.style.transform = 'none';
+
+      setTimeout(() => {
+        if (this.element) {
+          this.element.style.transition = '';
+        }
+      }, 250);
+    }
+  }
 
   _buildWidgetDocked() {
     const o = this.options;
@@ -473,6 +490,7 @@ class UITools {
         title: 'Arm MIDI',
         onclick: () => this._toggleMidi(),
       });
+      this._midiDotEl.classList.toggle('uw-midi-armed', this._midiArmed);
       const hdr = UITools._el(
         'div',
         { className: 'uw-w-hdr' },
@@ -714,7 +732,7 @@ class UITools {
     if (!this._maximized) this._preMaxSt = this.element.getAttribute('style');
     this._maximized = true;
     this.element.classList.add('uw-maximized');
-    const s = UITools._getState().safe;
+    const s = this._getEffectiveSafeArea();
 
     const parent = this.container;
     const isBody = parent === document.body && !this.env;
@@ -776,54 +794,54 @@ class UITools {
   }
 
   toggleMinimize() {
-      if (this._minimized) {
-        this.restore();
-        return;
-      }
-      if (!this._preMaxSt) this._preMaxSt = this.element.getAttribute('style');
-      this._preMinH = this.element.style.height || '';
-      this._preMinPos = {
-        left: this.element.style.left,
-        top: this.element.style.top,
-        width: this.element.style.width,
-      };
-
-      this._minimized = true;
-      this.element.classList.add('uw-minimized');
-
-      const h = this.header.getBoundingClientRect().height;
-      this.element.style.overflow = 'hidden';
-
-      this.element.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-      this.element.style.height = `${h}px`;
-      this.element.style.width = '220px';
-
-      const minis = UITools._getState().all.filter(
-        (w) => w._minimized && w._mode === 'dialog'
-      );
-      const idx = minis.length - 1;
-      
-      const parent = this.container;
-      const isBody = (parent === document.body && !this.env);
-      const parentHeight = isBody ? window.innerHeight : parent.clientHeight;
-      
-      const targetX = 20;
-      const targetY = parentHeight - 5 - (idx + 1) * (h + 4);
-
-      this.element.style.left = `${targetX}px`;
-      this.element.style.top = `${targetY}px`;
-
-      const animStep = () => {
-        this._children.forEach((c) => c._kickConnector?.());
-        if (this._minimized && this.element.style.transition)
-          requestAnimationFrame(animStep);
-      };
-      requestAnimationFrame(animStep);
-
-      setTimeout(() => {
-        this.element.style.transition = '';
-      }, 450);
+    if (this._minimized) {
+      this.restore();
+      return;
     }
+    if (!this._preMaxSt) this._preMaxSt = this.element.getAttribute('style');
+    this._preMinH = this.element.style.height || '';
+    this._preMinPos = {
+      left: this.element.style.left,
+      top: this.element.style.top,
+      width: this.element.style.width,
+    };
+
+    this._minimized = true;
+    this.element.classList.add('uw-minimized');
+
+    const h = this.header.getBoundingClientRect().height;
+    this.element.style.overflow = 'hidden';
+
+    this.element.style.transition = 'all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+    this.element.style.height = `${h}px`;
+    this.element.style.width = '220px';
+
+    const minis = UITools._getState().all.filter(
+      (w) => w._minimized && w._mode === 'dialog'
+    );
+    const idx = minis.length - 1;
+    
+    const parent = this.container;
+    const isBody = (parent === document.body && !this.env);
+    const parentHeight = isBody ? window.innerHeight : parent.clientHeight;
+    
+    const targetX = 20;
+    const targetY = parentHeight - 5 - (idx + 1) * (h + 4);
+
+    this.element.style.left = `${targetX}px`;
+    this.element.style.top = `${targetY}px`;
+
+    const animStep = () => {
+      this._children.forEach((c) => c._kickConnector?.());
+      if (this._minimized && this.element.style.transition)
+        requestAnimationFrame(animStep);
+    };
+    requestAnimationFrame(animStep);
+
+    setTimeout(() => {
+      this.element.style.transition = '';
+    }, 450);
+  }
 
   toggleTransparency() {
     this.element.classList.toggle('uw-transparent');
@@ -1021,11 +1039,9 @@ class UITools {
         ? String(Math.round(v))
         : v.toFixed(Math.min((String(step).split('.')[1] || '').length, 3));
 
-    // Cache width to avoid layout thrashing
     let cachedW = 100;
 
     const sync = () => {
-      // Use clientWidth instead of getBoundingClientRect() to avoid synchronous reflow
       if (!wrap._isDragging) {
         const cw = wrap.clientWidth;
         if (cw > 0) cachedW = cw;
@@ -1116,7 +1132,7 @@ class UITools {
 
       wrap.classList.add('uw-active');
       setDragState(true);
-      dragRect = wrap.getBoundingClientRect(); // Cache rect once on mousedown
+      dragRect = wrap.getBoundingClientRect();
       cachedW = dragRect.width;
 
       const clientX = e.clientX ?? e.touches?.[0]?.clientX;
@@ -1142,7 +1158,7 @@ class UITools {
         window.removeEventListener('touchend', mu);
       };
 
-      const preventDefault = (ev) => ev.preventDefault(); // Stop touch scrolling
+      const preventDefault = (ev) => ev.preventDefault();
       window.addEventListener('mousemove', mm);
       window.addEventListener('mouseup', mu);
       window.addEventListener('touchmove', mm, { passive: false });
@@ -1237,10 +1253,10 @@ class UITools {
     wrap._sync = () => {
       btns.forEach((b, i) => {
         const val = this.options.buttons[i]?.value;
-        const isSel = val !== undefined && String(this._value) === String(val);
-        b.classList.toggle('uw-active', isSel);
+        const isSelf = val !== undefined && String(this._value) === String(val);
+        b.classList.toggle('uw-active', isSelf);
         if (b._baseColor) {
-          b.style.boxShadow = isSel
+          b.style.boxShadow = isSelf
             ? `0 0 10px ${b._baseColor
                 .replace('rgb', 'rgba')
                 .replace(')', ', 0.6)')}`
@@ -1308,7 +1324,6 @@ class UITools {
 
   _listenDragDialog() {
     const onDown = (e) => {
-      // FIX: Remove .uw-custom-header from the ignore block so we can drag it, but STILL ignore actual inputs/selects inside it
       if (
         !e.target.closest('.uw-header') ||
         e.target.closest('button, .uw-controls, input, select')
@@ -1355,7 +1370,7 @@ class UITools {
         window.removeEventListener('mousemove', mm);
         window.removeEventListener('mouseup', mu);
         window.removeEventListener('touchmove', mm);
-        window.removeEventListener('touchmove', mu);
+        window.removeEventListener('touchend', mu);
       };
       window.addEventListener('mousemove', mm);
       window.addEventListener('mouseup', mu);
@@ -1519,11 +1534,8 @@ class UITools {
       window.addEventListener('mousemove', mm);
       window.addEventListener('mouseup', mu);
       window.addEventListener('touchmove', mm, { passive: false });
-      window.addEventListener('touchmove', preventDefault, { passive: false });
       window.addEventListener('touchend', mu);
     };
-
-    const preventDefault = (ev) => ev.preventDefault();
     bar.addEventListener('mousedown', onDown);
     bar.addEventListener('touchstart', onDown, { passive: false });
   }
@@ -1569,9 +1581,6 @@ class UITools {
         window.removeEventListener('mousemove', mm);
         window.removeEventListener('mouseup', mu);
         window.removeEventListener('touchmove', mm);
-        window.removeEventListener('touchmove', preventDefault, {
-          passive: false,
-        });
         window.removeEventListener('touchend', mu);
       };
 
@@ -1590,7 +1599,7 @@ class UITools {
     const el = targetEl || this._floatEl || this._dockedEl;
     if (!el) return;
     el.classList.remove('uw-flash-fx');
-    void el.offsetWidth; // force reflow
+    void el.offsetWidth;
     el.classList.add('uw-flash-fx');
   }
 
@@ -1598,7 +1607,6 @@ class UITools {
     if (UITools._getState().globalsInit) return;
     UITools._getState().globalsInit = true;
 
-    // Listen for mouse wheel locking on the document level
     window.addEventListener(
       'wheel',
       (e) => {
@@ -1626,7 +1634,6 @@ class UITools {
       { passive: false }
     );
 
-    // Click anywhere else releases the lock
     window.addEventListener('mousedown', (e) => {
       if (
         UITools._getState().wheelLockedWidget &&
@@ -1698,54 +1705,53 @@ class UITools {
   }
 
   _softClamp() {
-      if (this._maximized || this._isSnapped || !this.element) return;
-      const r = this.element.getBoundingClientRect(),
-        vis = 48;
-      const s = UITools._getState().safe;
-      
-      const parent = this.container;
-      const isBody = (parent === document.body && !this.env);
-      const pRect = isBody ? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth, height: window.innerHeight } : parent.getBoundingClientRect();
-      
-      if (!isBody && (pRect.width === 0 || pRect.height === 0)) {
-        return;
-      }
+    if (this._maximized || this._isSnapped || !this.element) return;
+    const r = this.element.getBoundingClientRect(),
+      vis = 48;
+    const s = this._getEffectiveSafeArea();
+    
+    const parent = this.container;
+    const isBody = (parent === document.body && !this.env);
+    const pRect = isBody ? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth, height: window.innerHeight } : parent.getBoundingClientRect();
+    
+    if (!isBody && (pRect.width === 0 || pRect.height === 0)) {
+      return;
+    }
 
-      let x = parseFloat(this.element.style.left) || 0,
-        y = parseFloat(this.element.style.top) || 0,
-        changed = false;
-        
-      if (r.height > pRect.height) {
-         this.element.style.maxHeight = `${pRect.height - s.top - s.bottom - 10}px`;
-         changed = true;
-      }
+    let x = parseFloat(this.element.style.left) || 0,
+      y = parseFloat(this.element.style.top) || 0,
+      changed = false;
+      
+    if (r.height > pRect.height) {
+       this.element.style.maxHeight = `${pRect.height - s.top - s.bottom - 10}px`;
+       changed = true;
+    }
 
-      if (r.right < pRect.left + s.left + vis) {
-        x = s.left + vis - r.width;
-        changed = true;
-      }
-      if (r.left > pRect.right - s.right - vis) {
-        x = pRect.width - s.right - vis;
-        changed = true;
-      }
-      if (r.bottom < pRect.top + s.top + vis) {
-        y = s.top + vis - r.height;
-        changed = true;
-      }
-      if (r.top > pRect.bottom - s.bottom - vis) {
-        y = pRect.height - s.bottom - vis;
-        changed = true;
-      }
-      if (changed) {
-        this.element.style.left = `${x}px`;
-        this.element.style.top = `${y}px`;
-        if (this.element.style.transform === 'scale(0.95)') {
-            // Leave transform untouched so the initial animation isn't busted
-        } else {
-            this.element.style.transform = 'none';
-        }
+    if (r.right < pRect.left + s.left + vis) {
+      x = s.left + vis - r.width;
+      changed = true;
+    }
+    if (r.left > pRect.right - s.right - vis) {
+      x = pRect.width - s.right - vis;
+      changed = true;
+    }
+    if (r.bottom < pRect.top + s.top + vis) {
+      y = s.top + vis - r.height;
+      changed = true;
+    }
+    if (r.top > pRect.bottom - s.bottom - vis) {
+      y = pRect.height - s.bottom - vis;
+    }
+    if (changed) {
+      this.element.style.left = `${x}px`;
+      this.element.style.top = `${y}px`;
+      if (this.element.style.transform === 'scale(0.95)') {
+          // Leave transform untouched
+      } else {
+          this.element.style.transform = 'none';
       }
     }
+  }
 
   _pt(e) {
     if (e.touches?.length)
@@ -1905,290 +1911,287 @@ class UITools {
   }
 
   static _applyStyles() {
-      if (UITools._getState().styled) return;
-      UITools._getState().styled = true;
-      const css = `
-          :root {
-            --uw-bg: rgba(22, 24, 30, 0.98);
-            --uw-border: rgba(255,255,255,0.08);
-            --uw-text: #ced6e0;
-            --uw-title: rgba(255,255,255,0.45);
-            --uw-btn-bg: rgba(255,255,255,0.06);
-            --uw-btn-hover: rgba(255,255,255,0.12);
-            --uw-hdr-bg: rgba(255,255,255,0.015);
-            --uw-ctrl-bg: rgba(0,0,0,0.3);
-            --uw-float-bg: rgba(14, 16, 22, 0.98);
-            --uw-ph-bg: rgba(255,255,255,0.015);
-            --uw-ph-border: rgba(255,255,255,0.08);
-          }
-          .uw-light-mode {
-            --uw-bg: rgba(245, 245, 245, 0.98);
-            --uw-border: rgba(0,0,0,0.15);
-            --uw-text: #222;
-            --uw-title: rgba(0,0,0,0.6);
-            --uw-btn-bg: rgba(0,0,0,0.06);
-            --uw-btn-hover: rgba(0,0,0,0.12);
-            --uw-hdr-bg: rgba(0,0,0,0.05);
-            --uw-ctrl-bg: #fff;
-            --uw-float-bg: rgba(250, 250, 250, 0.98);
-            --uw-ph-bg: rgba(0,0,0,0.03);
-            --uw-ph-border: rgba(0,0,0,0.15);
-          }
-  
-          .uw-dialog {
-            position: fixed; box-sizing: border-box; display: flex; flex-direction: column;
-            background: var(--uw-bg); 
-            border: 1px solid var(--uw-border); border-radius: 12px;
-            box-shadow: 0 14px 28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
-            min-width: 0; min-height: 0;
-            overflow: visible;
-            top: 50%; left: 50%; transform: translate(-50%,-50%);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
-            font-size: 13px; line-height: 1.5; color: var(--uw-text);
-          }
-          .uw-dialog:focus-within { box-shadow: 0 0 0 1px rgba(100,180,255,0.3), 0 14px 28px rgba(0,0,0,0.8); }
-          .uw-dialog.uw-snapped { border-radius: 0; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
-          .uw-dialog.uw-maximized { border-radius:0!important; border:none!important; box-shadow:none!important; }
-          .uw-dialog.uw-maximized .uw-header { cursor:default; }
-          .uw-dialog.uw-maximized .uw-corner,
-          .uw-dialog.uw-minimized .uw-corner { display:none!important; }
-          .uw-dialog.uw-minimized .uw-content { opacity: 0; pointer-events: none; }
-          
-          .uw-dialog.uw-minimized .fp-search-wrapper { display: none !important; }
-          .uw-dialog.uw-minimized .uw-title { display: block !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  
-          .uw-header {
-            display: flex; align-items: center; gap: 4px;
-            padding: 4px 8px; min-height: 28px; flex-shrink: 0;
-            background: var(--uw-hdr-bg); border-bottom: 1px solid var(--uw-border);
-            border-radius: 12px 12px 0 0; cursor: move; user-select: none; touch-action: none;
-          }
-          .uw-header-compact { padding: 2px 6px !important; min-height: 22px !important; }
-          .uw-title {
-            font-size: 11px; font-weight: 600; color: var(--uw-title);
-            flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
-            letter-spacing: 0.02em; text-transform: uppercase;
-          }
-  
-          .uw-controls { display:flex; align-items:center; gap:2px; flex-shrink:0; }
-          .uw-util-btn, .uw-close-btn {
-            background: none; border: none; cursor: pointer; color: var(--uw-title);
-            width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
-            border-radius: 4px; font-size: 10px; padding: 0; transition: all 0.12s; touch-action: manipulation;
-          }
-          .uw-util-btn:hover { background: var(--uw-btn-hover); color: var(--uw-text); }
-          .uw-close-btn:hover { background: #e53935; color: #fff; }
-  
-          .uw-content {
-            padding: 14px; flex-grow: 1; overflow: auto; background: transparent; color: var(--uw-text);
-            -webkit-overflow-scrolling: touch; overscroll-behavior: contain; transition: opacity 0.2s;
-          }
-          
-          /* Form Formatting Inside Dialogs */
-          .uw-content label {
-            display: block;
-            margin-bottom: 4px;
-            font-weight: 500;
-            color: rgba(255,255,255,0.7);
-            font-size: 12px;
-          }
-          .uw-content input[type="text"], 
-          .uw-content input[type="number"], 
-          .uw-content select {
-            width: 100%;
-            padding: 7px 10px;
-            margin-bottom: 12px;
-            background: rgba(0,0,0,0.3);
-            border: 1px solid rgba(255,255,255,0.15);
-            color: var(--uw-text);
-            border-radius: 6px;
-            box-sizing: border-box;
-            font-family: inherit;
-            transition: border-color 0.2s, box-shadow 0.2s;
-          }
-          .uw-content input[type="text"]:focus, 
-          .uw-content input[type="number"]:focus, 
-          .uw-content select:focus {
-            border-color: rgba(100, 180, 255, 0.6);
-            outline: none;
-            box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.15);
-          }
-          .uw-content .form-row {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            margin-bottom: 12px;
-            gap: 12px;
-          }
-          .uw-content .form-row label {
-            margin-bottom: 0;
-            flex-shrink: 0;
-          }
-
-          .uw-footer {
-            padding: 8px 14px; background: rgba(0,0,0,0.15); border-top: 1px solid var(--uw-border);
-            display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; border-radius: 0 0 12px 12px;
-          }
-          .uw-btn {
-            padding: 6px 14px; background: var(--uw-btn-bg); color: var(--uw-text); border: 1px solid var(--uw-border);
-            border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s;
-          }
-          .uw-btn:hover { background: var(--uw-btn-hover); color: var(--uw-text); transform: translateY(-1px); }
-          .uw-btn.primary { background: #2962ff; border-color: #2979ff; color: #fff; }
-          .uw-btn.primary:hover { background: #448aff; box-shadow: 0 2px 8px rgba(41,98,255,0.4); }
-  
-          .uw-transparent { background:transparent!important; border:none!important; box-shadow:none!important; backdrop-filter:none!important; }
-          .uw-transparent .uw-header { background: rgba(0,0,0,0.3)!important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 4px; }
-          .uw-transparent .uw-content { background:transparent!important; padding: 0; }
-          .uw-transparent .uw-footer { display:none!important; }
-          .uw-dialog:hover .uw-corner { opacity: 1 !important; }
-  
-          .uw-w-wrap { margin: 2px 0; }
-          .uw-w-ph {
-            display: flex; align-items: center; gap: 6px; padding: 4px 8px; min-height: 26px;
-            border-radius: 6px; background: var(--uw-ph-bg); border: 1px dashed var(--uw-ph-border);
-          }
-          .uw-w-ph-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink:0; animation: uw-pulse 2s ease-in-out infinite; }
-          .uw-w-ph-lbl { font-size: 10px; color: var(--uw-title); font-style: italic; flex-grow:1; }
-          .uw-w-ph-btn { background:none; border:none; color:var(--uw-title); cursor:pointer; font-size:14px; padding:0 4px; border-radius:4px; transition:all 0.15s; line-height:1; }
-          .uw-w-ph-btn:hover { color:var(--uw-text); background:var(--uw-btn-hover); }
-  
-          .uw-w-docked { border-radius: 6px; overflow: hidden; background: var(--uw-hdr-bg); border: 1px solid var(--uw-border); transition: box-shadow 0.2s; }
-          .uw-w-hdr {
-            display: flex; align-items: center; gap: 4px; padding: 3px 8px; min-height: 22px;
-            background: var(--uw-btn-bg); border-bottom: 1px solid var(--uw-border);
-          }
-          .uw-w-lbl { font-size: 9.5px; font-weight: 700; color: var(--uw-title); text-transform: uppercase; letter-spacing: 0.08em; flex-grow:1; pointer-events: none; }
-          .uw-w-pop { background:none; border:none; color:var(--uw-title); cursor:pointer; font-size:12px; padding:2px 5px; border-radius:3px; transition:all 0.15s; line-height:1; }
-          .uw-w-pop:hover { color:var(--uw-text); background:var(--uw-btn-hover); }
-          .uw-w-ctrl { padding: 6px 8px; }
-  
-          .uw-w-inline { display: flex; align-items: center; border-radius: 16px; background: var(--uw-btn-bg); border: 1px solid var(--uw-border); overflow: hidden; }
-          .uw-w-inline .uw-inline-hdr { display: flex; align-items: center; padding-left: 8px; flex-shrink: 1; min-width: 40px; }
-          .uw-w-inline .uw-w-ctrl { flex-grow: 1; padding: 2px 8px 2px 0; display: flex; justify-content: flex-end; }
-          .uw-inline-grip { color: var(--uw-title); cursor: grab; padding: 0 4px; font-size: 14px; user-select: none; }
-          .uw-inline-lbl { font-size: 10px; font-weight: 600; color: var(--uw-title); text-transform: uppercase; letter-spacing: 0.05em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 6px; pointer-events: none; }
-  
-          .uw-float {
-            position: fixed; min-width: 140px;
-            background: var(--uw-float-bg); 
-            border: 1px solid var(--uw-border); border-radius: 10px;
-            box-shadow: 0 24px 64px rgba(0,0,0,0.85), 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
-            opacity: 0; transform: scale(0.85) translateY(-8px);
-            transition: opacity 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
-            overflow: hidden;
-          }
-          .uw-float.uw-float-vis { opacity: 1; transform: scale(1) translateY(0); }
-  
-          .uw-float-inline { 
-            display: flex; align-items: center; border-radius: 20px; 
-            background: var(--uw-float-bg); min-width: 160px; height: 40px; padding: 0;
-          }
-          .uw-float-inline .uw-inline-hdr { display: flex; align-items: center; padding-left: 10px; flex-shrink: 1; min-width: 60px; border: none; cursor: grab; height: 100%; }
-          .uw-float-inline .uw-float-ctrl { flex-grow: 1; padding: 0 12px 0 0; display: flex; justify-content: flex-end; }
-          .uw-float-inline .uw-float-dock { background: none; border: none; color: var(--uw-title); cursor: pointer; font-size: 14px; margin-left: auto; padding: 4px; transition: color 0.15s; }
-          .uw-float-inline .uw-float-dock:hover { color: var(--uw-text); }
-  
-          .uw-float-bar {
-            display: flex; align-items: center; gap: 6px; padding: 4px 8px;
-            background: var(--uw-hdr-bg); border-bottom: 1px solid var(--uw-border);
-            cursor: grab; user-select: none; min-height: 24px;
-          }
-          .uw-float-bar:active, .uw-inline-hdr:active { cursor: grabbing; }
-          .uw-float-lbl { flex-grow:1; font-size: 10px; font-weight: 700; color: var(--uw-title); text-transform: uppercase; letter-spacing: 0.08em; pointer-events: none; }
-          .uw-float-dock { background:none; border:none; color:var(--uw-title); cursor:pointer; font-size:14px; padding:1px 4px; border-radius:4px; transition:all 0.15s; line-height:1; }
-          .uw-float-dock:hover { color:var(--uw-text); background:var(--uw-btn-hover); }
-          .uw-float-ctrl { padding: 8px; }
-  
-          .uw-fres { position:absolute; top:8px; bottom:8px; width:6px; cursor:ew-resize; opacity:0; transition:opacity 0.2s; border-radius:3px; background:rgba(255,255,255,0.15); }
-          .uw-float:hover .uw-fres { opacity: 1; }
-          .uw-fres-l { left: -2px; }
-          .uw-fres-r { right: -2px; }
-  
-          .uw-flash-fx { animation: uw-flash-anim 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
-          @keyframes uw-flash-anim { 0% { box-shadow: 0 0 0 2px rgba(100,255,150,0.8), inset 0 0 20px rgba(100,255,150,0.4); } 100% { box-shadow: 0 0 0 0 rgba(100,255,150,0); inset 0 0 0 rgba(100,255,150,0); } }
-          .uw-wheel-locked { box-shadow: 0 0 0 1px rgba(100, 180, 255, 0.5), 0 0 15px rgba(100, 180, 255, 0.2); border-color: rgba(100, 180, 255, 0.5); }
-  
-          .uw-midi-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
-          .uw-midi-dot:hover { background: rgba(255,180,0,0.6); border-color: rgba(255,180,0,0.9); box-shadow: 0 0 6px rgba(255,180,0,0.5); }
-          .uw-midi-dot.uw-midi-armed { background: #ff3333; border-color: #ff6666; animation: uw-pulse 0.5s ease-in-out infinite; box-shadow: 0 0 8px rgba(255,50,50,0.6); }
-          .uw-light-mode .uw-midi-dot { background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); }
-  
-          .uw-ctrl-inner { display: flex; align-items: center; justify-content: flex-start; min-height: 26px; width: 100%; }
-  
-          .uw-toggle {
-            width: 40px; height: 22px; border-radius: 11px; position: relative; cursor: pointer; flex-shrink:0;
-            background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.05);
-            transition: background 0.25s, box-shadow 0.25s;
-          }
-          .uw-toggle-thumb {
-            position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
-            background: #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.6);
-            transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1); pointer-events:none;
-          }
-          .uw-toggle.uw-on .uw-toggle-thumb { transform: translateX(18px); background: #fff; }
-          .uw-light-mode .uw-toggle { background: rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
-  
-          .uw-sl-wrap { position: relative; width: 100%; height: 32px; display: flex; align-items: center; cursor: ew-resize; padding: 0 8px; box-sizing: border-box; touch-action: none; margin-top: 6px; }
-          .uw-sl-bg { position: absolute; left: 8px; right: 8px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; }
-          .uw-light-mode .uw-sl-bg { background: rgba(0,0,0,0.1); }
-          .uw-sl-fill { position: absolute; left: 8px; height: 4px; border-radius: 2px; pointer-events: none; transition: background-color 0.2s, box-shadow 0.2s, filter 0.2s; background-color: rgba(255,255,255,0.6); }
-          .uw-sl-thumb { position: absolute; width: 8px; height: 14px; border-radius: 4px; background: #fff; transform: translate(-50%, 0); pointer-events: none; transition: transform 0.2s, opacity 0.2s; opacity: 0.5; }
-          .uw-sl-wrap:hover .uw-sl-fill, .uw-sl-wrap.uw-active .uw-sl-fill { background-color: #fff !important; filter: brightness(1.2); }
-          .uw-sl-wrap:hover .uw-sl-thumb, .uw-sl-wrap.uw-active .uw-sl-thumb { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
-          .uw-sl-txt { position: absolute; width: auto; font-size: 11px; font-weight: 800; pointer-events: none; text-shadow: 0 1px 3px #000, 0 0 4px #000, 0 0 6px rgba(0,0,0,0.8); color: #fff; font-family: monospace; letter-spacing: 0.05em; left: 0; top: -16px; z-index: 2; }
-          .uw-w-inline .uw-sl-wrap { margin-top: 0; }
-          .uw-w-inline .uw-sl-txt { top: -12px; position: absolute; width: auto; right: 8px; left: auto; font-size: 10px; }
-  
-          .uw-text-inp, .uw-select {
-            width:100%; background:var(--uw-ctrl-bg); border:1px solid var(--uw-border);
-            border-radius:5px; color:var(--uw-text); padding:6px 10px; font-size:12px;
-            outline:none; transition:all 0.15s; box-sizing:border-box;
-          }
-          .uw-text-inp:focus, .uw-select:focus { border-color:rgba(100,180,255,0.6); box-shadow: 0 0 0 2px rgba(100,180,255,0.15); }
-          .uw-select { cursor: pointer; }
-  
-          .uw-btnset { display:flex; gap:2px; flex-wrap:wrap; width:100%; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); }
-          .uw-light-mode .uw-btnset { background: rgba(0,0,0,0.05); box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
-          .uw-btn-item {
-            flex:1; min-width:32px; padding:4px 8px;
-            background: transparent; border: none;
-            border-radius:4px; color: var(--uw-title);
-            font-size:11px; font-weight: 600; cursor:pointer; transition:all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); white-space:nowrap;
-          }
-          .uw-btn-item:hover { color: var(--uw-text); background: rgba(255,255,255,0.05); }
-          .uw-light-mode .uw-btn-item:hover { background: rgba(0,0,0,0.05); }
-          .uw-btn-item.uw-active { background: rgba(255,255,255,0.15); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
-          .uw-light-mode .uw-btn-item.uw-active { background: #fff; color: #000; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
-  
-          .uw-prompt-inp { width:100%; padding:8px 12px; background:var(--uw-ctrl-bg); color:var(--uw-text); border:1px solid var(--uw-border); border-radius:6px; font-size:14px; outline:none; margin-top:10px; box-sizing:border-box; transition:border-color 0.2s; }
-          .uw-prompt-inp:focus { border-color: #2979ff; box-shadow: 0 0 0 2px rgba(41,121,255,0.2); }
-          .uw-prompt-msg { color: var(--uw-title); font-size: 13px; line-height: 1.4; }
-  
-          @keyframes uw-pulse { 0%,100% { opacity:0.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.4); } }
-          @media (max-width: 768px) {
-            .uw-dialog { max-width:calc(100vw - 16px)!important; max-height:calc(100vh - 24px)!important; }
-            .uw-header { min-height:44px!important; padding:6px 12px!important; cursor:default; }
-            .uw-swipe-hint { display:block; width: 32px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto; }
-            .uw-title { font-size: 13px; }
-            .uw-util-btn, .uw-close-btn { width: 36px!important; height: 36px!important; font-size: 14px!important; background: rgba(255,255,255,0.05); }
-            .uw-corner { display:none!important; }
-            .uw-btn { padding: 12px 20px; font-size: 14px; min-height: 44px; }
-          }
-        `;
-  
-      if (typeof applyCss === 'function') {
-        applyCss(css, 'UIToolsStyles');
-      } else {
-        let style = document.getElementById('UIToolsStyles');
-        if (!style) {
-          style = document.createElement('style');
-          style.id = 'UIToolsStyles';
-          (document.head || document.documentElement).appendChild(style);
+    if (UITools._getState().styled) return;
+    UITools._getState().styled = true;
+    const css = `
+        :root {
+          --uw-bg: rgba(22, 24, 30, 0.98);
+          --uw-border: rgba(255,255,255,0.08);
+          --uw-text: #ced6e0;
+          --uw-title: rgba(255,255,255,0.45);
+          --uw-btn-bg: rgba(255,255,255,0.06);
+          --uw-btn-hover: rgba(255,255,255,0.12);
+          --uw-hdr-bg: rgba(255,255,255,0.015);
+          --uw-ctrl-bg: rgba(0,0,0,0.3);
+          --uw-float-bg: rgba(14, 16, 22, 0.98);
+          --uw-ph-bg: rgba(255,255,255,0.015);
+          --uw-ph-border: rgba(255,255,255,0.08);
         }
-        style.textContent = css;
+        .uw-light-mode {
+          --uw-bg: rgba(245, 245, 245, 0.98);
+          --uw-border: rgba(0,0,0,0.15);
+          --uw-text: #222;
+          --uw-title: rgba(0,0,0,0.6);
+          --uw-btn-bg: rgba(0,0,0,0.06);
+          --uw-btn-hover: rgba(0,0,0,0.12);
+          --uw-hdr-bg: rgba(0,0,0,0.05);
+          --uw-ctrl-bg: #fff;
+          --uw-float-bg: rgba(250, 250, 250, 0.98);
+          --uw-ph-bg: rgba(0,0,0,0.03);
+          --uw-ph-border: rgba(0,0,0,0.15);
+        }
+
+        .uw-dialog {
+          position: fixed; box-sizing: border-box; display: flex; flex-direction: column;
+          background: var(--uw-bg); 
+          border: 1px solid var(--uw-border); border-radius: 12px;
+          box-shadow: 0 14px 28px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.05);
+          min-width: 0; min-height: 0;
+          overflow: visible;
+          top: 50%; left: 50%; transform: translate(-50%,-50%);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+          font-size: 13px; line-height: 1.5; color: var(--uw-text);
+        }
+        .uw-dialog:focus-within { box-shadow: 0 0 0 1px rgba(100,180,255,0.3), 0 14px 28px rgba(0,0,0,0.8); }
+        .uw-dialog.uw-snapped { border-radius: 0; transition: all 0.3s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        .uw-dialog.uw-maximized { border-radius:0!important; border:none!important; box-shadow:none!important; }
+        .uw-dialog.uw-maximized .uw-header { cursor:default; }
+        .uw-dialog.uw-maximized .uw-corner,
+        .uw-dialog.uw-minimized .uw-corner { display:none!important; }
+        .uw-dialog.uw-minimized .uw-content { opacity: 0; pointer-events: none; }
+        
+        .uw-dialog.uw-minimized .fp-search-wrapper { display: none !important; }
+        .uw-dialog.uw-minimized .uw-title { display: block !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+        .uw-header {
+          display: flex; align-items: center; gap: 4px;
+          padding: 4px 8px; min-height: 28px; flex-shrink: 0;
+          background: var(--uw-hdr-bg); border-bottom: 1px solid var(--uw-border);
+          border-radius: 12px 12px 0 0; cursor: move; user-select: none; touch-action: none;
+        }
+        .uw-header-compact { padding: 2px 6px !important; min-height: 22px !important; }
+        .uw-title {
+          font-size: 11px; font-weight: 600; color: var(--uw-title);
+          flex-grow: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; pointer-events: none;
+          letter-spacing: 0.02em; text-transform: uppercase;
+        }
+
+        .uw-controls { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+        .uw-util-btn, .uw-close-btn {
+          background: none; border: none; cursor: pointer; color: var(--uw-title);
+          width: 20px; height: 20px; display: flex; align-items: center; justify-content: center;
+          border-radius: 4px; font-size: 10px; padding: 0; transition: all 0.12s; touch-action: manipulation;
+        }
+        .uw-util-btn:hover { background: var(--uw-btn-hover); color: var(--uw-text); }
+        .uw-close-btn:hover { background: #e53935; color: #fff; }
+
+        .uw-content {
+          padding: 14px; flex-grow: 1; overflow: auto; background: transparent; color: var(--uw-text);
+          -webkit-overflow-scrolling: touch; overscroll-behavior: contain; transition: opacity 0.2s;
+        }
+        
+        .uw-content label {
+          display: block;
+          margin-bottom: 4px;
+          font-weight: 500;
+          color: rgba(255,255,255,0.7);
+          font-size: 12px;
+        }
+        .uw-content input[type="text"], 
+        .uw-content input[type="number"], 
+        .uw-content select {
+          width: 100%;
+          padding: 7px 10px;
+          margin-bottom: 12px;
+          background: rgba(0,0,0,0.3);
+          border: 1px solid rgba(255,255,255,0.15);
+          color: var(--uw-text);
+          border-radius: 6px;
+          box-sizing: border-box;
+          font-family: inherit;
+          transition: border-color 0.2s, box-shadow 0.2s;
+        }
+        .uw-content input[type="text"]:focus, 
+        .uw-content input[type="number"]:focus, 
+        .uw-content select:focus {
+          border-color: rgba(100, 180, 255, 0.6);
+          outline: none;
+          box-shadow: 0 0 0 2px rgba(100, 180, 255, 0.15);
+        }
+        .uw-content .form-row {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          margin-bottom: 12px;
+          gap: 12px;
+        }
+        .uw-content .form-row label {
+          margin-bottom: 0;
+          flex-shrink: 0;
+        }
+
+        .uw-footer {
+          padding: 8px 14px; background: rgba(0,0,0,0.15); border-top: 1px solid var(--uw-border);
+          display: flex; justify-content: flex-end; gap: 8px; flex-shrink: 0; border-radius: 0 0 12px 12px;
+        }
+        .uw-btn {
+          padding: 6px 14px; background: var(--uw-btn-bg); color: var(--uw-text); border: 1px solid var(--uw-border);
+          border-radius: 5px; cursor: pointer; font-size: 12px; font-weight: 500; transition: all 0.15s;
+        }
+        .uw-btn:hover { background: var(--uw-btn-hover); color: var(--uw-text); transform: translateY(-1px); }
+        .uw-btn.primary { background: #2962ff; border-color: #2979ff; color: #fff; }
+        .uw-btn.primary:hover { background: #448aff; box-shadow: 0 2px 8px rgba(41,98,255,0.4); }
+
+        .uw-transparent { background:transparent!important; border:none!important; box-shadow:none!important; backdrop-filter:none!important; }
+        .uw-transparent .uw-header { background: rgba(0,0,0,0.3)!important; border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 4px; }
+        .uw-transparent .uw-content { background:transparent!important; padding: 0; }
+        .uw-transparent .uw-footer { display:none!important; }
+        .uw-dialog:hover .uw-corner { opacity: 1 !important; }
+
+        .uw-w-wrap { margin: 2px 0; }
+        .uw-w-ph {
+          display: flex; align-items: center; gap: 6px; padding: 4px 8px; min-height: 26px;
+          border-radius: 6px; background: var(--uw-ph-bg); border: 1px dashed var(--uw-ph-border);
+        }
+        .uw-w-ph-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink:0; animation: uw-pulse 2s ease-in-out infinite; }
+        .uw-w-ph-lbl { font-size: 10px; color: var(--uw-title); font-style: italic; flex-grow:1; }
+        .uw-w-ph-btn { background:none; border:none; color:var(--uw-title); cursor:pointer; font-size:14px; padding:0 4px; border-radius:4px; transition:all 0.15s; line-height:1; }
+        .uw-w-ph-btn:hover { color:var(--uw-text); background:var(--uw-btn-hover); }
+
+        .uw-w-docked { border-radius: 6px; overflow: hidden; background: var(--uw-hdr-bg); border: 1px solid var(--uw-border); transition: box-shadow 0.2s; }
+        .uw-w-hdr {
+          display: flex; align-items: center; gap: 4px; padding: 3px 8px; min-height: 22px;
+          background: var(--uw-btn-bg); border-bottom: 1px solid var(--uw-border);
+        }
+        .uw-w-lbl { font-size: 9.5px; font-weight: 700; color: var(--uw-title); text-transform: uppercase; letter-spacing: 0.08em; flex-grow:1; pointer-events: none; }
+        .uw-w-pop { background:none; border:none; color:var(--uw-title); cursor:pointer; font-size:12px; padding:2px 5px; border-radius:3px; transition:all 0.15s; line-height:1; }
+        .uw-w-pop:hover { color:var(--uw-text); background:var(--uw-btn-hover); }
+        .uw-w-ctrl { padding: 6px 8px; }
+
+        .uw-w-inline { display: flex; align-items: center; border-radius: 16px; background: var(--uw-btn-bg); border: 1px solid var(--uw-border); overflow: hidden; }
+        .uw-w-inline .uw-inline-hdr { display: flex; align-items: center; padding-left: 8px; flex-shrink: 1; min-width: 40px; }
+        .uw-w-inline .uw-w-ctrl { flex-grow: 1; padding: 2px 8px 2px 0; display: flex; justify-content: flex-end; }
+        .uw-inline-grip { color: var(--uw-title); cursor: grab; padding: 0 4px; font-size: 14px; user-select: none; }
+        .uw-inline-lbl { font-size: 10px; font-weight: 600; color: var(--uw-title); text-transform: uppercase; letter-spacing: 0.05em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-right: 6px; pointer-events: none; }
+
+        .uw-float {
+          position: fixed; min-width: 140px;
+          background: var(--uw-float-bg); 
+          border: 1px solid var(--uw-border); border-radius: 10px;
+          box-shadow: 0 24px 64px rgba(0,0,0,0.85), 0 4px 16px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+          opacity: 0; transform: scale(0.85) translateY(-8px);
+          transition: opacity 0.2s cubic-bezier(0.4,0,0.2,1), transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+          overflow: hidden;
+        }
+        .uw-float.uw-float-vis { opacity: 1; transform: scale(1) translateY(0); }
+
+        .uw-float-inline { 
+          display: flex; align-items: center; border-radius: 20px; 
+          background: var(--uw-float-bg); min-width: 160px; height: 40px; padding: 0;
+        }
+        .uw-float-inline .uw-inline-hdr { display: flex; align-items: center; padding-left: 10px; flex-shrink: 1; min-width: 60px; border: none; cursor: grab; height: 100%; }
+        .uw-float-inline .uw-float-ctrl { flex-grow: 1; padding: 0 12px 0 0; display: flex; justify-content: flex-end; }
+        .uw-float-inline .uw-float-dock { background: none; border: none; color: var(--uw-title); cursor: pointer; font-size: 14px; margin-left: auto; padding: 4px; transition: color 0.15s; }
+        .uw-float-inline .uw-float-dock:hover { color: var(--uw-text); }
+
+        .uw-float-bar {
+          display: flex; align-items: center; gap: 6px; padding: 4px 8px;
+          background: var(--uw-hdr-bg); border-bottom: 1px solid var(--uw-border);
+          cursor: grab; user-select: none; min-height: 24px;
+        }
+        .uw-float-bar:active, .uw-inline-hdr:active { cursor: grabbing; }
+        .uw-float-lbl { flex-grow:1; font-size: 10px; font-weight: 700; color: var(--uw-title); text-transform: uppercase; letter-spacing: 0.08em; pointer-events: none; }
+        .uw-float-ctrl { padding: 8px; }
+
+        .uw-fres { position:absolute; top:8px; bottom:8px; width:6px; cursor:ew-resize; opacity:0; transition:opacity 0.2s; border-radius:3px; background:rgba(255,255,255,0.15); }
+        .uw-float:hover .uw-fres { opacity: 1; }
+        .uw-fres-l { left: -2px; }
+        .uw-fres-r { right: -2px; }
+
+        .uw-flash-fx { animation: uw-flash-anim 0.5s cubic-bezier(0.2, 0.8, 0.2, 1); }
+        @keyframes uw-flash-anim { 0% { box-shadow: 0 0 0 2px rgba(100,255,150,0.8), inset 0 0 20px rgba(100,255,150,0.4); } 100% { box-shadow: 0 0 0 0 rgba(100,255,150,0); inset 0 0 0 rgba(100,255,150,0); } }
+        .uw-wheel-locked { box-shadow: 0 0 0 1px rgba(100, 180, 255, 0.5), 0 0 15px rgba(100, 180, 255, 0.2); border-color: rgba(100, 180, 255, 0.5); }
+
+        .uw-midi-dot { width: 6px; height: 6px; border-radius: 50%; background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.08); cursor: pointer; transition: all 0.2s; flex-shrink: 0; }
+        .uw-midi-dot:hover { background: rgba(255,180,0,0.6); border-color: rgba(255,180,0,0.9); box-shadow: 0 0 6px rgba(255,180,0,0.5); }
+        .uw-midi-dot.uw-midi-armed { background: #ff3333; border-color: #ff6666; animation: uw-pulse 0.5s ease-in-out infinite; box-shadow: 0 0 8px rgba(255,50,50,0.6); }
+        .uw-light-mode .uw-midi-dot { background: rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.1); }
+
+        .uw-ctrl-inner { display: flex; align-items: center; justify-content: flex-start; min-height: 26px; width: 100%; }
+
+        .uw-toggle {
+          width: 40px; height: 22px; border-radius: 11px; position: relative; cursor: pointer; flex-shrink:0;
+          background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.05);
+          transition: background 0.25s, box-shadow 0.25s;
+        }
+        .uw-toggle-thumb {
+          position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+          background: #e2e8f0; box-shadow: 0 2px 5px rgba(0,0,0,0.6);
+          transition: transform 0.25s cubic-bezier(0.34,1.56,0.64,1); pointer-events:none;
+        }
+        .uw-toggle.uw-on .uw-toggle-thumb { transform: translateX(18px); background: #fff; }
+        .uw-light-mode .uw-toggle { background: rgba(0,0,0,0.08); border: 1px solid rgba(0,0,0,0.05); }
+
+        .uw-sl-wrap { position: relative; width: 100%; height: 32px; display: flex; align-items: center; cursor: ew-resize; padding: 0 8px; box-sizing: border-box; touch-action: none; margin-top: 6px; }
+        .uw-sl-bg { position: absolute; left: 8px; right: 8px; height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; }
+        .uw-light-mode .uw-sl-bg { background: rgba(0,0,0,0.1); }
+        .uw-sl-fill { position: absolute; left: 8px; height: 4px; border-radius: 2px; pointer-events: none; transition: background-color 0.2s, box-shadow 0.2s, filter 0.2s; background-color: rgba(255,255,255,0.6); }
+        .uw-sl-thumb { position: absolute; width: 8px; height: 14px; border-radius: 4px; background: #fff; transform: translate(-50%, 0); pointer-events: none; transition: transform 0.2s, opacity 0.2s; opacity: 0.5; }
+        .uw-sl-wrap:hover .uw-sl-fill, .uw-sl-wrap.uw-active .uw-sl-fill { background-color: #fff !important; filter: brightness(1.2); }
+        .uw-sl-wrap:hover .uw-sl-thumb, .uw-sl-wrap.uw-active .uw-sl-thumb { opacity: 1; transform: translate(-50%, 0) scale(1.3); }
+        .uw-sl-txt { position: absolute; width: auto; font-size: 11px; font-weight: 800; pointer-events: none; text-shadow: 0 1px 3px #000, 0 0 4px #000, 0 0 6px rgba(0,0,0,0.8); color: #fff; font-family: monospace; letter-spacing: 0.05em; left: 0; top: -16px; z-index: 2; }
+        .uw-w-inline .uw-sl-wrap { margin-top: 0; }
+        .uw-w-inline .uw-sl-txt { top: -12px; position: absolute; width: auto; right: 8px; left: auto; font-size: 10px; }
+
+        .uw-text-inp, .uw-select {
+          width:100%; background:var(--uw-ctrl-bg); border:1px solid var(--uw-border);
+          border-radius:5px; color:var(--uw-text); padding:6px 10px; font-size:12px;
+          outline:none; transition:border-color 0.2s, box-shadow 0.2s;
+        }
+        .uw-text-inp:focus, .uw-select:focus { border-color:rgba(100,180,255,0.6); box-shadow: 0 0 0 2px rgba(100,180,255,0.15); }
+        .uw-select { cursor: pointer; }
+
+        .uw-btnset { display:flex; gap:2px; flex-wrap:wrap; width:100%; background: rgba(0,0,0,0.3); padding: 3px; border-radius: 6px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.4); }
+        .uw-light-mode .uw-btnset { background: rgba(0,0,0,0.05); box-shadow: inset 0 1px 3px rgba(0,0,0,0.1); }
+        .uw-btn-item {
+          flex:1; min-width:32px; padding:4px 8px;
+          background: transparent; border: none;
+          border-radius:4px; color: var(--uw-title);
+          font-size:11px; font-weight: 600; cursor:pointer; transition:all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1); white-space:nowrap;
+        }
+        .uw-btn-item:hover { color: var(--uw-text); background: var(--uw-btn-hover); }
+        .uw-light-mode .uw-btn-item:hover { background: rgba(0,0,0,0.05); }
+        .uw-btn-item.uw-active { background: rgba(255,255,255,0.15); color: #fff; box-shadow: 0 1px 4px rgba(0,0,0,0.5); }
+        .uw-light-mode .uw-btn-item.uw-active { background: #fff; color: #000; box-shadow: 0 1px 4px rgba(0,0,0,0.2); }
+
+        .uw-prompt-inp { width:100%; padding:8px 12px; background:var(--uw-ctrl-bg); color:var(--uw-text); border:1px solid var(--uw-border); border-radius:6px; font-size:14px; outline:none; margin-top:10px; box-sizing:border-box; transition:border-color 0.2s; }
+        .uw-prompt-inp:focus { border-color: #2979ff; box-shadow: 0 0 0 2px rgba(41,121,255,0.2); }
+        .uw-prompt-msg { color: var(--uw-title); font-size: 13px; line-height: 1.4; }
+
+        @keyframes uw-pulse { 0%,100% { opacity:0.5; transform:scale(1); } 50% { opacity:1; transform:scale(1.4); } }
+        @media (max-width: 768px) {
+          .uw-dialog { max-width:calc(100vw - 16px)!important; max-height:calc(100vh - 24px)!important; }
+          .uw-header { min-height:44px!important; padding:6px 12px!important; cursor:default; }
+          .uw-swipe-hint { display:block; width: 32px; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; margin: 0 auto; }
+          .uw-title { font-size: 13px; }
+          .uw-util-btn, .uw-close-btn { width: 36px!important; height: 36px!important; font-size: 14px!important; background: rgba(255,255,255,0.05); }
+          .uw-corner { display:none!important; }
+          .uw-btn { padding: 12px 20px; font-size: 14px; min-height: 44px; }
+        }
+      `;
+
+    if (typeof applyCss === 'function') {
+      applyCss(css, 'UIToolsStyles');
+    } else {
+      let style = document.getElementById('UIToolsStyles');
+      if (!style) {
+        style = document.createElement('style');
+        style.id = 'UIToolsStyles';
+        (document.head || document.documentElement).appendChild(style);
       }
+      style.textContent = css;
     }
+  }
 
   _toggleMidi() {
     this._midiArmed = !this._midiArmed;
@@ -2229,9 +2232,8 @@ class UITools {
     if (status >= 176 && status <= 191) {
       if (this._midiArmed && this.options.midiCC == null) {
         this.options.midiCC = cc;
-        this._toggleMidi(); // disarm automatically upon mapping
+        this._toggleMidi();
 
-        // Register permanent listener for this CC
         MidiInputHandler.addDataHandler((m) => {
           const [s, c, v] = m.data;
           if (s >= 176 && s <= 191 && c === this.options.midiCC) {
@@ -2289,15 +2291,11 @@ class UITools {
     }
   }
 
-  static _ensureSVG() {
-    // Intentionally empty. We do not need a massive invisible SVG covering the screen
-    // trying to route cables (this is a leftover from a node-editor app).
-  }
+  static _ensureSVG() {}
 
   _setupSmartSplit(container, hdr, ctrlWrap) {
     if (!container || !hdr || !ctrlWrap) return;
 
-    // Replace the expensive ResizeObserver loop with safe CSS to eliminate layout thrashing
     hdr.style.flex = '1';
     ctrlWrap.style.flex = '1';
     hdr.style.width = '50%';
@@ -2377,7 +2375,6 @@ class UITools {
       hudObj.el.innerHTML = options.html;
     }
 
-    // Animate in and restack
     requestAnimationFrame(() => {
       hudObj.el.style.opacity = '1';
       if (
@@ -2437,53 +2434,50 @@ class UITools {
   }
 
   _setupLifecycleObserver() {
-      if (this.env && this.env.container) {
-        const parent = this.env.container.parentNode || document.body;
-        
-        this._lifecycleObserver = new MutationObserver(() => {
-          const isConnected = document.body.contains(this.env.container);
-          if (!isConnected) {
-            console.log(`[UITools] 🗑️ Closing dialog "${this.options.title}" due to parent container unmounting.`);
-            this.close();
-          }
-        });
-        
-        // Observe only the immediate parent to eliminate the recursive subtree cascade
-        this._lifecycleObserver.observe(parent, { childList: true });
-      }
-    }
-
-  
-
-  setSubtitle(sub) {
-      if (!this.header) return;
-      let subEl = this.header.querySelector('.uw-subtitle');
-      if (!subEl) {
-        subEl = UITools._el('span', { className: 'uw-subtitle', style: 'opacity: 0.6; font-size: 0.9em; margin-left: 6px; font-weight: normal;' });
-        const titleEl = this.header.querySelector('.uw-title');
-        if (titleEl) titleEl.appendChild(subEl);
-      }
-      subEl.textContent = sub ? `(${sub})` : '';
-    }
-
-  static get creationVisibilityMode() {
-      return this._creationVisibilityMode || 'visible';
-    }
-
-  static set creationVisibilityMode(val) {
-      this._creationVisibilityMode = val;
-    }
-
-  static revealHiddenDialogs() {
-      UITools._getState().all.forEach(w => {
-        if (w.element && (w.element.style.opacity === '0' || w.element.style.opacity === '0.01')) {
-          w.element.style.transition = 'opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
-          w.element.style.opacity = '1';
-          w.element.style.transform = 'none';
-          setTimeout(() => {
-            if (w.element) w.element.style.transition = '';
-          }, 250);
+    if (this.env && this.env.container) {
+      const parent = this.env.container.parentNode || document.body;
+      
+      this._lifecycleObserver = new MutationObserver(() => {
+        const isConnected = document.body.contains(this.env.container);
+        if (!isConnected) {
+          console.log(`[UITools] 🗑️ Closing dialog "${this.options.title}" due to parent container unmounting.`);
+          this.close();
         }
       });
+      
+      this._lifecycleObserver.observe(parent, { childList: true });
     }
+  }
+
+  setSubtitle(sub) {
+    if (!this.header) return;
+    let subEl = this.header.querySelector('.uw-subtitle');
+    if (!subEl) {
+      subEl = UITools._el('span', { className: 'uw-subtitle', style: 'opacity: 0.6; font-size: 0.9em; margin-left: 6px; font-weight: normal;' });
+      const titleEl = this.header.querySelector('.uw-title');
+      if (titleEl) titleEl.appendChild(subEl);
+    }
+    subEl.textContent = sub ? `(${sub})` : '';
+  }
+
+  static get creationVisibilityMode() {
+    return this._creationVisibilityMode || 'visible';
+  }
+
+  static set creationVisibilityMode(val) {
+    this._creationVisibilityMode = val;
+  }
+
+  static revealHiddenDialogs() {
+    UITools._getState().all.forEach(w => {
+      if (w.element && (w.element.style.opacity === '0' || w.element.style.opacity === '0.01')) {
+        w.element.style.transition = 'opacity 0.2s ease-out, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+        w.element.style.opacity = '1';
+        w.element.style.transform = 'none';
+        setTimeout(() => {
+          if (w.element) w.element.style.transition = '';
+        }, 250);
+      }
+    });
+  }
 }
