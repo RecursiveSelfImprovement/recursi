@@ -59,25 +59,26 @@ class FrontPageContent {
     });
   }
 
-  static projectAardvark() {
-    return this.project({
-      href: '/AardvarkPlaylist/',
-      icon: this.svgPlaceholder('#ff2d95'),
-      image: 'aardvarkbig.png',
-      imageSide: 'right',
-      imageWidthPct: 28,
-      imageHoverScale: 1.34,
-      imageOverlapPct: 2,
-      imageBottomOffsetPct: 0,
-      imageAlignY: 'center',
-      imageObjectPosition: 'center center',
-      name: 'Aardvark Extension',
-      tag: 'live',
-      tagClass: 'tag-live',
-      desc: 'A browser extension and YouTube playlist environment — clean playback, curated playlists, a full 3D piano with synchronized piano rolls, SVG tools, dictation, and more. The original Aardvark helped inspire Firebug. This one goes further.',
-      featured: true,
-    });
-  }
+  projectAardvark() {
+      return this.project({
+        href: '/AardvarkPlaylist/',
+        icon: this.svgPlaceholder('#ff2d95'),
+        image: 'aardvarkbig.png',
+        imageSide: 'right',
+        imageWidthPct: 28,
+        imageHoverScale: 1.34,
+        imageOverlapPct: 2,
+        imageBottomOffsetPct: 0,
+        imageAlignY: 'center',
+        imageObjectPosition: 'center center',
+        name: 'Aardvark Extension <span class="aardvark-playlist-parens">(YouTube Playlist)</span>',
+        tag: 'live',
+        tagClass: 'tag-live',
+        desc: 'A browser extension and YouTube playlist environment - clean playback, curated playlists, a full 3D piano with synchronized piano rolls, SVG tools, dictation, and more. The original Aardvark helped inspire Firebug. This one goes further.',
+        featured: true,
+        isAardvark: true,
+      });
+    }
 
   static projectMarkdownNotebook() {
     return this.project({
@@ -136,14 +137,17 @@ class FrontPageContent {
   }
 
   static projects() {
-    return [
-      this.projectVibes(),
-      this.projectAardvark(),
-      this.projectMarkdownNotebook(),
-      this.projectScratchy(),
-      this.projectAardvarkBookmarklet(),
-    ];
-  }
+      return [
+        this.projectVibes(),
+        this.projectAardvark(),
+        this.projectLegoDetective(),
+        this.projectGuessTheNote(),
+        this.projectAccuCAD(),
+        this.projectMarkdownNotebook(),
+        this.projectScratchy(),
+        this.projectAardvarkBookmarklet(),
+      ];
+    }
 
   // ─── Merch ────────────────────────────────────────────────────────────────
 
@@ -269,4 +273,73 @@ class FrontPageContent {
       ...data,
     };
   }
+
+  static projectAardvark() {
+      return this.project({
+        href: '/AardvarkPlaylist/',
+        icon: this.svgPlaceholder('#ff2d95'),
+        image: 'aardvarkbig.png',
+        imageSide: 'right',
+        imageWidthPct: 28,
+        imageHoverScale: 1.34,
+        imageOverlapPct: 2,
+        imageBottomOffsetPct: 0,
+        imageAlignY: 'center',
+        imageObjectPosition: 'center center',
+        name: 'Aardvark Extension <span class="aardvark-playlist-parens">(YouTube Playlist)</span>',
+        tag: 'live',
+        tagClass: 'tag-live',
+        desc: 'A browser extension and YouTube playlist environment - clean playback, curated playlists, a full 3D piano with synchronized piano rolls, SVG tools, dictation, and more. The original Aardvark helped inspire Firebug. This one goes further.',
+        featured: true,
+        isAardvark: true,
+      });
+    }
+
+  static projectLegoDetective() {
+      return this.project({
+        href: '/LegoDetective/',
+        icon: this.svgPlaceholder('#ffea00'),
+        image: 'legoDetective.png',
+        imageSide: 'left',
+        imageWidthPct: 28,
+        imageHoverScale: 1.25,
+        name: 'Lego Detective',
+        tag: 'live',
+        tagClass: 'tag-live',
+        desc: 'Spot the differences between twin 3D Lego structures in a playful, Where\'s Waldo style game. Designed to build 3D spatial awareness, featuring voxel explosion effects when you successfully identify anomalies.',
+        featured: false,
+      });
+    }
+
+  static projectGuessTheNote() {
+      return this.project({
+        href: '/GuessTheNote/',
+        icon: this.svgPlaceholder('#b84dff'),
+        image: 'guessTheNote.png',
+        imageSide: 'right',
+        imageWidthPct: 28,
+        imageHoverScale: 1.25,
+        name: 'Guess the Note',
+        tag: 'live',
+        tagClass: 'tag-live',
+        desc: 'Playful musical interval ear training. Listen to a three-note sequence, see the first two highlighted on an interactive on-screen piano roll, and guess the third note to build your play-by-ear intuition.',
+        featured: false,
+      });
+    }
+
+  static projectAccuCAD() {
+      return this.project({
+        href: '/AccuCAD/',
+        icon: this.svgPlaceholder('#00e5ff'),
+        image: 'accuCad.png',
+        imageSide: 'left',
+        imageWidthPct: 28,
+        imageHoverScale: 1.25,
+        name: 'AccuCAD',
+        tag: 'beta preview',
+        tagClass: 'tag-demo',
+        desc: 'A sophisticated web-based CAD system reviving the historic drafting paradigm of AccuDraw. Brings construction reference vectors, lockable constraint sweeps, and high-precision coordinate alignment to the browser.',
+        featured: false,
+      });
+    }
 }

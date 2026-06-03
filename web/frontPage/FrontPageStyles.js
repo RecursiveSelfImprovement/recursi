@@ -3,22 +3,26 @@ class FrontPageStyles {
     applyCss(this.css());
   }
 
-  static css() {
-    return [
-      this.cssVariables(),
-      this.cssReset(),
-      this.cssBody(),
-      this.cssHero(),
-      this.cssManifesto(),
-      this.cssSectionHeaders(),
-      this.cssProjects(),
-      this.cssMerch(),
-      this.cssLightbox(),
-      this.cssFooter(),
-      this.cssAnimations(),
-      this.cssResponsive(),
-    ].join('\n');
-  }
+  css() {
+      return [
+        this.cssVariables(),
+        this.cssReset(),
+        this.cssBody(),
+        this.cssHero(),
+        this.cssManifesto(),
+        this.cssSectionHeaders(),
+        this.cssProjects(),
+        this.cssMerch(),
+        this.cssLightbox(),
+        this.cssFooter(),
+        this.cssAnimations(),
+        this.cssResponsive(),
+        this.cssVideoButton(),
+        this.cssVideoModal(),
+        this.cssAardvarkMenu(),
+        this.cssExtensionDialog(),
+      ].join('\n');
+    }
 
   static cssVariables() {
     return `
@@ -436,121 +440,460 @@ class FrontPageStyles {
     `;
   }
 
+  cssVideoButton() {
+      return `
+        .hero-video-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-top: 1.6rem;
+          padding: 0.75em 2em;
+          background: rgba(255, 106, 0, 0.10);
+          border: 1.5px solid rgba(255, 106, 0, 0.55);
+          border-radius: 50px;
+          color: var(--neon-orange);
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          cursor: pointer;
+          text-shadow: 0 0 18px rgba(255, 106, 0, 0.55);
+          box-shadow:
+            0 0 22px rgba(255, 106, 0, 0.16),
+            inset 0 0 16px rgba(255, 106, 0, 0.06),
+            0 2px 0 rgba(255,255,255,0.04);
+          transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+        .hero-video-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,106,0,0.12) 50%, transparent 100%);
+          transform: translateX(-100%);
+          transition: transform 0.5s ease;
+        }
+        .hero-video-btn:hover::before {
+          transform: translateX(100%);
+        }
+        .hero-video-btn:hover {
+          background: rgba(255, 106, 0, 0.20);
+          border-color: rgba(255, 106, 0, 0.85);
+          box-shadow:
+            0 0 34px rgba(255, 106, 0, 0.28),
+            inset 0 0 22px rgba(255, 106, 0, 0.10);
+          transform: translateY(-2px);
+          letter-spacing: 0.28em;
+        }
+        .hero-video-btn:active {
+          transform: translateY(0px);
+        }
+        .video-btn-icon {
+          font-size: 1.1rem;
+          line-height: 1;
+          filter: drop-shadow(0 0 6px rgba(255,106,0,0.7));
+          animation: pulse-play 2.5s ease-in-out infinite;
+        }
+        @keyframes pulse-play {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.15); opacity: 0.85; }
+        }
+        .video-btn-label {
+          position: relative;
+        }
+      `;
+    }
 
-// FrontPageStyles additions — patch these into FrontPageStyles.js
-// Add cssVideoButton() and cssVideoModal() as new static methods,
-// then include them in the css() return array.
+  cssVideoModal() {
+      return `
+        .dialog-video-player-container {
+          width: 100%;
+          height: 100%;
+          background: #000;
+          position: relative;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+        .dialog-video-player-container iframe {
+          width: 100% !important;
+          height: 100% !important;
+          border: none;
+        }
+      `;
+    }
 
-// 1.  In css(), change the cssHero() call block to remove the coming-soon badge
-//     styles (the .coming-soon-badge rule and its @keyframes pulse-glow can stay
-//     for now since they're harmless if unused, or remove them for cleanliness).
+  cssAardvarkMenu() {
+      return `
+        .aardvark-popup-menu {
+          background: rgba(14, 14, 22, 0.97);
+          border: 1px solid rgba(255, 45, 149, 0.25);
+          border-radius: 12px;
+          box-shadow:
+            0 16px 48px rgba(0,0,0,0.7),
+            0 0 30px rgba(255,45,149,0.08);
+          overflow: hidden;
+          backdrop-filter: blur(16px);
+          animation: menu-appear 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        @keyframes menu-appear {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .aardvark-menu-title {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.58rem;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: var(--neon-pink);
+          text-shadow: 0 0 10px rgba(255,45,149,0.4);
+          padding: 0.9rem 1.2rem 0.5rem;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .aardvark-menu-option {
+          padding: 0.85rem 1.2rem;
+          cursor: pointer;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+          transition: background 0.18s ease;
+        }
+        .aardvark-menu-option:last-child {
+          border-bottom: none;
+        }
+        .aardvark-menu-option:hover {
+          background: rgba(255, 45, 149, 0.07);
+        }
+        .option-label {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.62rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: var(--text-primary);
+          margin-bottom: 0.25rem;
+        }
+        .option-desc {
+          font-size: 0.78rem;
+          color: var(--text-muted);
+          line-height: 1.5;
+        }
+      `;
+    }
 
-// 2.  Add the two new methods below and call them from css():
+  cssExtensionDialog() {
+      return `
+        .extension-dialog-content {
+          padding: 0.25rem 0;
+        }
+        .extension-explanation h3 {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.7rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--neon-pink);
+          margin-bottom: 1rem;
+        }
+        .extension-explanation p {
+          font-size: 0.88rem;
+          color: #b8b4ae;
+          line-height: 1.7;
+          margin-bottom: 1rem;
+        }
+        .extension-explanation ol {
+          padding-left: 1.4rem;
+          margin-bottom: 1rem;
+        }
+        .extension-explanation li {
+          font-size: 0.86rem;
+          color: #b8b4ae;
+          line-height: 1.7;
+          margin-bottom: 0.4rem;
+        }
+        .extension-explanation code {
+          font-family: 'Fira Code', monospace;
+          font-size: 0.8rem;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 3px;
+          padding: 0.1em 0.4em;
+          color: var(--neon-cyan);
+        }
+        .extension-explanation strong {
+          color: #fff;
+        }
+        .explanation-note {
+          font-family: 'Fira Code', monospace;
+          font-size: 0.74rem !important;
+          color: rgba(138,134,144,0.7) !important;
+          border-left: 2px solid rgba(255,45,149,0.3);
+          padding-left: 0.75rem !important;
+          margin-top: 1rem !important;
+        }
+        .extension-download-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          width: 100%;
+          margin-top: 1rem;
+          padding: 0.75em 1.5em;
+          background: rgba(255, 45, 149, 0.12);
+          border: 1.5px solid rgba(255, 45, 149, 0.4);
+          border-radius: 8px;
+          color: var(--neon-pink);
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.22s ease;
+          text-shadow: 0 0 12px rgba(255,45,149,0.4);
+        }
+        .extension-download-btn:hover {
+          background: rgba(255, 45, 149, 0.22);
+          border-color: rgba(255, 45, 149, 0.7);
+          box-shadow: 0 0 20px rgba(255,45,149,0.15);
+          transform: translateY(-1px);
+        }
+      `;
+    }
 
-static cssVideoButton() {
-  return `
-    .hero-video-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.65rem;
-      margin-top: 1.4rem;
-      padding: 0.65em 1.6em;
-      background: rgba(255, 106, 0, 0.12);
-      border: 1px solid rgba(255, 106, 0, 0.5);
-      border-radius: 40px;
-      color: var(--neon-orange);
-      font-family: 'Orbitron', sans-serif;
-      font-size: 0.65rem;
-      font-weight: 700;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      cursor: pointer;
-      text-shadow: var(--glow-orange);
-      box-shadow: 0 0 18px rgba(255, 106, 0, 0.18), inset 0 0 12px rgba(255, 106, 0, 0.06);
-      transition: all 0.25s ease;
+  static css() {
+      return [
+        this.cssVariables(),
+        this.cssReset(),
+        this.cssBody(),
+        this.cssHero(),
+        this.cssManifesto(),
+        this.cssSectionHeaders(),
+        this.cssProjects(),
+        this.cssMerch(),
+        this.cssLightbox(),
+        this.cssFooter(),
+        this.cssAnimations(),
+        this.cssResponsive(),
+        this.cssVideoButton(),
+        this.cssVideoModal(),
+        this.cssAardvarkMenu(),
+        this.cssExtensionDialog(),
+      ].join('\n');
     }
-    .hero-video-btn:hover {
-      background: rgba(255, 106, 0, 0.22);
-      border-color: rgba(255, 106, 0, 0.8);
-      box-shadow: var(--glow-orange), inset 0 0 18px rgba(255, 106, 0, 0.1);
-      transform: translateY(-1px);
-    }
-    .video-btn-icon {
-      font-size: 0.9rem;
-      line-height: 1;
-    }
-  `;
-}
 
-static cssVideoModal() {
-  return `
-    .video-modal-overlay {
-      position: fixed;
-      inset: 0;
-      z-index: 10001;
-      background: rgba(5, 5, 10, 0.92);
-      backdrop-filter: blur(16px);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn 0.25s ease;
+  static cssVideoButton() {
+      return `
+        .hero-video-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.75rem;
+          margin-top: 1.6rem;
+          padding: 0.75em 2em;
+          background: rgba(255, 106, 0, 0.10);
+          border: 1.5px solid rgba(255, 106, 0, 0.55);
+          border-radius: 50px;
+          color: var(--neon-orange);
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          cursor: pointer;
+          text-shadow: 0 0 18px rgba(255, 106, 0, 0.55);
+          box-shadow:
+            0 0 22px rgba(255, 106, 0, 0.16),
+            inset 0 0 16px rgba(255, 106, 0, 0.06),
+            0 2px 0 rgba(255,255,255,0.04);
+          transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+        .hero-video-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent 0%, rgba(255,106,0,0.12) 50%, transparent 100%);
+          transform: translateX(-100%);
+          transition: transform 0.5s ease;
+        }
+        .hero-video-btn:hover::before {
+          transform: translateX(100%);
+        }
+        .hero-video-btn:hover {
+          background: rgba(255, 106, 0, 0.20);
+          border-color: rgba(255, 106, 0, 0.85);
+          box-shadow:
+            0 0 34px rgba(255, 106, 0, 0.28),
+            inset 0 0 22px rgba(255, 106, 0, 0.10);
+          transform: translateY(-2px);
+          letter-spacing: 0.28em;
+        }
+        .hero-video-btn:active {
+          transform: translateY(0px);
+        }
+        .video-btn-icon {
+          font-size: 1.1rem;
+          line-height: 1;
+          filter: drop-shadow(0 0 6px rgba(255,106,0,0.7));
+          animation: pulse-play 2.5s ease-in-out infinite;
+        }
+        @keyframes pulse-play {
+          0%, 100% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.15); opacity: 0.85; }
+        }
+        .video-btn-label {
+          position: relative;
+        }
+      `;
     }
-    .video-modal-box {
-      position: relative;
-      width: min(860px, 92vw);
-      aspect-ratio: 16 / 9;
-      background: rgba(15, 15, 25, 0.9);
-      border: 1px solid rgba(255, 106, 0, 0.25);
-      border-radius: 12px;
-      box-shadow: 0 0 80px rgba(255, 106, 0, 0.12), 0 40px 80px rgba(0,0,0,0.6);
-      overflow: hidden;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+
+  static cssVideoModal() {
+      return `
+        .dialog-video-player-container {
+          width: 100%;
+          height: 100%;
+          background: #000;
+          position: relative;
+          border-radius: 6px;
+          overflow: hidden;
+        }
+        .dialog-video-player-container iframe {
+          width: 100% !important;
+          height: 100% !important;
+          border: none;
+        }
+      `;
     }
-    .video-modal-close {
-      position: absolute;
-      top: 0.75rem;
-      right: 1rem;
-      background: rgba(0,0,0,0.5);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 50%;
-      width: 36px;
-      height: 36px;
-      font-size: 1.3rem;
-      color: var(--text-muted);
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 10002;
-      transition: color 0.2s, border-color 0.2s;
-      line-height: 1;
-      padding-bottom: 2px;
+
+  static cssAardvarkMenu() {
+      return `
+        .aardvark-popup-menu {
+          background: rgba(14, 14, 22, 0.97);
+          border: 1px solid rgba(255, 45, 149, 0.25);
+          border-radius: 12px;
+          box-shadow:
+            0 16px 48px rgba(0,0,0,0.7),
+            0 0 30px rgba(255,45,149,0.08);
+          overflow: hidden;
+          backdrop-filter: blur(16px);
+          animation: menu-appear 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+        }
+        @keyframes menu-appear {
+          from { opacity: 0; transform: translateY(-8px) scale(0.97); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .aardvark-menu-title {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.58rem;
+          letter-spacing: 0.3em;
+          text-transform: uppercase;
+          color: var(--neon-pink);
+          text-shadow: 0 0 10px rgba(255,45,149,0.4);
+          padding: 0.9rem 1.2rem 0.5rem;
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .aardvark-menu-option {
+          padding: 0.85rem 1.2rem;
+          cursor: pointer;
+          border-bottom: 1px solid rgba(255,255,255,0.04);
+          transition: background 0.18s ease;
+        }
+        .aardvark-menu-option:last-child {
+          border-bottom: none;
+        }
+        .aardvark-menu-option:hover {
+          background: rgba(255, 45, 149, 0.07);
+        }
+        .option-label {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.62rem;
+          font-weight: 700;
+          letter-spacing: 0.08em;
+          color: var(--text-primary);
+          margin-bottom: 0.25rem;
+        }
+        .option-desc {
+          font-size: 0.78rem;
+          color: var(--text-muted);
+          line-height: 1.5;
+        }
+      `;
     }
-    .video-modal-close:hover {
-      color: var(--neon-orange);
-      border-color: rgba(255, 106, 0, 0.4);
+
+  static cssExtensionDialog() {
+      return `
+        .extension-dialog-content {
+          padding: 0.25rem 0;
+        }
+        .extension-explanation h3 {
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.7rem;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          color: var(--neon-pink);
+          margin-bottom: 1rem;
+        }
+        .extension-explanation p {
+          font-size: 0.88rem;
+          color: #b8b4ae;
+          line-height: 1.7;
+          margin-bottom: 1rem;
+        }
+        .extension-explanation ol {
+          padding-left: 1.4rem;
+          margin-bottom: 1rem;
+        }
+        .extension-explanation li {
+          font-size: 0.86rem;
+          color: #b8b4ae;
+          line-height: 1.7;
+          margin-bottom: 0.4rem;
+        }
+        .extension-explanation code {
+          font-family: 'Fira Code', monospace;
+          font-size: 0.8rem;
+          background: rgba(255,255,255,0.06);
+          border: 1px solid rgba(255,255,255,0.1);
+          border-radius: 3px;
+          padding: 0.1em 0.4em;
+          color: var(--neon-cyan);
+        }
+        .extension-explanation strong {
+          color: #fff;
+        }
+        .explanation-note {
+          font-family: 'Fira Code', monospace;
+          font-size: 0.74rem !important;
+          color: rgba(138,134,144,0.7) !important;
+          border-left: 2px solid rgba(255,45,149,0.3);
+          padding-left: 0.75rem !important;
+          margin-top: 1rem !important;
+        }
+        .extension-download-btn {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 0.5rem;
+          width: 100%;
+          margin-top: 1rem;
+          padding: 0.75em 1.5em;
+          background: rgba(255, 45, 149, 0.12);
+          border: 1.5px solid rgba(255, 45, 149, 0.4);
+          border-radius: 8px;
+          color: var(--neon-pink);
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          cursor: pointer;
+          transition: all 0.22s ease;
+          text-shadow: 0 0 12px rgba(255,45,149,0.4);
+        }
+        .extension-download-btn:hover {
+          background: rgba(255, 45, 149, 0.22);
+          border-color: rgba(255, 45, 149, 0.7);
+          box-shadow: 0 0 20px rgba(255,45,149,0.15);
+          transform: translateY(-1px);
+        }
+      `;
     }
-    .video-modal-placeholder {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1rem;
-      color: var(--text-muted);
-    }
-    .video-placeholder-icon {
-      font-size: 3rem;
-      color: var(--neon-orange);
-      opacity: 0.4;
-    }
-    .video-modal-placeholder p {
-      font-family: 'Fira Code', monospace;
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
-      opacity: 0.5;
-    }
-  `;
-}
-  
 }

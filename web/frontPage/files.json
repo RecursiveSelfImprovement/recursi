@@ -8,7 +8,7 @@
     "FrontPageStyles.js"
   ],
   "library": [
-    "UITools.js"
+    "UITools.js", "VideoPlayer.js"
   ],
   "thirdParty": [
     "/Comments/js/DialogBoxExtended.js",

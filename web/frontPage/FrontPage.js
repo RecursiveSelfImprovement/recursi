@@ -5,6 +5,9 @@ class FrontPage {
       this.assetBaseUrl = 'https://recursi.dev/SiteResources/frontPage/';
       this._lightboxKeydownHandler = null;
       this.scrollObserver = null;
+      this._videoDialog = null;
+      this._videoPlayer = null;
+      this._activeAardvarkCard = null;
     }
 
   init(env) {
@@ -128,7 +131,7 @@ class FrontPage {
         (i + 1);
 
       const card = makeElement('a', {
-        href: p.href,
+        href: p.isAardvark ? '#' : p.href,
         className: cardClass,
         'aria-label': p.name,
       });
@@ -152,6 +155,11 @@ class FrontPage {
 
       if (p.comingSoon) {
         card.addEventListener('click', (e) => e.preventDefault());
+      } else if (p.isAardvark) {
+        card.addEventListener('click', (e) => {
+          e.preventDefault();
+          this._showAardvarkMenu(e, card);
+        });
       }
 
       card.append(
@@ -339,24 +347,45 @@ class FrontPage {
     }
 
   _openVideoModal() {
-      // Video modal placeholder — wire up real video URL here
-      const overlay = makeElement('div', { className: 'video-modal-overlay' });
-      const box = makeElement('div', { className: 'video-modal-box' });
-      const close = makeElement('button', { className: 'video-modal-close' }, '×');
-      const placeholder = makeElement('div', { className: 'video-modal-placeholder' });
-      placeholder.innerHTML = `<span class="video-placeholder-icon">▶</span><p>Demo video coming soon</p>`;
-
-      close.onclick = () => overlay.remove();
-      overlay.onclick = (e) => { if (e.target === overlay) overlay.remove(); };
-
-      box.append(close, placeholder);
-      overlay.appendChild(box);
-
-      if (this.rootElement) {
-        this.rootElement.appendChild(overlay);
-      } else {
-        document.body.appendChild(overlay);
+      if (this._videoDialog) {
+        this._videoDialog.bringToFront();
+        return;
       }
+
+      const playerContainer = makeElement('div', {
+        className: 'dialog-video-player-container',
+      });
+
+      this._videoDialog = UITools.makeDialog({
+        title: '▶  Recursi Vibe Coding Demo',
+        content: playerContainer,
+        width: '720px',
+        height: '440px',
+        allowMinimize: true,
+        allowMaximize: true,
+        noPadding: true,
+        onClose: () => {
+          if (this._videoPlayer) {
+            this._videoPlayer.destroy();
+            this._videoPlayer = null;
+          }
+          this._videoDialog = null;
+        }
+      });
+
+      this._videoPlayer = new VideoPlayer({
+        container: playerContainer,
+        playerType: 'youtube',
+        videoId: '1PIkWmj6SxA',
+        autoplay: true,
+        controls: true,
+        width: '100%',
+        height: '100%',
+      }, (event) => {
+        if (event.type === 'ready') {
+          console.log('[FrontPage] VideoPlayer ready in UITools dialog.');
+        }
+      });
     }
 
   _initScrollAnimations() {
@@ -466,9 +495,242 @@ class FrontPage {
         } catch (e) {}
         this.commentsApp = null;
       }
+      const existingMenu = document.getElementById('aardvark-popup-menu');
+      if (existingMenu) {
+        existingMenu.remove();
+      }
+      if (this._videoPlayer) {
+        this._videoPlayer.destroy();
+        this._videoPlayer = null;
+      }
+      if (this._videoDialog) {
+        this._videoDialog.close();
+        this._videoDialog = null;
+      }
       if (this.rootElement) {
         this.rootElement.innerHTML = '';
       }
       this.rootElement = null;
+    }
+
+  _showAardvarkMenu(e, card) {
+      e.stopPropagation();
+
+      const existingMenu = document.getElementById('aardvark-popup-menu');
+      if (existingMenu) {
+        existingMenu.remove();
+        if (this._activeAardvarkCard === card) {
+          this._activeAardvarkCard = null;
+          return;
+        }
+      }
+
+      this._activeAardvarkCard = card;
+
+      const menu = makeElement('div', {
+        id: 'aardvark-popup-menu',
+        className: 'aardvark-popup-menu'
+      });
+
+      const title = makeElement('div', { className: 'aardvark-menu-title' }, 'Aardvark Options');
+
+      const opt1 = makeElement('div', { className: 'aardvark-menu-option' });
+      opt1.append(
+        makeElement('div', { className: 'option-label' }, 'Try Canned Playlists (Music App)'),
+        makeElement('div', { className: 'option-desc' }, 'Try out the high-quality synchronized audio player directly in your browser.')
+      );
+      opt1.onclick = () => {
+        menu.remove();
+        this._activeAardvarkCard = null;
+        window.location.href = '/AardvarkPlaylist/';
+      };
+
+      const opt2 = makeElement('div', { className: 'aardvark-menu-option' });
+      opt2.append(
+        makeElement('div', { className: 'option-label' }, 'Install Browser Extension'),
+        makeElement('div', { className: 'option-desc' }, 'Download ZIP pack and learn how to run the extension directly in developer mode.')
+      );
+      opt2.onclick = () => {
+        menu.remove();
+        this._activeAardvarkCard = null;
+        this._openExtensionInstallDialog();
+      };
+
+      menu.append(title, opt1, opt2);
+      document.body.appendChild(menu);
+
+      const rect = card.getBoundingClientRect();
+      const scrollX = window.scrollX || window.pageXOffset;
+      const scrollY = window.pageYOffset || window.scrollTop || 0;
+
+      menu.style.position = 'absolute';
+      menu.style.left = `${rect.left + scrollX}px`;
+      menu.style.top = `${rect.bottom + scrollY + 10}px`;
+      menu.style.width = `${rect.width}px`;
+      menu.style.zIndex = '9999';
+
+      const dismissHandler = (event) => {
+        if (!menu.contains(event.target) && event.target !== card && !card.contains(event.target)) {
+          menu.remove();
+          this._activeAardvarkCard = null;
+          document.removeEventListener('click', dismissHandler);
+        }
+      };
+      document.addEventListener('click', dismissHandler);
+    }
+
+  _openExtensionInstallDialog() {
+      const content = makeElement('div', { className: 'extension-dialog-content' });
+
+      const explanation = makeElement('div', { className: 'extension-explanation' });
+      explanation.innerHTML = `
+        <h3>Aardvark unpacked extension setup</h3>
+        <p>To run the extension locally in modern desktop browsers:</p>
+        <ol>
+          <li>Click the button below to download <code>aardvark-extension.zip</code>.</li>
+          <li>Unpack the ZIP file into a permanent directory on your machine.</li>
+          <li>Navigate to your browser extension manager (e.g., <code>chrome://extensions</code> or <code>brave://extensions</code>).</li>
+          <li>Enable <strong>Developer mode</strong> in the upper right.</li>
+          <li>Click the <strong>Load unpacked</strong> button on the top-left and select the unpacked folder.</li>
+        </ol>
+        <p class="explanation-note">Once loaded, you can open any YouTube playlist to access synchronized visualizer overlays instantly.</p>
+      `;
+
+      const downloadBtn = makeElement('button', {
+        className: 'extension-download-btn'
+      });
+      downloadBtn.textContent = '📥 Download Extension ZIP';
+      downloadBtn.onclick = () => this._triggerExtensionDownload(downloadBtn);
+
+      content.append(explanation, downloadBtn);
+
+      UITools.makeDialog({
+        title: 'Install Aardvark Extension',
+        content: content,
+        width: '460px',
+        height: 'auto',
+        allowMinimize: true,
+        allowMaximize: false
+      });
+    }
+
+  async _triggerExtensionDownload(btn) {
+      const originalText = btn.textContent;
+      btn.disabled = true;
+      btn.textContent = '🔄 Loading Zipper...';
+
+      try {
+        await this._loadJSZip();
+        btn.textContent = '🔄 Packaging Extension...';
+
+        const zip = new JSZip();
+        const baseUrl = '/AardvarkExtension/browserExtension/';
+
+        const files = [
+          "background.js",
+          "BookMarksOrganizer/css/bookMarksOrganizer.css",
+          "BookMarksOrganizer/index.html",
+          "BookMarksOrganizer/js/BookMarksOrganizer.js",
+          "BookMarksOrganizer/js/BookMarksOrganizerActionsDialog.js",
+          "BookMarksOrganizer/js/BookMarksOrganizerActiveItem.js",
+          "BookMarksOrganizer/js/BookMarksOrganizerIO.js",
+          "BookMarksOrganizer/js/BookMarksOrganizerMutations.js",
+          "BookMarksOrganizer/js/BookMarksOrganizerTreeOps.js",
+          "BookMarksOrganizer/js/BookMarksOrganizerUI.js",
+          "BookMarksOrganizer/js/organizerEntry.js",
+          "content/ContentController.js",
+          "content/GoogleContent.js",
+          "content/PlayerBridge.js",
+          "content/YoloPageRelayBridge.js",
+          "content/YoloTargetAgent.js",
+          "content/YouTubeContent.js",
+          "contentScript.js",
+          "dictation.html",
+          "dictation.js",
+          "features/Aardvark.js",
+          "features/AardvarkActions.js",
+          "features/AardvarkDictation.js",
+          "features/AardvarkOverlay.js",
+          "features/AardvarkRadialMenu.js",
+          "features/AardvarkStyleEditor.js",
+          "features/CurveFitter.js",
+          "features/DrawingTool.js",
+          "features/LlmHelper.js",
+          "features/LlmHelperUI.js",
+          "features/LooperKeystrokeHandler.js",
+          "features/SegmentManager.js",
+          "features/TimelineUI.js",
+          "features/VideoController.js",
+          "features/VideoLooper.js",
+          "features/VideoSegment.js",
+          "manifest.json",
+          "notification.css",
+          "popup.html",
+          "popup.js",
+          "PopupController.js",
+          "services/BookmarkService.js",
+          "services/YouTubeService.js",
+          "utils/applyCss.js",
+          "utils/DialogBox.js",
+          "utils/KeystrokeHandler.js",
+          "utils/makeElement.js",
+          "utils/WindowMessenger.js"
+        ];
+
+        // Fetch each file in parallel
+        const fetchPromises = files.map(async (filePath) => {
+          try {
+            const res = await fetch(baseUrl + filePath);
+            if (!res.ok) {
+              throw new Error(`Status ${res.status}`);
+            }
+            const blob = await res.blob();
+            zip.file(filePath, blob);
+          } catch (err) {
+            console.warn(`[FrontPage] Skipping missing file during extension package: ${filePath}`, err);
+          }
+        });
+
+        await Promise.all(fetchPromises);
+
+        const zipBlob = await zip.generateAsync({ type: 'blob' });
+        const url = URL.createObjectURL(zipBlob);
+
+        const anchor = makeElement('a', {
+          href: url,
+          download: 'aardvark-extension.zip'
+        });
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+
+        btn.textContent = '✓ Download Complete!';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }, 3000);
+      } catch (err) {
+        console.error('[FrontPage] Failed to generate extension zip:', err);
+        btn.textContent = '❌ Packaging Failed';
+        setTimeout(() => {
+          btn.disabled = false;
+          btn.textContent = originalText;
+        }, 3000);
+      }
+    }
+
+  _loadJSZip() {
+      return new Promise((resolve, reject) => {
+        if (typeof JSZip !== 'undefined') {
+          resolve();
+          return;
+        }
+        const script = document.createElement('script');
+        script.src = 'https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js';
+        script.onload = () => resolve();
+        script.onerror = () => reject(new Error('Failed to load JSZip library from CDN'));
+        document.head.appendChild(script);
+      });
     }
 }
