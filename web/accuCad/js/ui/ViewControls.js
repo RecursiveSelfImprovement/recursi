@@ -1,19 +1,19 @@
 
 class ViewControls {
   constructor(baseController, threeDView) {
-    this.baseController = baseController;
-    this.threeDView = threeDView;
+      this.baseController = baseController;
+      this.threeDView = threeDView;
 
-    this.compassBox = null;
-    this.spinnerBox = null;
-    this.sliders = {};
-    this.spinners = {};
+      this.compassBox = null;
+      this.spinnerBox = null;
+      this.sliders = {};
+      this.spinners = {};
 
-    this.rotations = { x: 0, y: 0, z: 0 };
+      this.rotations = { x: 0, y: 0, z: 0 };
 
-    this.spinnerMoveMult = 5;
-    this.spinnerDivider = 20;
-  }
+      this.spinnerMoveMult = 5;
+      this.spinnerDivider = 20;
+    }
 
   toggle() {
     if (this.compassBox && this.spinnerBox) {
@@ -45,8 +45,8 @@ class ViewControls {
       this.rotations = { x: 0, y: 0, z: 0 };
       const savedSettings = this._loadSettings();
 
-      // Stacked neatly on top of the bottom view spinners
-      const compassTop = Math.max(20, parentHeight - 510);
+      const spinnerTop = Math.max(20, parentHeight - 85);
+      const compassTop = Math.max(20, spinnerTop - 425);
 
       this.compassBox = UITools.makeDialog({
         stateId: 'accuCad-compassBox',
@@ -135,8 +135,8 @@ class ViewControls {
       ['x', 'y', 'z'].forEach((axis) => {
         this.sliders[`${axis}rot`] = new SliderControl({
           label: `${axis} rotation`,
-          min: -90,
-          max: 90,
+          min: -127,
+          max: 127,
           initialValue: 0,
           saveToLocalStorage: false,
           relativeMidi: true,
@@ -153,7 +153,7 @@ class ViewControls {
         label: 'background',
         min: 0,
         max: 255,
-        initialValue: savedSettings.bg !== undefined ? savedSettings.bg : 127,
+        initialValue: savedSettings.bg !== undefined ? savedSettings.bg : 34,
         showValue: true,
         callback: (val) => {
           const rounded = Math.round(val);
@@ -163,31 +163,16 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.bg.container);
 
-      this.sliders.gcd = new SliderControl({
-        label: 'grid/cube/dancer',
-        min: 0.5,
-        max: 7.5,
-        initialValue: savedSettings.gcd !== undefined ? savedSettings.gcd : 1,
-        showValue: true,
-        callback: (val) => {
-          const rounded = Math.round(val);
-          this._applyCompassSetting('grid/cube/dancer', rounded);
-          this._saveSetting('gcd', rounded);
-        },
-      });
-      this.compassBox.contentElement.appendChild(this.sliders.gcd.container);
-
       this._applyAllSavedSettings(savedSettings);
     }
 
   _createSpinnerControls() {
       const hostContainer = this.baseController?.domElement?.parentElement || document.body;
       const parentHeight = hostContainer.clientHeight || window.innerHeight;
-      const parentWidth = hostContainer.clientWidth || window.innerWidth;
-      const width = 780;
+      const width = 690;
       
-      const left = Math.max(20, (parentWidth - width) / 2);
-      const top = Math.max(20, parentHeight - 100);
+      const left = 20;
+      const top = Math.max(20, parentHeight - 85);
 
       this.spinnerBox = UITools.makeDialog({
         stateId: 'accuCad-spinnerBox',
@@ -195,7 +180,7 @@ class ViewControls {
         width: `${width}px`,
         height: '55px',
         position: [left, top],
-        titleBarAtBottom: false, // Reverted bottom title bar to standard top layout
+        titleBarAtBottom: false,
         transparent: true,
         allowMaximize: false,
         noPadding: true,
@@ -219,7 +204,6 @@ class ViewControls {
       create('tilt', 'tilt', (inc) => this._transformView(inc * this.spinnerMoveMult, 'tilt'));
       create('diagonal', 'diagonal', (inc) => this._transformView(inc * this.spinnerMoveMult, 'ddiag'));
       create('perspective', 'perspective', (inc) => this._transformView(inc, 'dfov'));
-      create('lights', 'lights', (inc) => this._transformView(inc / 5, 'denvRot'));
       create('accudraw Z', 'accudraw Z', (inc) => this._transformView(inc, 'accudrawZ'));
     }
 
@@ -257,20 +241,36 @@ class ViewControls {
   }
 
   _buildRotationMatrix(x, y, z) {
-    const euler = new THREE.Euler(
-      THREE.MathUtils.degToRad(x),
-      THREE.MathUtils.degToRad(y),
-      THREE.MathUtils.degToRad(z),
-      'XYZ'
-    );
-    const matrix = new THREE.Matrix4().makeRotationFromEuler(euler);
-    const te = matrix.elements;
-    return [
-      [te[0], te[4], te[8]],
-      [te[1], te[5], te[9]],
-      [te[2], te[6], te[10]],
-    ];
-  }
+      const controller = this.baseController;
+      const base = (controller && controller.basePlaneMatrix) ? controller.basePlaneMatrix : [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1]
+      ];
+
+      const baseM = new THREE.Matrix4().set(
+        base[0][0], base[0][1], base[0][2], 0,
+        base[1][0], base[1][1], base[1][2], 0,
+        base[2][0], base[2][1], base[2][2], 0,
+        0, 0, 0, 1
+      );
+
+      const euler = new THREE.Euler(
+        THREE.MathUtils.degToRad(x),
+        THREE.MathUtils.degToRad(y),
+        THREE.MathUtils.degToRad(z),
+        'XYZ'
+      );
+      const rotM = new THREE.Matrix4().makeRotationFromEuler(euler);
+
+      const combinedM = baseM.clone().multiply(rotM);
+      const te = combinedM.elements;
+      return [
+        [te[0], te[4], te[8]],
+        [te[1], te[5], te[9]],
+        [te[2], te[6], te[10]],
+      ];
+    }
 
   _applyDancerStyle(level) {
     // TODO: The dancer logic should be encapsulated in its own module and passed as a dependency.
@@ -278,72 +278,52 @@ class ViewControls {
   }
 
   _applyCompassSetting(name, value) {
-    const controller = this.baseController;
-    const view = this.threeDView;
-    if (!controller || !view) return;
+      const controller = this.baseController;
+      const view = this.threeDView;
+      if (!controller || !view) return;
 
-    // FIX: Reference the correct object 'accuDraw', not 'originMarker'
-    const target = controller.accuDraw;
+      const target = controller.accuDraw;
 
-    if (name === 'size') {
-      const adjustedSize = value * (1.5 / 300);
-      if (target?.setSizeAnimated) {
-        target.setSizeAnimated(adjustedSize, 0.5);
-      }
-    } else if (name === 'color') {
-      const colorVal = this._hueToRgb(value);
-      if (target?.setColorAnimated) {
-        target.setColorAnimated(colorVal, 0.5);
-      }
-    } else if (name === 'square or circle') {
-      if (target?.setSquircleAnimated) {
-        target.setSquircleAnimated(value, 0.5);
-      }
-    } else if (name === 'background') {
-      const percent = value / 255;
-      view.scene.background = new THREE.Color(percent, percent, percent);
-    } else if (name === 'transparency') {
-      if (target?.update) {
-        target.update({ opacity: 1 - value });
-      }
-    } else if (name === 'depth aware') {
-      if (target?.update) {
-        target.update({ depthTest: value });
-      }
-    } else if (name.endsWith('rotation')) {
-      const axis = name.split(' ')[0];
-      this.rotations[axis] = value;
-      const updatedMatrix = this._buildRotationMatrix(
-        this.rotations.x,
-        this.rotations.y,
-        this.rotations.z
-      );
-      if (target?.setRotationAnimated) {
-        controller.rotationMatrix = updatedMatrix;
-        target.setRotationAnimated(updatedMatrix, 0.5);
-        controller.refreshMousePosition();
-      }
-    } else if (name === 'grid/cube/dancer') {
-      if (controller.gridHelper) controller.gridHelper.visible = value >= 1;
-      if (view.cube) view.cube.visible = value >= 2;
-
-      if (value >= 3) {
-        if (!window.dancer && !window.dancerLoading) {
-          if (window.loadDancer) window.loadDancer();
-          const checkInterval = setInterval(() => {
-            if (window.dancer) {
-              clearInterval(checkInterval);
-              this._applyDancerStyle(value);
-            }
-          }, 100);
-        } else if (window.dancer) {
-          this._applyDancerStyle(value);
+      if (name === 'size') {
+        const adjustedSize = value * (1.5 / 300);
+        if (target?.setSizeAnimated) {
+          target.setSizeAnimated(adjustedSize, 0.5);
         }
-      } else {
-        if (window.dancer && window.unloadDancer) window.unloadDancer();
+      } else if (name === 'color') {
+        const colorVal = this._hueToRgb(value);
+        if (target?.setColorAnimated) {
+          target.setColorAnimated(colorVal, 0.5);
+        }
+      } else if (name === 'square or circle') {
+        if (target?.setSquircleAnimated) {
+          target.setSquircleAnimated(value, 0.5);
+        }
+      } else if (name === 'background') {
+        const percent = value / 255;
+        view.scene.background = new THREE.Color(percent, percent, percent);
+      } else if (name === 'transparency') {
+        if (target?.update) {
+          target.update({ opacity: 1 - value });
+        }
+      } else if (name === 'depth aware') {
+        if (target?.update) {
+          target.update({ depthTest: value });
+        }
+      } else if (name.endsWith('rotation')) {
+        const axis = name.split(' ')[0];
+        this.rotations[axis] = value;
+        const updatedMatrix = this._buildRotationMatrix(
+          this.rotations.x,
+          this.rotations.y,
+          this.rotations.z
+        );
+        if (target?.setRotationAnimated) {
+          controller.rotationMatrix = updatedMatrix;
+          target.setRotationAnimated(updatedMatrix, 0.5);
+          controller.refreshMousePosition();
+        }
       }
     }
-  }
 
   _transformView(inc, name) {
     if (name === 'accudrawZ') {
@@ -409,28 +389,25 @@ class ViewControls {
   }
 
   _applyAllSavedSettings(settings) {
-    if (settings.size !== undefined) {
-      this._applyCompassSetting('size', settings.size);
+      if (settings.size !== undefined) {
+        this._applyCompassSetting('size', settings.size);
+      }
+      if (settings.hue !== undefined) {
+        this._applyCompassSetting('color', (settings.hue + 30) % 360);
+      }
+      if (settings.opa !== undefined) {
+        this._applyCompassSetting('transparency', settings.opa);
+      }
+      if (settings.depth !== undefined) {
+        this._applyCompassSetting('depth aware', settings.depth >= 0.5);
+      }
+      if (settings.sqrcl !== undefined) {
+        this._applyCompassSetting('square or circle', settings.sqrcl);
+      }
+      if (settings.bg !== undefined) {
+        this._applyCompassSetting('background', settings.bg);
+      }
     }
-    if (settings.hue !== undefined) {
-      this._applyCompassSetting('color', (settings.hue + 30) % 360);
-    }
-    if (settings.opa !== undefined) {
-      this._applyCompassSetting('transparency', settings.opa);
-    }
-    if (settings.depth !== undefined) {
-      this._applyCompassSetting('depth aware', settings.depth >= 0.5);
-    }
-    if (settings.sqrcl !== undefined) {
-      this._applyCompassSetting('square or circle', settings.sqrcl);
-    }
-    if (settings.bg !== undefined) {
-      this._applyCompassSetting('background', settings.bg);
-    }
-    if (settings.gcd !== undefined) {
-      this._applyCompassSetting('grid/cube/dancer', Math.round(settings.gcd));
-    }
-  }
 
 
   destroy() {
@@ -442,6 +419,16 @@ class ViewControls {
       }
       this.compassBox = null;
       this.spinnerBox = null;
+    }
+
+  resetRotationSliders() {
+      this.rotations = { x: 0, y: 0, z: 0 };
+      ['x', 'y', 'z'].forEach((axis) => {
+        const slider = this.sliders[`${axis}rot`];
+        if (slider) {
+          slider.setValue(0);
+        }
+      });
     }
 }
 

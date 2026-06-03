@@ -1,53 +1,57 @@
 
 class BaseController {
   constructor(threeDView, domElem) {
-    this.view = threeDView;
-    this.domElement = domElem || threeDView.renderer.domElement;
-    this.cadElements = [];
+      this.view = threeDView;
+      this.domElement = domElem || threeDView.renderer.domElement;
+      this.cadElements = [];
 
-    this.currentColor = '#0088FF';
-    this.lineWidth = 4;
-    this.origin = [0, 0, 0];
-    this.rotationMatrix = [
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, 1],
-    ];
-    this.originVisible = true;
-    this.floatingOrigin = true;
-    this.zPlaneLocked = false;
-    this.activeCommand = null;
-    this.commands = {};
-    this.previousPoints = [];
-    this.gridHelper = new THREE.GridHelper(20, 20);
-    this.gridHelper.userData.isPickable = false;
-    this.view.scene.add(this.gridHelper);
-    this.tentativeMarker = null;
-    this.tentativeProjectionLine = null;
-    this._highlightedElement = null;
-    this._tentativeTimeout = null;
-    this._lastMousePosition = null;
-    this._lastWorldPoint = null;
-    this._lastControlMousePos = null;
-    this._ctrlDown = false;
-    this._lockedHoverPoint = null;
-    this._lastMetaWorldPoint = null;
-    this.indexEnabled = true;
-    this.indexTolerance = 0.2;
-    this._shiftDown = false;
+      this.currentColor = '#0088FF';
+      this.lineWidth = 4;
+      this.origin = [0, 0, 0];
+      this.basePlaneMatrix = [
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 1, 0]
+      ];
+      this.rotationMatrix = [
+        [1, 0, 0],
+        [0, 0, -1],
+        [0, 1, 0]
+      ];
+      this.originVisible = true;
+      this.floatingOrigin = true;
+      this.zPlaneLocked = false;
+      this.activeCommand = null;
+      this.commands = {};
+      this.previousPoints = [];
+      this.gridHelper = new THREE.GridHelper(20, 20);
+      this.gridHelper.userData.isPickable = false;
+      this.view.scene.add(this.gridHelper);
+      this.tentativeMarker = null;
+      this.tentativeProjectionLine = null;
+      this._highlightedElement = null;
+      this._tentativeTimeout = null;
+      this._lastMousePosition = null;
+      this._lastWorldPoint = null;
+      this._lastControlMousePos = null;
+      this._ctrlDown = false;
+      this._lockedHoverPoint = null;
+      this._lastMetaWorldPoint = null;
+      this.indexEnabled = true;
+      this.indexTolerance = 0.2;
+      this._shiftDown = false;
 
-    this.commandControlValue = 0.25;
+      this.commandControlValue = 0.25;
 
-    this.chordThreshold = 50;
-    this.leftDownTime = null;
-    this.rightDownTime = null;
-    this.pendingClickTimer = null;
+      this.chordThreshold = 50;
+      this.leftDownTime = null;
+      this.rightDownTime = null;
+      this.pendingClickTimer = null;
 
-    // Initialize AccuDraw Logic
-    this.accuDrawLogic = new AccuDrawLogic(this);
+      this.accuDrawLogic = new AccuDrawLogic(this);
 
-    EventHandlers.setupEventListeners(this);
-  }
+      EventHandlers.setupEventListeners(this);
+    }
 
   _storePoint(pointData) {
     this.previousPoints.push(pointData);
@@ -76,37 +80,41 @@ class BaseController {
   }
 
   setDrawingPlane(planeType) {
-    const PLANE_ROTATION_MATRICES = {
-      front: [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, 1],
-      ],
-      top: [
-        [1, 0, 0],
-        [0, 0, -1],
-        [0, 1, 0],
-      ],
-      side: [
-        [0, 0, 1],
-        [0, 1, 0],
-        [-1, 0, 0],
-      ],
-    };
-    this.rotationMatrix =
-      PLANE_ROTATION_MATRICES[planeType] || PLANE_ROTATION_MATRICES.front;
+      const PLANE_ROTATION_MATRICES = {
+        front: [
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1],
+        ],
+        top: [
+          [1, 0, 0],
+          [0, 0, -1],
+          [0, 1, 0],
+        ],
+        side: [
+          [0, 0, 1],
+          [0, 1, 0],
+          [-1, 0, 0],
+        ],
+      };
+      this.basePlaneMatrix =
+        PLANE_ROTATION_MATRICES[planeType] || PLANE_ROTATION_MATRICES.front;
+      this.rotationMatrix = this.basePlaneMatrix;
 
-    if (this.accuDraw) {
-      this.accuDraw.setRotationAnimated(this.rotationMatrix, 0.3);
+      if (this.accuDraw) {
+        this.accuDraw.setRotationAnimated(this.rotationMatrix, 0.3);
+      }
+
+      if (this.accuDrawLogic) {
+        this.accuDrawLogic.setRotation(this.rotationMatrix);
+      }
+
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.resetRotationSliders();
+      }
+
+      this.refreshMousePosition();
     }
-
-    // SYNC LOGIC
-    if (this.accuDrawLogic) {
-      this.accuDrawLogic.setRotation(this.rotationMatrix);
-    }
-
-    this.refreshMousePosition();
-  }
 
   setOrigin(newOrigin) {
     if (Array.isArray(newOrigin) && newOrigin.length === 3) {
