@@ -32,7 +32,7 @@ class GameUI {
       const feedbackWrapper = makeElement('div', { className: 'feedback-wrapper' }, this.feedbackNode, this.instructionsBtn);
 
       this.spinBtn = makeElement('button', {}, 'Stop Spin');
-      this.revealBtn = makeElement('button', {}, 'Give Up?');
+      this.revealBtn = makeElement('button', {}, 'Cheat'); // Renamed from "Give Up?" to "Cheat"
       const buttonGroup = makeElement('div', { className: 'button-group' }, this.spinBtn, this.revealBtn);
       
       this.difficultyLabel = makeElement('span', {});
@@ -40,10 +40,8 @@ class GameUI {
       
       const difficultyContainer = makeElement('div', { className: 'difficulty-container' }, this.difficultyLabel, this.difficultySlider);
 
-      // We remove absolute positioning and fixed sizes from here, let UITools handle it
       this.uiContainer = makeElement('div', { id: 'game-ui' }, this.panelMascot, feedbackWrapper, difficultyContainer, buttonGroup);
       
-      // FIX: Encapsulate UI in a standard dialog
       this.dialog = UITools.makeDialog({
          env: this.env,
          title: 'Lego Detective',
@@ -394,4 +392,47 @@ class GameUI {
       `;
     }
 
+
+  flashCheatButtonColor(hexColor, durationMs = 2500) {
+      if (!this.revealBtn) return;
+
+      const originalBg = this.revealBtn.style.backgroundColor;
+      const originalBorder = this.revealBtn.style.borderColor;
+      const originalColor = this.revealBtn.style.color;
+      const originalShadow = this.revealBtn.style.boxShadow;
+
+      // Apply target hex color
+      this.revealBtn.style.backgroundColor = hexColor;
+      this.revealBtn.style.borderColor = 'rgba(255, 255, 255, 0.4)';
+      this.revealBtn.style.boxShadow = `0 0 12px ${hexColor}`;
+
+      // Adjust text color dynamically for readability depending on brightness
+      const r = parseInt(hexColor.slice(1, 3), 16);
+      const g = parseInt(hexColor.slice(3, 5), 16);
+      const b = parseInt(hexColor.slice(5, 7), 16);
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      this.revealBtn.style.color = luminance > 0.5 ? '#111' : '#fff';
+
+      setTimeout(() => {
+        this.revealBtn.style.backgroundColor = originalBg;
+        this.revealBtn.style.borderColor = originalBorder;
+        this.revealBtn.style.color = originalColor;
+        this.revealBtn.style.boxShadow = originalShadow;
+      }, durationMs);
+    }
+
+  showCheatButtonText(text, durationMs = 3000) {
+      if (!this.revealBtn) return;
+
+      const originalText = this.revealBtn.textContent;
+      const originalFontSize = this.revealBtn.style.fontSize;
+
+      this.revealBtn.textContent = text;
+      this.revealBtn.style.fontSize = '11px'; // Small text as requested
+
+      setTimeout(() => {
+        this.revealBtn.textContent = originalText;
+        this.revealBtn.style.fontSize = originalFontSize;
+      }, durationMs);
+    }
 }

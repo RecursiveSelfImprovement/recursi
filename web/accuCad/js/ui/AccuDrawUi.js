@@ -108,7 +108,7 @@ class AccuDrawUi {
       'div',
       { className: 'accudrawDragger' },
       makeElement('img', {
-        src: 'https://sniplets/resources/accudraw-small.png',
+        src: 'https://recursi.dev/resources/accudraw-small.png',
         className: 'accudrawIcon',
       }),
       makeElement('div', { className: 'accudrawTitle' }, 'accudraw')
@@ -327,14 +327,3 @@ class AccuDrawUi {
     }
   }
 }
-
-/* recursi-meta
-{
-  "schema": 1,
-  "lines": 329,
-  "provides": [
-    "AccuDrawUi"
-  ],
-  "deps": []
-}
-recursi-meta */

@@ -1,28 +1,29 @@
 class ThreeJSLoader {
   constructor(containerId, options = {}) {
-    this.containerId = containerId;
-    this.options = Object.assign(
-      {
-        cameraPos: null,
-        enableControls: false,
-        useThickLines: false,
-        useRaycaster: false,
-        commonLoaders: false,
-        hdrPath: null,
-      },
-      options
-    );
+      this.containerId = containerId;
+      this.options = Object.assign(
+        {
+          cameraPos: null,
+          enableControls: false,
+          useThickLines: false,
+          useRaycaster: false,
+          commonLoaders: false,
+          hdrPath: null,
+          fov: 50, // Default to a standard 50-degree lens to eliminate wide-angle distortion
+        },
+        options
+      );
 
-    this.scene = null;
-    this.camera = null;
-    this.renderer = null;
-    this.controls = null;
-    this.raycaster = null;
-    this.modules = {};
-    this.loaders = {};
-    this.onUpdateCallback = null;
-    this._onResizeBound = this._onResize.bind(this);
-  }
+      this.scene = null;
+      this.camera = null;
+      this.renderer = null;
+      this.controls = null;
+      this.raycaster = null;
+      this.modules = {};
+      this.loaders = {};
+      this.onUpdateCallback = null;
+      this._onResizeBound = this._onResize.bind(this);
+    }
 
   async init(containerElement) {
       console.log('[INSTRUMENT] ThreeJSLoader.init start');
@@ -99,7 +100,8 @@ class ThreeJSLoader {
       const width = Math.max(1, rect.width || 640);
       const height = Math.max(1, rect.height || 360);
 
-      this.camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+      const fov = this.options.fov || 50;
+      this.camera = new THREE.PerspectiveCamera(fov, width / height, 0.1, 1000);
       if (this.options.cameraPos) {
         this.camera.position.set(
           this.options.cameraPos.x,

@@ -18,7 +18,7 @@
     "src/VisibilityTester.js"
   ],
   "library": [
-    "ThreeJsLoader.js",
+    "ThreeJSLoader.js",
     "UITools.js"
   ],
   "thirdParty": []

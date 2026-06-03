@@ -191,5 +191,28 @@ class EventHandlers {
       app.videoPlayer.setVolume(desiredVol);
     }
 
+
+  static mute(event) {
+      const app = AppContext.get();
+      if (!app || !app.videoPlayer) return;
+      
+      const currentVol = app.videoPlayer.getVolume();
+      window.smartLog('Volume', `[Mute Event] Triggered. Captured YT Vol: ${currentVol}`);
+      
+      app._scriptMuted = true;
+      app._preMuteVolume = currentVol;
+      app.videoPlayer.setVolume(0);
+    }
+
+  static mute_off(event) {
+      const app = AppContext.get();
+      if (!app || !app.videoPlayer) return;
+      
+      app._scriptMuted = false;
+      let desiredVol = window.projectApp?.state?.settings?.videoVolume ?? app._preMuteVolume ?? 100;
+      
+      window.smartLog('Volume', `[Mute_Off Event] Triggered. Restoring to: ${desiredVol}`);
+      app.videoPlayer.setVolume(desiredVol);
+    }
 }
 
