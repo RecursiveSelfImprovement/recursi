@@ -16,53 +16,64 @@ class DrawingApp {
   configuredBoxes = [];
 
   init(targetElement) {
-    console.log('Initializing Drawing Panel v10 (Tools)...');
-    targetElement.innerHTML = '';
+      console.log('Initializing Drawing Panel v10 (Tools)...');
+      targetElement.innerHTML = '';
 
-    this.drawnPaths = [];
-    this.history.clear();
+      this.drawnPaths = [];
 
-    this.loadSettings();
-    this.injectStyles();
+      // Safe initialization using the newly isolated DrawingHistory class
+      if (!this.history || typeof this.history.clear !== 'function') {
+        this.history = new DrawingHistory();
+      }
+      this.history.clear();
 
-    const pad = 20;
-    const settingsW = 280;
-    const mainW = Math.max(
-      400,
-      Math.min(
-        window.innerWidth * 0.75,
-        window.innerWidth - pad * 3 - settingsW
-      )
-    );
-    const mainH = Math.floor(window.innerHeight * 0.85);
+      if (!this.colorPicker) {
+        this.colorPicker = new ColorPicker();
+      }
 
-    this.createDrawingInterface({ x: pad, y: pad, w: mainW, h: mainH });
-    this.createSettingsInterface({
-      x: pad + mainW + pad,
-      y: pad,
-      w: settingsW,
-      h: 400,
-    });
-    this.setupGlobalKeys();
+      this.loadSettings();
+      this.injectStyles();
 
-    // Auto-start MIDI if mappings exist
-    const savedMappings = localStorage.getItem('drawingAppMidiMappings_v1');
-    if (savedMappings) {
-      try {
-        const parsed = JSON.parse(savedMappings);
-        if (parsed.mappings && Object.keys(parsed.mappings).length > 0) {
-          console.log('Found saved MIDI mappings, initializing controller...');
-          // Initialize mapper (starts listening) but don't activate mapping mode UI
-          this.midiMapper = new MidiMapper(
-            this.settingsDialog.contentElement,
-            this
-          );
+      const rect = targetElement.getBoundingClientRect();
+      const containerW = (rect.width && rect.width > 100) ? rect.width : window.innerWidth;
+      const containerH = (rect.height && rect.height > 100) ? rect.height : window.innerHeight;
+
+      const pad = 20;
+      const settingsW = 280;
+      const mainW = Math.max(
+        400,
+        Math.min(
+          containerW * 0.70,
+          containerW - pad * 3 - settingsW
+        )
+      );
+      const mainH = Math.floor(containerH * 0.85);
+
+      this.createDrawingInterface({ x: pad, y: pad, w: mainW, h: mainH });
+      this.createSettingsInterface({
+        x: pad + mainW + pad,
+        y: pad,
+        w: settingsW,
+        h: Math.min(400, containerH - pad * 2),
+      });
+      this.setupGlobalKeys();
+
+      const savedMappings = localStorage.getItem('drawingAppMidiMappings_v1');
+      if (savedMappings) {
+        try {
+          const parsed = JSON.parse(savedMappings);
+          if (parsed.mappings && Object.keys(parsed.mappings).length > 0) {
+            console.log('Found saved MIDI mappings, initializing controller...');
+            this.midiMapper = new MidiMapper(
+              this.settingsDialog.contentElement,
+              this
+            );
+          }
+        } catch (e) {
+          console.warn('Error checking MIDI mappings', e);
         }
-      } catch (e) {
-        console.warn('Error checking MIDI mappings', e);
       }
     }
-  }
 
   createConfigurableBox() {
     if (!this.configTextarea || !this.statusDiv) {
@@ -121,79 +132,69 @@ class DrawingApp {
   }
 
   constructor() {
-    this.svgElement = null;
-    this.drawingDialog = null;
-    this.settingsDialog = null;
-    this.modeLabel = null;
-    this.cursorTip = null;
-    this.history = new HistoryManager();
-    // Utilities
-    this.colorPicker = new ColorPicker();
+      this.svgElement = null;
+      this.drawingDialog = null;
+      this.settingsDialog = null;
+      this.modeLabel = null;
+      this.cursorTip = null;
+      this.history = new DrawingHistory(); // Updated instantiation
+      this.colorPicker = new ColorPicker();
 
-    // State
-    this.activeElement = null;
-    this.rubberBand = null;
-    this.arcChordGuide = null;
-    this.isDrawing = false;
-    this.currentPoints = [];
-    this.drawnPaths = [];
-    // Interaction State
-    this.highlightCircle = null;
-    this.snappedPoint = null;
-    // Edit/Move/Copy State
-    this.hoveredElement = null;
-    this.carriedElement = null;
-    this.carryOrigin = null;
-    this.originalPathData = null;
-    // Vertex Editing
-    this.editingPoint = null;
-    this.editStartPos = null;
-    this.pulsingElement = null;
-    // Image Placement State
-    this.pendingImage = null; // The Image object
-    this.imageAspectRatio = 1;
-    this.imageStartPoint = null;
-    this.imagePreviewEl = null; // UI element in dialog
+      this.activeElement = null;
+      this.rubberBand = null;
+      this.arcChordGuide = null;
+      this.isDrawing = false;
+      this.currentPoints = [];
+      this.drawnPaths = [];
+      this.highlightCircle = null;
+      this.snappedPoint = null;
+      this.hoveredElement = null;
+      this.carriedElement = null;
+      this.carryOrigin = null;
+      this.originalPathData = null;
+      this.editingPoint = null;
+      this.editStartPos = null;
+      this.pulsingElement = null;
+      this.pendingImage = null;
+      this.imageAspectRatio = 1;
+      this.imageStartPoint = null;
+      this.imagePreviewEl = null;
 
-    // Keys
-    this.isShiftDown = false;
-    this.isCtrlDown = false;
-    this.isSpaceDown = false; // For panning
+      this.isShiftDown = false;
+      this.isCtrlDown = false;
+      this.isSpaceDown = false;
 
-    // Pointer & Preview
-    this.currentMousePt = null;
-    this.cornerCentersGroup = null;
-    // Zoom / Pan state
-    this.zoom = 1;
-    this.panX = 0;
-    this.panY = 0;
-    this.zoomGroup = null;
-    // Default Settings
-    this.settings = {
-      toolMode: 'curve',
-      bgColor: '#222222',
-      strokeColor: 'rgb(0, 255, 170)',
-      strokeWidth: 4,
-      cornerRadius: 0,
-      arcAngle: 0, // New setting for PolyArc
-      // Construction / Debug Settings
-      construction: {
-        visible: true,
-        activeOnly: false,
-        opacity: 0.6,
-        lineWidth: 1,
-        labelSize: 10,
-      },
-    };
-    this.vbWidth = 2000;
-    this.vbHeight = 1500;
+      this.currentMousePt = null;
+      this.cornerCentersGroup = null;
+      this.zoom = 1;
+      this.panX = 0;
+      this.panY = 0;
+      this.zoomGroup = null;
+      
+      this.settings = {
+        toolMode: 'curve',
+        bgColor: '#222222',
+        strokeColor: 'rgb(0, 255, 170)',
+        strokeWidth: 4,
+        cornerRadius: 0,
+        arcAngle: 0,
+        construction: {
+          visible: true,
+          activeOnly: false,
+          opacity: 0.6,
+          lineWidth: 1,
+          labelSize: 10,
+        },
+      };
+      this.vbWidth = 2000;
+      this.vbHeight = 1500;
 
-    this.identityTransform = {
-      worldToScreen: (pt) => [pt[0], pt[1]],
-      screenToWorld: (pt) => [pt[0], pt[1]],
-      zoom: 1,
-    };
-  }
+      this.identityTransform = {
+        worldToScreen: (pt) => [pt[0], pt[1]],
+        screenToWorld: (pt) => [pt[0], pt[1]],
+        zoom: 1,
+      };
+    }
 
   injectStyles() {
     applyCss(
@@ -541,9 +542,9 @@ class DrawingApp {
       this.drawingDialog = UITools.makeDialog({
         env: this.env,
         title: 'Drawing Panel',
-        width: layout.w + 'px',
-        height: layout.h + 'px',
-        content: wrapper,
+        size: [layout.w, layout.h],
+        position: [layout.x, layout.y],
+        contentElement: wrapper,
         noPadding: true,
         allowMaximize: true,
         stateId: stateId,
@@ -1061,9 +1062,9 @@ class DrawingApp {
       this.settingsDialog = UITools.makeDialog({
         env: this.env,
         title: 'Settings',
-        width: layout.w + 'px',
-        height: 'auto',
-        content: container,
+        size: [layout.w, layout.h || 400],
+        position: [layout.x, layout.y],
+        contentElement: container,
         allowMinimize: true,
         stateId: stateId,
       });
