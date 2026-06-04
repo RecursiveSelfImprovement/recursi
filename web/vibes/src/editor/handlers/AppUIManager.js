@@ -995,6 +995,39 @@ class AppUIManager {
         logElementInfo(content, `  Content of Dialog #${idx}`);
       });
     }
+
+  showLogoAnimation() {
+      if (typeof EmberLogo === 'undefined') {
+        this.setStatus('EmberLogo is not available/loaded.', true);
+        return;
+      }
+      if (this.app.emberLogo && this.app.emberLogo._shell && this.app.emberLogo._shell.isConnected) {
+        this.app.emberLogo.setAwake(true);
+        this.setStatus('Logo is already active!');
+        return;
+      }
+      EmberLogo._loadGoogleFont();
+      this.app.emberLogo = EmberLogo.createFloatingPanel(document.body, {
+        showSubtitle: false,
+        isAwake: true,
+        scale: 0.55,
+        emberCountMultiplier: 0.4,
+        emberSpeedMultiplier: 0.3,
+        emberSizeMultiplier: 0.4,
+        bgOpacity: 0.0,
+        displaySubtitle: false,
+        onClose: () => {
+          this.app.emberLogo = null;
+        }
+      });
+      if (this.app.emberLogo._shell) {
+        this.app.emberLogo._shell.style.position = 'absolute';
+        this.app.emberLogo._shell.style.left = '450px'; 
+        this.app.emberLogo._shell.style.top = '2px'; 
+        this.app.emberLogo._shell.style.zIndex = '9999999';
+      }
+      this.setStatus('✨ Logo restored!');
+    }
 }
 
 /* recursi-meta

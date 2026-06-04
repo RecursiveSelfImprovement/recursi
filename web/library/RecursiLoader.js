@@ -52,9 +52,30 @@ class RecursiLoader {
         }
       }
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error(`HTTP ${res.status} (${res.statusText}) while fetching ${url}`);
-      return await res.text();
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error();
+        return await res.text();
+      } catch (e) {
+        // Dynamic path fallback: if LogoExperimentation fails, try LogoExperiments (and vice versa)
+        if (url.includes('/LogoExperimentation/')) {
+          const altUrl = url.replace('/LogoExperimentation/', '/LogoExperiments/');
+          try {
+            const res = await fetch(altUrl);
+            if (res.ok) return await res.text();
+          } catch (err) {}
+        } else if (url.includes('/LogoExperiments/')) {
+          const altUrl = url.replace('/LogoExperiments/', '/LogoExperimentation/');
+          try {
+            const res = await fetch(altUrl);
+            if (res.ok) return await res.text();
+          } catch (err) {}
+        }
+        
+        const res = await fetch(url);
+        if (!res.ok) throw new Error(`HTTP ${res.status} (${res.statusText}) while fetching ${url}`);
+        return await res.text();
+      }
     }
 
   static async loadCss(url) {

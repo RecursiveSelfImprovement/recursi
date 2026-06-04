@@ -1083,10 +1083,20 @@ class ProjectEditorApp {
         if (startupShell && window.vibesStartupLogo) {
           this.emberLogo = window.vibesStartupLogo;
           
-          // Clear the 1.4s transition to prevent conflicts with JS positioning/glide
-          startupShell.style.transition = 'none';
+          // Elevate the logo zIndex to 9999999 so it sits on top of all dialogs (100000+)
+          if (this.emberLogo._shell) {
+            this.emberLogo._shell.style.zIndex = '9999999';
+          }
+
+          // Apply a smooth flight transition right before we trigger the glide
+          startupShell.style.transition = 'left 1.2s cubic-bezier(0.25, 1, 0.25, 1), top 1.2s cubic-bezier(0.25, 1, 0.25, 1), transform 1.2s cubic-bezier(0.25, 1, 0.25, 1), scale 1.2s cubic-bezier(0.25, 1, 0.25, 1)';
           
           this.emberLogo.glideToHeader('450px', '2px', 0.55);
+
+          // Clear the transition afterwards to prevent dragging conflicts
+          setTimeout(() => {
+            if (startupShell) startupShell.style.transition = 'none';
+          }, 1300);
 
           if (overlay) {
             overlay.style.opacity = '0';
@@ -1108,6 +1118,9 @@ class ProjectEditorApp {
               emberSizeMultiplier: 0.4,
               bgOpacity: 0.0,
               displaySubtitle: false,
+              onClose: () => {
+                this.emberLogo = null;
+              }
             });
             if (this.emberLogo._shell) {
               this.emberLogo._shell.style.position = 'absolute';

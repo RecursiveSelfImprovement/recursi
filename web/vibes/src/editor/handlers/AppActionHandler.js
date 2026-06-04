@@ -2040,4 +2040,64 @@ class AppActionHandler {
         ]
       });
     }
+
+  async handleClearLocalData() {
+      const confirmClear = confirm(
+        "Are you sure you want to clear all locally stored data in Vibes?\n\nThis will reset appearance, editor settings, active workspace state, and pending patches/history in the browser.\n\nYour comments login data and saved local disk folders will NOT be affected."
+      );
+      if (!confirmClear) return;
+
+      this.app.uiManager.setStatus('Clearing local data...');
+
+      const preservedKeys = [];
+      const keysToRemove = [];
+
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        const lowerKey = key.toLowerCase();
+        
+        const isCommentsLogin = 
+          lowerKey.includes('comment') || 
+          lowerKey.includes('login') || 
+          lowerKey.includes('user') || 
+          lowerKey.includes('token') || 
+          lowerKey.includes('pass') || 
+          lowerKey.includes('session') ||
+          lowerKey.startsWith('comments_');
+
+        if (isCommentsLogin) {
+          preservedKeys.push(key);
+        } else {
+          keysToRemove.push(key);
+        }
+      }
+
+      for (const key of keysToRemove) {
+        localStorage.removeItem(key);
+      }
+
+      console.log('[Clear Data] Preserved keys:', preservedKeys);
+      console.log('[Clear Data] Removed keys:', keysToRemove);
+
+      if (this.app.patchStore) {
+        try {
+          await this.app.patchStore.clear();
+        } catch (e) {
+          console.warn('Failed to clear patchStore:', e);
+        }
+      }
+
+      if (this.app.historyManager) {
+        try {
+          await this.app.historyManager.clearHistory();
+        } catch (e) {
+          console.warn('Failed to clear history:', e);
+        }
+      }
+
+      this.app.uiManager.setStatus('Local data cleared successfully! Reloading...');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    }
 }

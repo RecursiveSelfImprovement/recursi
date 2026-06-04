@@ -9,9 +9,71 @@
   <script src="https://cdn.jsdelivr.net/npm/acorn@8.11.3/dist/acorn.min.js"></script>
   <script src="https://unpkg.com/prettier@2.8.8/standalone.js"></script>
   <script src="https://unpkg.com/prettier@2.8.8/parser-babel.js"></script>
+
+  <!-- Google Font required by EmberLogo -->
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" />
+
+  <style>
+    #startup-overlay {
+      position: fixed;
+      inset: 0;
+      background: #0c0e12;
+      background-image: radial-gradient(circle at 50% 25%, #191410 0%, #0c0e12 68%);
+      z-index: 2147483647;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: opacity 1.0s ease-out;
+    }
+  </style>
 </head>
 <body>
+  <div id="startup-overlay"></div>
+
   <div id="app-container"></div>
+
+  <!-- Bootstrapping DomBasics globally first -->
+  <script src="/library/DomBasics.js"></script>
+  <script>
+      globalThis.DomBasics = DomBasics;
+      DomBasics.run();
+      globalThis.makeElement = makeElement;
+      globalThis.applyCss = applyCss;
+      console.log("preload complete");
+  </script>
+
+  <!-- Load EmberLogo and copy to global scope to prevent loader redeclaration errors -->
+  <script src="/LogoExperiments/js/EmberLogo.js" onerror="this.onerror=null; this.src='/LogoExperiments/js/EmberLogo.js';"></script>
+  <script>
+    if (typeof EmberLogo !== 'undefined') {
+      window.EmberLogo = EmberLogo;
+      globalThis.EmberLogo = EmberLogo;
+
+      // Instantiate the logo centered on the splash screen
+      window.vibesStartupLogo = EmberLogo.createFloatingPanel(document.body, {
+        showSubtitle: false,
+        isAwake: true,
+        scale: 1.0,
+        emberCountMultiplier: 0.6,
+        emberSpeedMultiplier: 0.4,
+        emberSizeMultiplier: 0.6,
+        bgOpacity: 0.0,
+        isStartupLogo: true
+      });
+
+      // Align and center the logo
+      if (window.vibesStartupLogo._shell) {
+        window.vibesStartupLogo._shell.id = 'startup-logo-shell';
+        window.vibesStartupLogo._shell.style.position = 'fixed';
+        window.vibesStartupLogo._shell.style.left = '50%';
+        window.vibesStartupLogo._shell.style.top = '40%';
+        window.vibesStartupLogo._shell.style.transform = 'translate(-50%, -50%)';
+        // Setup transition for the high-performance flight glide
+        window.vibesStartupLogo._shell.style.transition = 'left 1.4s cubic-bezier(0.25, 1, 0.25, 1), top 1.4s cubic-bezier(0.25, 1, 0.25, 1), transform 1.4s cubic-bezier(0.25, 1, 0.25, 1), scale 1.4s cubic-bezier(0.25, 1, 0.25, 1)';
+      }
+    }
+  </script>
+
   <script src="/library/recursi.js" data-files="/vibes/files.json"></script>
 </body>
 </html>

@@ -20,12 +20,18 @@ class ActionInitializer {
       this.app.actionRegistry.register({ id: 'tools:show-playground', label: '🕹️ Component Playground', handler: () => this.app.actionHandler.togglePlayground(), menuPath: 'Tools / Component Playground' });
       this.app.actionRegistry.register({ id: 'tools:push-to-runner', label: '🚀 Live Preview', handler: () => this.app.actionHandler.handlePushToRunner() });
       
-      // Class Registration Logs Viewer
       this.app.actionRegistry.register({
         id: 'tools:view-class-logs',
         label: '📋 View Global Class Logs',
         handler: () => this.app.actionHandler.handleViewClassLogs(),
         menuPath: 'Tools / View Global Class Logs'
+      });
+
+      this.app.actionRegistry.register({
+        id: 'tools:clear-local-data',
+        label: '🧹 Clear All Local Data (Safe)',
+        menuPath: 'Tools / Clear All Local Data',
+        handler: () => this.app.actionHandler.handleClearLocalData()
       });
 
       this.app.actionRegistry.register({
