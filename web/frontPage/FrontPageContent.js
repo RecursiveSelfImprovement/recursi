@@ -292,50 +292,50 @@ class FrontPageContent {
   }
 
   static projectLegoDetective() {
-    return this.project({
-      href: '/LegoDetective/',
-      icon: this.svgPlaceholder('#ffea00'),
-      image: 'legoDetective.png',
-      imageSide: 'left',
-      imageWidthPct: 28,
-      imageHoverScale: 1.25,
-      name: 'Lego Detective',
-      tag: 'live',
-      tagClass: 'tag-live',
-      desc: "Spot the differences between twin 3D Lego structures in a playful, Where's Waldo style game. Designed to build 3D spatial awareness, featuring voxel explosion effects when you successfully identify anomalies.",
-      featured: false,
-    });
-  }
+      return this.project({
+        href: '/legos',
+        icon: this.svgPlaceholder('#ffea00'),
+        image: 'legoDetective.png',
+        imageSide: 'left',
+        imageWidthPct: 28,
+        imageHoverScale: 1.25,
+        name: 'Lego Detective',
+        tag: 'live',
+        tagClass: 'tag-live',
+        desc: "Spot the differences between twin 3D Lego structures in a playful, Where's Waldo style game. Designed to build 3D spatial awareness, featuring voxel explosion effects when you successfully identify anomalies.",
+        featured: false,
+      });
+    }
 
   static projectGuessTheNote() {
-    return this.project({
-      href: '/GuessTheNote/',
-      icon: this.svgPlaceholder('#b84dff'),
-      image: 'guessTheNote.png',
-      imageSide: 'right',
-      imageWidthPct: 28,
-      imageHoverScale: 1.25,
-      name: 'Guess the Note',
-      tag: 'live',
-      tagClass: 'tag-live',
-      desc: 'Playful musical interval ear training. Listen to a three-note sequence, see the first two highlighted on an interactive on-screen piano roll, and guess the third note to build your play-by-ear intuition.',
-      featured: false,
-    });
-  }
+      return this.project({
+        href: '/guessTheNoteGame',
+        icon: this.svgPlaceholder('#b84dff'),
+        image: 'guessTheNote.png',
+        imageSide: 'right',
+        imageWidthPct: 28,
+        imageHoverScale: 1.25,
+        name: 'Guess the Note',
+        tag: 'live',
+        tagClass: 'tag-live',
+        desc: 'Playful musical interval ear training. Listen to a three-note sequence, see the first two highlighted on an interactive on-screen piano roll, and guess the third note to build your play-by-ear intuition.',
+        featured: false,
+      });
+    }
 
   static projectAccuCAD() {
-    return this.project({
-      href: '/AccuCAD/',
-      icon: this.svgPlaceholder('#00e5ff'),
-      image: 'accuCad.png',
-      imageSide: 'left',
-      imageWidthPct: 28,
-      imageHoverScale: 1.25,
-      name: 'AccuCAD',
-      tag: 'beta preview',
-      tagClass: 'tag-demo',
-      desc: 'A sophisticated web-based CAD system reviving the historic drafting paradigm of AccuDraw. Brings construction reference vectors, lockable constraint sweeps, and high-precision coordinate alignment to the browser.',
-      featured: false,
-    });
-  }
+      return this.project({
+        href: '/accuCad',
+        icon: this.svgPlaceholder('#00e5ff'),
+        image: 'accuCad.png',
+        imageSide: 'left',
+        imageWidthPct: 28,
+        imageHoverScale: 1.25,
+        name: 'AccuCAD',
+        tag: 'beta preview',
+        tagClass: 'tag-demo',
+        desc: 'A sophisticated web-based CAD system reviving the historic drafting paradigm of AccuDraw. Brings construction reference vectors, lockable constraint sweeps, and high-precision coordinate alignment to the browser.',
+        featured: false,
+      });
+    }
 }

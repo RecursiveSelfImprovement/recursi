@@ -352,15 +352,59 @@ class FrontPage {
         return;
       }
 
+      // 5 Video Chapters with 5-6 word descriptions each
+      const chapters = [
+        { time: 0, label: 'Introduction to Vibes', desc: 'Learn about visual vibe-coding loops' },
+        { time: 75, label: 'Composable Architecture', desc: 'Build pages from small units' },
+        { time: 150, label: 'YouTube Music Sandbox', desc: 'Experience Aardvark synchronized 3D piano' },
+        { time: 225, label: 'Scratchy Local AI', desc: 'Surgically patch Scratch blocks offline' },
+        { time: 300, label: 'Markdown & Future', desc: 'Durable notebook keeps conversations alive' }
+      ];
+
+      const modalContent = makeElement('div', { className: 'video-modal-layout' });
+      const playerWrapper = makeElement('div', { className: 'video-player-pane' });
       const playerContainer = makeElement('div', {
         className: 'dialog-video-player-container',
       });
+      playerWrapper.appendChild(playerContainer);
+
+      const chaptersPane = makeElement('div', { className: 'video-chapters-pane' });
+      const chaptersHeader = makeElement('div', { className: 'chapters-header' }, 'VIDEO CHAPTERS');
+      chaptersPane.appendChild(chaptersHeader);
+
+      const chapterItems = [];
+
+      chapters.forEach((ch, idx) => {
+        const item = makeElement('button', { className: 'chapter-item' });
+        
+        const timeBadge = makeElement('span', { className: 'chapter-time' }, this._formatTime(ch.time));
+        const info = makeElement('div', { className: 'chapter-info' });
+        const title = makeElement('div', { className: 'chapter-title' }, ch.label);
+        const desc = makeElement('div', { className: 'chapter-desc' }, ch.desc);
+        
+        info.append(title, desc);
+        item.append(timeBadge, info);
+
+        item.onclick = () => {
+          chapterItems.forEach(el => el.classList.remove('active'));
+          item.classList.add('active');
+          this._seekVideoTo(ch.time);
+        };
+
+        chaptersPane.appendChild(item);
+        chapterItems.push(item);
+      });
+
+      // Set the first one active initially
+      chapterItems[0].classList.add('active');
+
+      modalContent.append(playerWrapper, chaptersPane);
 
       this._videoDialog = UITools.makeDialog({
         title: '▶  Recursi Vibe Coding Demo',
-        content: playerContainer,
-        width: '720px',
-        height: '440px',
+        content: modalContent,
+        width: '940px',
+        height: '460px',
         allowMinimize: true,
         allowMaximize: true,
         noPadding: true,
@@ -514,69 +558,42 @@ class FrontPage {
     }
 
   _showAardvarkMenu(e, card) {
+      e.preventDefault();
       e.stopPropagation();
 
-      const existingMenu = document.getElementById('aardvark-popup-menu');
-      if (existingMenu) {
-        existingMenu.remove();
-        if (this._activeAardvarkCard === card) {
-          this._activeAardvarkCard = null;
-          return;
-        }
-      }
+      const container = makeElement('div', { className: 'aardvark-dialog-options' });
+      const infoText = makeElement('div', { className: 'aardvark-dialog-header-text' }, 'Choose an option to experience the Aardvark playlist integration:');
 
-      this._activeAardvarkCard = card;
-
-      const menu = makeElement('div', {
-        id: 'aardvark-popup-menu',
-        className: 'aardvark-popup-menu'
-      });
-
-      const title = makeElement('div', { className: 'aardvark-menu-title' }, 'Aardvark Options');
-
-      const opt1 = makeElement('div', { className: 'aardvark-menu-option' });
+      const opt1 = makeElement('div', { className: 'aardvark-dialog-card' });
       opt1.append(
-        makeElement('div', { className: 'option-label' }, 'Try Canned Playlists (Music App)'),
-        makeElement('div', { className: 'option-desc' }, 'Try out the high-quality synchronized audio player directly in your browser.')
+        makeElement('div', { className: 'option-label' }, '🎵 Try Canned Playlists (Music App)'),
+        makeElement('div', { className: 'option-desc' }, 'Try out the high-quality synchronized audio player directly in your browser with synchronized 3D piano rolls.')
       );
       opt1.onclick = () => {
-        menu.remove();
-        this._activeAardvarkCard = null;
+        dialog.close();
         window.location.href = '/AardvarkPlaylist/';
       };
 
-      const opt2 = makeElement('div', { className: 'aardvark-menu-option' });
+      const opt2 = makeElement('div', { className: 'aardvark-dialog-card' });
       opt2.append(
-        makeElement('div', { className: 'option-label' }, 'Install Browser Extension'),
-        makeElement('div', { className: 'option-desc' }, 'Download ZIP pack and learn how to run the extension directly in developer mode.')
+        makeElement('div', { className: 'option-label' }, '📦 Install Browser Extension'),
+        makeElement('div', { className: 'option-desc' }, 'Download ZIP pack and learn how to run the extension in developer mode for YouTube overlays.')
       );
       opt2.onclick = () => {
-        menu.remove();
-        this._activeAardvarkCard = null;
+        dialog.close();
         this._openExtensionInstallDialog();
       };
 
-      menu.append(title, opt1, opt2);
-      document.body.appendChild(menu);
+      container.append(infoText, opt1, opt2);
 
-      const rect = card.getBoundingClientRect();
-      const scrollX = window.scrollX || window.pageXOffset;
-      const scrollY = window.pageYOffset || window.scrollTop || 0;
-
-      menu.style.position = 'absolute';
-      menu.style.left = `${rect.left + scrollX}px`;
-      menu.style.top = `${rect.bottom + scrollY + 10}px`;
-      menu.style.width = `${rect.width}px`;
-      menu.style.zIndex = '9999';
-
-      const dismissHandler = (event) => {
-        if (!menu.contains(event.target) && event.target !== card && !card.contains(event.target)) {
-          menu.remove();
-          this._activeAardvarkCard = null;
-          document.removeEventListener('click', dismissHandler);
-        }
-      };
-      document.addEventListener('click', dismissHandler);
+      const dialog = UITools.makeDialog({
+        title: 'Aardvark Integration Options',
+        content: container,
+        width: '480px',
+        height: 'auto',
+        allowMinimize: false,
+        allowMaximize: false,
+      });
     }
 
   _openExtensionInstallDialog() {
@@ -618,6 +635,36 @@ class FrontPage {
       const originalText = btn.textContent;
       btn.disabled = true;
       btn.textContent = '🔄 Loading Zipper...';
+
+      const createDummyIconBlob = (size, color) => {
+        try {
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          
+          ctx.fillStyle = '#0f0f14';
+          ctx.fillRect(0, 0, size, size);
+          
+          ctx.strokeStyle = color;
+          ctx.lineWidth = Math.max(2, size / 8);
+          ctx.strokeRect(0, 0, size, size);
+          
+          ctx.fillStyle = '#ffffff';
+          ctx.font = `bold ${Math.floor(size * 0.65)}px sans-serif`;
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillText('A', size / 2, size / 2 + (size > 16 ? 1 : 0));
+          
+          return new Promise((resolve) => {
+            canvas.toBlob((blob) => {
+              resolve(blob);
+            }, 'image/png');
+          });
+        } catch (err) {
+          return null;
+        }
+      };
 
       try {
         await this._loadJSZip();
@@ -663,6 +710,9 @@ class FrontPage {
           "features/VideoController.js",
           "features/VideoLooper.js",
           "features/VideoSegment.js",
+          "images/icon16.png",
+          "images/icon48.png",
+          "images/icon128.png",
           "manifest.json",
           "notification.css",
           "popup.html",
@@ -688,6 +738,14 @@ class FrontPage {
             zip.file(filePath, blob);
           } catch (err) {
             console.warn(`[FrontPage] Skipping missing file during extension package: ${filePath}`, err);
+            if (filePath.startsWith('images/icon')) {
+              const size = filePath.includes('16') ? 16 : filePath.includes('48') ? 48 : 128;
+              const fallbackBlob = await createDummyIconBlob(size, '#ff2d95');
+              if (fallbackBlob) {
+                zip.file(filePath, fallbackBlob);
+                console.log(`[FrontPage] Generated fallback icon for: ${filePath}`);
+              }
+            }
           }
         });
 
@@ -732,5 +790,33 @@ class FrontPage {
         script.onerror = () => reject(new Error('Failed to load JSZip library from CDN'));
         document.head.appendChild(script);
       });
+    }
+
+  _formatTime(sec) {
+      const m = Math.floor(sec / 60);
+      const s = sec % 60;
+      return `${m}:${s < 10 ? '0' : ''}${s}`;
+    }
+
+  _seekVideoTo(seconds) {
+      if (!this._videoPlayer) return;
+      try {
+        if (typeof this._videoPlayer.seekTo === 'function') {
+          this._videoPlayer.seekTo(seconds);
+        } else if (this._videoPlayer.player && typeof this._videoPlayer.player.seekTo === 'function') {
+          this._videoPlayer.player.seekTo(seconds, true);
+        } else {
+          const iframe = document.querySelector('.dialog-video-player-container iframe');
+          if (iframe) {
+            iframe.contentWindow.postMessage(JSON.stringify({
+              event: 'command',
+              func: 'seekTo',
+              args: [seconds, true]
+            }), '*');
+          }
+        }
+      } catch (err) {
+        console.warn('[FrontPage] Seek failed:', err);
+      }
     }
 }
