@@ -1,8 +1,9 @@
 
 class ViewControls {
-  constructor(baseController, threeDView) {
+  constructor(baseController, threeDView, customCompassContainer = null) {
       this.baseController = baseController;
       this.threeDView = threeDView;
+      this.customCompassContainer = customCompassContainer;
 
       this.compassBox = null;
       this.spinnerBox = null;
@@ -40,29 +41,36 @@ class ViewControls {
 
   _createCompassControls() {
       const hostContainer = this.baseController?.domElement?.parentElement || document.body;
-      const parentHeight = hostContainer.clientHeight || window.innerHeight;
 
       this.rotations = { x: 0, y: 0, z: 0 };
       const savedSettings = this._loadSettings();
 
-      const spinnerTop = Math.max(20, parentHeight - 85);
-      const compassTop = Math.max(20, spinnerTop - 425);
+      if (this.customCompassContainer) {
+        this.compassBox = {
+          element: this.customCompassContainer,
+          contentElement: this.customCompassContainer
+        };
+      } else {
+        const parentHeight = hostContainer.clientHeight || window.innerHeight;
+        const spinnerTop = Math.max(20, parentHeight - 85);
+        const compassTop = Math.max(20, spinnerTop - 425);
 
-      this.compassBox = UITools.makeDialog({
-        stateId: 'accuCad-compassBox',
-        title: 'Compass Controls',
-        width: '225px',
-        height: 'auto',
-        position: [20, compassTop], 
-        titleBarAtBottom: false,
-        transparent: true,
-        allowMaximize: false,
-        noPadding: true,
-        appendTo: hostContainer,
-      });
+        this.compassBox = UITools.makeDialog({
+          stateId: 'accuCad-compassBox',
+          title: 'Compass Controls',
+          width: '225px',
+          height: 'auto',
+          position: [20, compassTop], 
+          titleBarAtBottom: false,
+          transparent: true,
+          allowMaximize: false,
+          noPadding: true,
+          appendTo: hostContainer,
+        });
 
-      this.compassBox.contentElement.style.overflow = 'hidden';
-      this.compassBox.contentElement.style.padding = '4px 6px 6px 6px';
+        this.compassBox.contentElement.style.overflow = 'hidden';
+        this.compassBox.contentElement.style.padding = '4px 6px 6px 6px';
+      }
 
       this.sliders.size = new SliderControl({
         label: 'compass size',
@@ -165,7 +173,6 @@ class ViewControls {
 
       this._applyAllSavedSettings(savedSettings);
 
-      // ADDED: Glowing Diagnostics Launcher Button for Bentley Presenters
       const diagBtn = makeElement('button', {
         className: 'accudraw-diag-btn',
         style: {
@@ -193,7 +200,7 @@ class ViewControls {
           }
           this.baseController.accuDrawDiagnostics.toggle();
         }
-      }, 'AccuDraw Diagnostics \u25b6');
+      }, 'AccuDraw Diagnostics ▶');
 
       diagBtn.onmouseover = () => {
         diagBtn.style.background = '#0e240e';
@@ -210,7 +217,7 @@ class ViewControls {
   _createSpinnerControls() {
       const hostContainer = this.baseController?.domElement?.parentElement || document.body;
       const parentHeight = hostContainer.clientHeight || window.innerHeight;
-      const width = 740;
+      const width = 690;
       
       const left = 20;
       const top = Math.max(20, parentHeight - 85);
@@ -218,7 +225,7 @@ class ViewControls {
       this.spinnerBox = UITools.makeDialog({
         stateId: 'accuCad-spinnerBox',
         title: 'View Spinners',
-        width: `${width}px`,
+        width: width + 'px',
         height: '55px',
         position: [left, top],
         titleBarAtBottom: false,
@@ -246,31 +253,6 @@ class ViewControls {
       create('diagonal', 'diagonal', (inc) => this._transformView(inc * this.spinnerMoveMult, 'ddiag'));
       create('perspective', 'perspective', (inc) => this._transformView(inc, 'dfov'));
       create('accudraw Z', 'accudraw Z', (inc) => this._transformView(inc, 'accudrawZ'));
-
-      const p2pBtn = makeElement('button', {
-        style: {
-          width: '50px',
-          height: '100%',
-          background: '#090a0f',
-          border: 'none',
-          borderLeft: '1px solid #333',
-          color: '#00e676',
-          fontFamily: 'monospace',
-          fontSize: '11px',
-          fontWeight: 'bold',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          boxSizing: 'border-box'
-        },
-        onclick: () => {
-          if (this.baseController && this.baseController.p2pConnector) {
-            this.baseController.p2pConnector.showDialog();
-          }
-        }
-      }, 'P2P');
-      this.spinnerBox.contentElement.appendChild(p2pBtn);
     }
 
   _hueToRgb(h) {
@@ -521,8 +503,10 @@ class ViewControls {
     }
 
   selectSliderRelative(change) {
-      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
-      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
         this.selectedSliderIndex = 0;
       }
       this.selectedSliderIndex = (this.selectedSliderIndex + change + list.length) % list.length;
@@ -530,13 +514,16 @@ class ViewControls {
     }
 
   adjustSelectedSlider(ratio) {
-      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
-      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
         this.selectedSliderIndex = 0;
       }
-      const key = list[this.selectedSliderIndex];
-      const slider = this.sliders[key];
-      if (slider && this.sliderStartValue !== undefined) {
+      const item = list[this.selectedSliderIndex];
+      if (item && this.sliderStartValue !== undefined) {
+        const slider = item.slider;
+        const key = item.key;
         const rangeInfo = this._getSliderRange(key, slider);
         const min = rangeInfo.min;
         const max = rangeInfo.max;
@@ -546,18 +533,14 @@ class ViewControls {
         newVal = Math.max(min, Math.min(max, newVal));
         slider.setValue(newVal);
 
-        // Display real-time diagnostics HUD
         this._showDiagnosticHud(key, this.sliderStartValue, ratio, newVal, min, max);
       }
     }
 
   _updateSlidersHighlighting() {
-      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
-      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
-        this.selectedSliderIndex = 0;
-      }
-      list.forEach((key, idx) => {
-        const slider = this.sliders[key];
+      const list = this.getNavigatableSliders();
+      list.forEach((item, idx) => {
+        const slider = item.slider;
         if (slider && slider.container) {
           slider.container.style.transition = 'all 0.15s ease';
           if (idx === this.selectedSliderIndex) {
@@ -574,9 +557,9 @@ class ViewControls {
     }
 
   _clearSlidersHighlighting() {
-      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
-      list.forEach((key) => {
-        const slider = this.sliders[key];
+      const list = this.getNavigatableSliders();
+      list.forEach((item) => {
+        const slider = item.slider;
         if (slider && slider.container) {
           slider.container.style.borderLeft = '';
           slider.container.style.background = '';
@@ -586,13 +569,15 @@ class ViewControls {
     }
 
   startSliderAdjustment() {
-      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
-      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
         this.selectedSliderIndex = 0;
       }
-      const key = list[this.selectedSliderIndex];
-      const slider = this.sliders[key];
-      if (slider) {
+      const item = list[this.selectedSliderIndex];
+      if (item) {
+        const slider = item.slider;
         let val = slider.value;
         if (val === undefined) {
           if (slider.options && slider.options.value !== undefined) {
@@ -604,12 +589,12 @@ class ViewControls {
           } else if (slider.container) {
             const input = slider.container.querySelector('input[type="range"]');
             if (input) {
-              const rawVal = parseFloat(input.value); // typically 0..1000 range resolution
+              const rawVal = parseFloat(input.value);
               const domMin = parseFloat(input.getAttribute('min')) || 0;
               const domMax = parseFloat(input.getAttribute('max')) || 1000;
               const domRange = domMax - domMin;
               
-              const rangeInfo = this._getSliderRange(key, slider);
+              const rangeInfo = this._getSliderRange(item.key, slider);
               if (domRange > 0) {
                 const pct = (rawVal - domMin) / domRange;
                 val = rangeInfo.min + pct * (rangeInfo.max - rangeInfo.min);
@@ -700,6 +685,34 @@ class ViewControls {
         hud.style.opacity = '0';
         setTimeout(() => { if (hud.style.opacity === '0') hud.style.display = 'none'; }, 300);
       }, 2000);
+    }
+
+  getNavigatableSliders() {
+      const list = [];
+      const compassKeys = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      compassKeys.forEach(key => {
+        if (this.sliders[key]) {
+          list.push({
+            key: key,
+            slider: this.sliders[key],
+            type: 'compass'
+          });
+        }
+      });
+
+      if (this.baseController?.sidePanel?.toolSliders) {
+        const toolSliders = this.baseController.sidePanel.toolSliders;
+        Object.entries(toolSliders).forEach(([key, slider]) => {
+          if (slider) {
+            list.push({
+              key: key,
+              slider: slider,
+              type: 'tool'
+            });
+          }
+        });
+      }
+      return list;
     }
 }
 

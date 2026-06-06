@@ -44,12 +44,18 @@ class Main {
       // Store handler reference for proper destruction later
       this._scrollResetHandler = resetScroll;
 
+      // Introduce flex layout wrapper for layout expansion/contraction
+      const layoutWrapper = document.createElement('div');
+      layoutWrapper.id = 'accucad-layout-wrapper';
+      layoutWrapper.style.cssText = 'display: flex; flex-direction: row; width: 100%; height: 100%; overflow: hidden; position: relative;';
+      parentElement.appendChild(layoutWrapper);
+      this.layoutWrapper = layoutWrapper;
+
       const canvasId = 'accucad-canvas-' + Math.random().toString(36).slice(2);
       const canvasContainer = document.createElement('div');
       canvasContainer.id = canvasId;
-      canvasContainer.style.cssText =
-        'width:100%; height:100%; position:absolute; inset:0; overflow:hidden;';
-      parentElement.appendChild(canvasContainer);
+      canvasContainer.style.cssText = 'flex-grow: 1; height: 100%; position: relative; overflow: hidden;';
+      layoutWrapper.appendChild(canvasContainer);
       this.canvasContainer = canvasContainer;
 
       if (
@@ -63,7 +69,7 @@ class Main {
             }
           }
         });
-        ro.observe(parentElement);
+        ro.observe(canvasContainer); // Observing the canvasContainer itself so it resizes beautifully when side panel slides
         parentElement._vibesAppResizeObserver = ro;
       }
 
@@ -124,7 +130,6 @@ class Main {
         }
       };
 
-      // FIX: pointed BufferGeometryUtils to '/utils/' instead of '/loaders/'
       await Promise.all([
         loadExtraAddon('/loaders/DRACOLoader.js', 'DRACOLoader'),
         loadExtraAddon('/loaders/SVGLoader.js', 'SVGLoader'),
@@ -151,13 +156,23 @@ class Main {
         this.threeDView.scene
       );
 
+      // Setup SidePanel UI structure
+      if (typeof SidePanel !== 'undefined') {
+        this.sidePanel = new SidePanel(this.baseController, layoutWrapper, canvasContainer);
+        layoutWrapper.insertBefore(this.sidePanel.element, canvasContainer);
+      }
+
       // Initialize P2PConnector on the controller
       if (typeof P2PConnector !== 'undefined') {
         this.baseController.p2pConnector = new P2PConnector(this.baseController);
+        if (this.sidePanel) {
+          this.baseController.p2pConnector.renderControls(this.sidePanel.p2pSection);
+        }
       }
 
       if (typeof ViewControlsManager !== 'undefined') {
-        ViewControlsManager.init(this.baseController, this.threeDView);
+        const compassContainer = this.sidePanel ? this.sidePanel.compassSection : null;
+        ViewControlsManager.init(this.baseController, this.threeDView, compassContainer);
       }
 
       if (typeof KeyCommandHandler !== 'undefined') {
@@ -246,8 +261,13 @@ class Main {
       if (this.app && typeof this.app.destroy === 'function') {
         this.app.destroy();
       }
+      
       if (this.canvasContainer) {
         this.canvasContainer.remove();
+      }
+
+      if (this.layoutWrapper) {
+        this.layoutWrapper.remove();
       }
 
       if (
@@ -296,6 +316,7 @@ class Main {
 
       this.rootElement = null;
       this.canvasContainer = null;
+      this.layoutWrapper = null;
       this.app = null;
       this.baseController = null;
       this.threeDView = null;

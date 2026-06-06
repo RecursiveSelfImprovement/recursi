@@ -19,147 +19,11 @@ class P2PConnector {
     }
 
     showDialog() {
-      if (this.dialog) {
-        this.dialog.close();
-        this.dialog = null;
+      if (this.baseController?.sidePanel) {
+        this.baseController.sidePanel.toggle(true);
+        const p2pSec = this.baseController.sidePanel.element.querySelector('details:nth-child(3)');
+        if (p2pSec) p2pSec.open = true;
       }
-
-      const hostContainer = this.baseController?.domElement?.parentElement || document.body;
-      const parentWidth = hostContainer.clientWidth || window.innerWidth;
-
-      const content = document.createElement('div');
-      content.style.padding = '12px';
-      content.style.display = 'flex';
-      content.style.flexDirection = 'column';
-      content.style.gap = '10px';
-      content.style.color = '#ddd';
-      content.style.fontFamily = 'sans-serif';
-      content.style.fontSize = '12px';
-
-      const roomRow = document.createElement('div');
-      roomRow.style.display = 'flex';
-      roomRow.style.justifyContent = 'space-between';
-      roomRow.style.alignItems = 'center';
-
-      const roomLabel = document.createElement('span');
-      roomLabel.textContent = 'Room Code:';
-      roomLabel.style.fontWeight = 'bold';
-
-      const roomInput = document.createElement('input');
-      roomInput.type = 'text';
-      roomInput.value = '7777';
-      roomInput.style.width = '80px';
-      roomInput.style.padding = '4px';
-      roomInput.style.background = '#222';
-      roomInput.style.border = '1px solid #555';
-      roomInput.style.color = '#fff';
-      roomInput.style.borderRadius = '3px';
-      roomInput.style.textAlign = 'center';
-
-      roomRow.appendChild(roomLabel);
-      roomRow.appendChild(roomInput);
-      content.appendChild(roomRow);
-
-      const connectBtn = document.createElement('button');
-      connectBtn.style.padding = '8px';
-      connectBtn.style.border = 'none';
-      connectBtn.style.borderRadius = '4px';
-      connectBtn.style.fontWeight = 'bold';
-      connectBtn.style.cursor = 'pointer';
-      connectBtn.style.transition = 'all 0.15s';
-      this.connectBtn = connectBtn;
-      content.appendChild(connectBtn);
-
-      const statusLabel = document.createElement('div');
-      statusLabel.style.textAlign = 'center';
-      statusLabel.style.fontStyle = 'italic';
-      statusLabel.style.color = '#aaa';
-      this.statusLabel = statusLabel;
-      content.appendChild(statusLabel);
-
-      // Integrated Diagnostics Panel
-      const diagRow = document.createElement('div');
-      diagRow.style.display = 'flex';
-      diagRow.style.alignItems = 'center';
-      diagRow.style.gap = '8px';
-      diagRow.style.marginTop = '6px';
-      diagRow.style.paddingTop = '6px';
-      diagRow.style.borderTop = '1px solid #444';
-
-      const diagCheckbox = document.createElement('input');
-      diagCheckbox.type = 'checkbox';
-      diagCheckbox.id = 'p2p-diag-toggle';
-      diagCheckbox.style.cursor = 'pointer';
-      diagCheckbox.checked = this.showDiagnosticsInline || false;
-      
-      const diagLabel = document.createElement('label');
-      diagLabel.htmlFor = 'p2p-diag-toggle';
-      diagLabel.textContent = 'Show diagnostics inline';
-      diagLabel.style.cursor = 'pointer';
-      diagLabel.style.fontSize = '11px';
-      diagLabel.style.color = '#bbb';
-
-      diagRow.appendChild(diagCheckbox);
-      diagRow.appendChild(diagLabel);
-      content.appendChild(diagRow);
-
-      const diagContainer = document.createElement('div');
-      diagContainer.id = 'p2p-diag-container';
-      diagContainer.style.display = this.showDiagnosticsInline ? 'block' : 'none';
-      diagContainer.style.background = '#090a0f';
-      diagContainer.style.border = '1px solid #113311';
-      diagContainer.style.borderRadius = '4px';
-      diagContainer.style.padding = '8px';
-      diagContainer.style.fontFamily = 'monospace';
-      diagContainer.style.fontSize = '10px';
-      diagContainer.style.color = '#00ff66';
-      diagContainer.style.lineHeight = '1.4';
-      diagContainer.style.marginTop = '8px';
-      diagContainer.style.width = '100%';
-      diagContainer.style.boxSizing = 'border-box';
-      diagContainer.style.maxHeight = '280px'; // Raised from 120px to support clear inspection
-      diagContainer.style.overflowY = 'auto';
-      content.appendChild(diagContainer);
-
-      diagCheckbox.onchange = () => {
-        diagContainer.style.display = diagCheckbox.checked ? 'block' : 'none';
-        this.showDiagnosticsInline = diagCheckbox.checked;
-        const floatingHud = document.getElementById('p2p-diagnostic-hud');
-        if (floatingHud) floatingHud.style.display = 'none';
-        
-        // Auto-refresh layout frame boundaries
-        if (this.dialog && typeof this.dialog.center === 'function') {
-          this.dialog.element.style.height = 'auto';
-        }
-      };
-
-      this.updateButtonState(false);
-
-      connectBtn.onclick = () => {
-        if (this.isHostMode || this._hostConnecting) {
-          this.handleConnectionFailure();
-        } else {
-          const room = roomInput.value.trim();
-          if (!room) {
-            statusLabel.textContent = 'Enter room code.';
-            return;
-          }
-          this.startWirelessHost(room, statusLabel);
-        }
-      };
-
-      this.dialog = UITools.makeDialog({
-        title: 'Phone Rotation Sync (v3.2)',
-        width: '240px',
-        height: 'auto',
-        content: content,
-        position: [parentWidth - 280, 240],
-        transparent: true,
-        appendTo: hostContainer,
-        onClose: () => {
-          this.dialog = null;
-        }
-      });
     }
 
     async startWirelessHost(roomCode, statusLabel, isAutoRestart = false) {
@@ -630,5 +494,124 @@ class P2PConnector {
       if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
         ViewControlsManager.instance.startSliderAdjustment();
       }
+    }
+
+  renderControls(container) {
+      container.innerHTML = '';
+      
+      const content = document.createElement('div');
+      content.style.padding = '12px';
+      content.style.display = 'flex';
+      content.style.flexDirection = 'column';
+      content.style.gap = '10px';
+      content.style.color = '#ddd';
+      content.style.fontFamily = 'sans-serif';
+      content.style.fontSize = '12px';
+
+      const roomRow = document.createElement('div');
+      roomRow.style.display = 'flex';
+      roomRow.style.justifyContent = 'space-between';
+      roomRow.style.alignItems = 'center';
+
+      const roomLabel = document.createElement('span');
+      roomLabel.textContent = 'Room Code:';
+      roomLabel.style.fontWeight = 'bold';
+
+      const roomInput = document.createElement('input');
+      roomInput.type = 'text';
+      roomInput.value = '7777';
+      roomInput.style.width = '80px';
+      roomInput.style.padding = '4px';
+      roomInput.style.background = '#222';
+      roomInput.style.border = '1px solid #555';
+      roomInput.style.color = '#fff';
+      roomInput.style.borderRadius = '3px';
+      roomInput.style.textAlign = 'center';
+
+      roomRow.appendChild(roomLabel);
+      roomRow.appendChild(roomInput);
+      content.appendChild(roomRow);
+
+      const connectBtn = document.createElement('button');
+      connectBtn.style.padding = '8px';
+      connectBtn.style.border = 'none';
+      connectBtn.style.borderRadius = '4px';
+      connectBtn.style.fontWeight = 'bold';
+      connectBtn.style.cursor = 'pointer';
+      connectBtn.style.transition = 'all 0.15s';
+      this.connectBtn = connectBtn;
+      content.appendChild(connectBtn);
+
+      const statusLabel = document.createElement('div');
+      statusLabel.style.textAlign = 'center';
+      statusLabel.style.fontStyle = 'italic';
+      statusLabel.style.color = '#aaa';
+      this.statusLabel = statusLabel;
+      content.appendChild(statusLabel);
+
+      const diagRow = document.createElement('div');
+      diagRow.style.display = 'flex';
+      diagRow.style.alignItems = 'center';
+      diagRow.style.gap = '8px';
+      diagRow.style.marginTop = '6px';
+      diagRow.style.paddingTop = '6px';
+      diagRow.style.borderTop = '1px solid #444';
+
+      const diagCheckbox = document.createElement('input');
+      diagCheckbox.type = 'checkbox';
+      diagCheckbox.id = 'p2p-diag-toggle-sidebar';
+      diagCheckbox.style.cursor = 'pointer';
+      diagCheckbox.checked = this.showDiagnosticsInline || false;
+      
+      const diagLabel = document.createElement('label');
+      diagLabel.htmlFor = 'p2p-diag-toggle-sidebar';
+      diagLabel.textContent = 'Show diagnostics inline';
+      diagLabel.style.cursor = 'pointer';
+      diagLabel.style.fontSize = '11px';
+      diagLabel.style.color = '#bbb';
+
+      diagRow.appendChild(diagCheckbox);
+      diagRow.appendChild(diagLabel);
+      content.appendChild(diagRow);
+
+      const diagContainer = document.createElement('div');
+      diagContainer.id = 'p2p-diag-container-sidebar';
+      diagContainer.style.display = this.showDiagnosticsInline ? 'block' : 'none';
+      diagContainer.style.background = '#090a0f';
+      diagContainer.style.border = '1px solid #113311';
+      diagContainer.style.borderRadius = '4px';
+      diagContainer.style.padding = '8px';
+      diagContainer.style.fontFamily = 'monospace';
+      diagContainer.style.fontSize = '10px';
+      diagContainer.style.color = '#00ff66';
+      diagContainer.style.lineHeight = '1.4';
+      diagContainer.style.marginTop = '8px';
+      diagContainer.style.width = '100%';
+      diagContainer.style.boxSizing = 'border-box';
+      diagContainer.style.maxHeight = '280px';
+      diagContainer.style.overflowY = 'auto';
+      content.appendChild(diagContainer);
+
+      diagCheckbox.onchange = () => {
+        diagContainer.style.display = diagCheckbox.checked ? 'block' : 'none';
+        this.showDiagnosticsInline = diagCheckbox.checked;
+      };
+
+      this.updateButtonState(false);
+
+      connectBtn.onclick = () => {
+        if (this.isHostMode || this._hostConnecting) {
+          this.handleConnectionFailure();
+        } else {
+          const room = roomInput.value.trim();
+          if (!room) {
+            statusLabel.textContent = 'Enter room code.';
+            return;
+          }
+          this.startWirelessHost(room, statusLabel);
+        }
+      };
+
+      container.appendChild(content);
     }
 }

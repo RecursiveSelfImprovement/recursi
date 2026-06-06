@@ -6,13 +6,13 @@ class ViewControlsManager {
     this._staticsInitialized = true;
   }
 
-  static init(baseController, threeDView) {
-    this.initStatics();
-    if (!this.instance) {
-      this.instance = new ViewControls(baseController, threeDView);
-      this.instance.show();
+  static init(baseController, threeDView, customCompassContainer = null) {
+      this.initStatics();
+      if (!this.instance) {
+        this.instance = new ViewControls(baseController, threeDView, customCompassContainer);
+        this.instance.show();
+      }
     }
-  }
 
   static toggle() {
     if (this.instance) {
