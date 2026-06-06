@@ -188,10 +188,9 @@ class PeerToPeerRotation {
         }
       };
 
-      // P2P Synchronization Section
       const p2pTitle = makeElement('div', {
         style: { fontWeight: 'bold', marginTop: '12px', marginBottom: '6px', borderTop: '1px solid #444', paddingTop: '8px', color: '#00e676', textAlign: 'center' }
-      }, 'P2P Controller Link');
+      }, 'P2P Controller Link (v3.2)');
 
       const roomInput = makeElement('input', {
         placeholder: 'Room code (e.g. 7777)',
@@ -218,114 +217,29 @@ class PeerToPeerRotation {
           border: 'none',
           borderRadius: '3px',
           fontWeight: 'bold',
-          cursor: 'pointer'
+          cursor: 'pointer',
+          transition: 'all 0.15s'
         }
-      }, 'Start Host Sync');
+      });
+      this.connectBtn = connectBtn;
+      this._updateButtonState(false);
 
       const p2pStatusLabel = makeElement('div', {
         style: { fontSize: '11px', marginTop: '4px', fontStyle: 'italic', color: '#aaa', textAlign: 'center' }
-      }, 'Status: Disconnected');
+      }, 'Status: [v3.2] Disconnected');
 
       connectBtn.onclick = () => {
-        const room = roomInput.value.trim();
-        if (!room) {
-          p2pStatusLabel.textContent = 'Enter room code.';
-          return;
-        }
-        this._startWirelessHost(room, p2pStatusLabel);
-      };
-
-      const manualToggle = makeElement('div', {
-        style: { marginTop: '8px', color: '#888', cursor: 'pointer', fontSize: '10px', textDecoration: 'underline', textAlign: 'center' }
-      }, 'Manual Sync (Copy-Paste)');
-
-      const manualArea = makeElement('div', {
-        style: { display: 'none', marginTop: '6px' }
-      });
-
-      const offerArea = makeElement('textarea', {
-        readOnly: true,
-        placeholder: 'Generating offer...',
-        style: {
-          width: '100%',
-          height: '45px',
-          background: '#111',
-          color: '#00e676',
-          fontFamily: 'monospace',
-          fontSize: '9px',
-          border: '1px solid #333',
-          borderRadius: '3px',
-          marginBottom: '4px',
-          boxSizing: 'border-box'
-        }
-      });
-
-      const copyOfferBtn = makeElement('button', {
-        style: {
-          width: '100%',
-          padding: '4px',
-          background: '#333',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '3px',
-          marginBottom: '4px',
-          cursor: 'pointer'
-        }
-      }, 'Copy Offer');
-
-      const answerArea = makeElement('textarea', {
-        placeholder: 'Paste Phone Answer here...',
-        style: {
-          width: '100%',
-          height: '45px',
-          background: '#111',
-          color: '#00ffff',
-          fontFamily: 'monospace',
-          fontSize: '9px',
-          border: '1px solid #333',
-          borderRadius: '3px',
-          marginBottom: '4px',
-          boxSizing: 'border-box'
-        }
-      });
-
-      const processAnswerBtn = makeElement('button', {
-        style: {
-          width: '100%',
-          padding: '4px',
-          background: '#00b0ff',
-          color: '#fff',
-          border: 'none',
-          borderRadius: '3px',
-          cursor: 'pointer'
-        }
-      }, 'Process Answer');
-
-      manualToggle.onclick = () => {
-        if (manualArea.style.display === 'none') {
-          manualArea.style.display = 'block';
-          manualToggle.textContent = 'Hide Manual Sync';
-          this._generateManualOffer(offerArea, p2pStatusLabel);
+        if (this.isHostMode || this._hostConnecting) {
+          this._handleConnectionFailure(p2pStatusLabel);
         } else {
-          manualArea.style.display = 'none';
-          manualToggle.textContent = 'Manual Sync (Copy-Paste)';
+          const room = roomInput.value.trim();
+          if (!room) {
+            p2pStatusLabel.textContent = 'Enter room code.';
+            return;
+          }
+          this._startWirelessHost(room, p2pStatusLabel);
         }
       };
-
-      copyOfferBtn.onclick = () => {
-        offerArea.select();
-        document.execCommand('copy');
-        p2pStatusLabel.textContent = 'Offer copied to clipboard.';
-      };
-
-      processAnswerBtn.onclick = () => {
-        this._processManualAnswer(answerArea.value, p2pStatusLabel);
-      };
-
-      manualArea.appendChild(offerArea);
-      manualArea.appendChild(copyOfferBtn);
-      manualArea.appendChild(answerArea);
-      manualArea.appendChild(processAnswerBtn);
 
       const content = makeElement('div', {}, [
         btn,
@@ -337,14 +251,12 @@ class PeerToPeerRotation {
         roomInput,
         connectBtn,
         p2pStatusLabel,
-        manualToggle,
-        manualArea,
         feedback,
       ]);
 
       this.controlsDialog = UITools.makeDialog({
         env: this.env,
-        title: 'Controls',
+        title: 'Controls (v3.2)',
         contentElement: content,
         size: [230, 480],
         position: [20, 40],
@@ -761,22 +673,29 @@ class PeerToPeerRotation {
 
   
 
-  async _startWirelessHost(roomCode, statusLabel) {
-      const SIGNAL_BASE = 'http://192.168.2.213:7102/signal';
+  async _startWirelessHost(roomCode, statusLabel, isAutoRestart = false) {
+      const SIGNAL_BASE = window.location.origin + '/signal';
+      this.roomCode = roomCode;
+      this.isHostMode = true;
 
-      if (this._hostConnecting) {
-        statusLabel.textContent = 'Already connecting, please wait...';
-        return;
-      }
-      this._hostConnecting = true;
-      statusLabel.textContent = 'Initializing connection...';
+      const mapState = (state) => {
+        const s = state.toLowerCase();
+        if (s === 'connected' || s === 'completed') return 'Active';
+        if (s === 'checking') return 'Analyzing routes';
+        if (s === 'disconnected') return 'Disconnected';
+        if (s === 'failed') return 'Failed';
+        return s;
+      };
 
-      if (this.peerConnection) {
-        try { this.peerConnection.close(); } catch(e) {}
-        this.peerConnection = null;
+      if (!isAutoRestart) {
+        this._hostConnecting = true;
+        this._updateStatus(statusLabel, 'Initializing connection...', '#aaa');
+      } else {
+        this._updateStatus(statusLabel, 'Re-advertising host sync...', '#ffa726');
       }
-      if (this.hostBeaconInterval) clearInterval(this.hostBeaconInterval);
-      if (this.hostPollInterval) clearInterval(this.hostPollInterval);
+
+      this._updateButtonState(true);
+      this._cleanupConnection(true);
 
       const hostTopic = `vibes-rotate-${roomCode}-host`;
       const clientTopic = `vibes-rotate-${roomCode}-client`;
@@ -784,9 +703,15 @@ class PeerToPeerRotation {
       try {
         await fetch(`${SIGNAL_BASE}/${hostTopic}`, { method: 'POST', body: '' });
         await fetch(`${SIGNAL_BASE}/${clientTopic}`, { method: 'POST', body: '' });
-      } catch(e) {}
+      } catch(e) {
+        this._updateStatus(statusLabel, 'Signaling server offline. Retrying soon...', '#ff4444');
+        this._handleConnectionFailure(statusLabel);
+        return;
+      }
 
-      statusLabel.textContent = 'Cleared. Building offer...';
+      if (!isAutoRestart) {
+        this._updateStatus(statusLabel, 'Cleared signaling. Building offer...', '#aaa');
+      }
       await new Promise(r => setTimeout(r, 300));
 
       try {
@@ -795,23 +720,24 @@ class PeerToPeerRotation {
 
         pc.oniceconnectionstatechange = () => {
           console.log('ICE:', pc.iceConnectionState);
-          statusLabel.textContent = `ICE: ${pc.iceConnectionState.toUpperCase()}`;
+          this._updateStatus(statusLabel, `[v3.2] Routes: ${mapState(pc.iceConnectionState)}`, '#90a4ae');
           if (pc.iceConnectionState === 'failed') {
-            statusLabel.textContent = 'ICE Failed.';
-            this._hostConnecting = false;
+            this._updateStatus(statusLabel, 'Routes failed. Reconnecting...', '#ff4444');
+            this._handleConnectionFailure(statusLabel);
           }
         };
 
         pc.onconnectionstatechange = () => {
-          console.log('Conn:', pc.connectionState);
-          statusLabel.textContent = `Conn: ${pc.connectionState.toUpperCase()}`;
-          if (pc.connectionState === 'connected') {
-            statusLabel.textContent = 'Linked Successfully!';
-            statusLabel.style.color = '#00e676';
-            this._hostConnecting = false;
-          }
-          if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
-            this._hostConnecting = false;
+          const state = pc.connectionState.toLowerCase();
+          console.log('Conn:', state);
+          if (state === 'failed' || state === 'closed' || state === 'disconnected') {
+            this._handleConnectionFailure(statusLabel);
+          } else if (state === 'connected') {
+            if (!this.isVerified) {
+              this._updateStatus(statusLabel, 'Transport established. Verifying datachannel...', '#0288d1');
+            }
+          } else {
+            this._updateStatus(statusLabel, `Transport: ${state === 'checking' ? 'Establishing' : state}`, '#90a4ae');
           }
         };
 
@@ -827,13 +753,13 @@ class PeerToPeerRotation {
           sdp: pc.localDescription
         }));
 
-        statusLabel.textContent = 'Broadcasting host beacon...';
+        this._updateStatus(statusLabel, 'Broadcasting host offer...', '#90a4ae');
 
         fetch(`${SIGNAL_BASE}/${hostTopic}`, { method: 'POST', body: bakedOffer })
           .catch(e => console.warn('Offer post error:', e));
 
         this.hostBeaconInterval = setInterval(async () => {
-          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          if (this.dataChannel && this.dataChannel.readyState === 'open' && this.isVerified) {
             clearInterval(this.hostBeaconInterval);
             return;
           }
@@ -843,7 +769,7 @@ class PeerToPeerRotation {
         }, 2000);
 
         this.hostPollInterval = setInterval(async () => {
-          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          if (this.dataChannel && this.dataChannel.readyState === 'open' && this.isVerified) {
             clearInterval(this.hostPollInterval);
             return;
           }
@@ -855,7 +781,7 @@ class PeerToPeerRotation {
               const envelope = JSON.parse(decodeURIComponent(text));
               if (!envelope.sdp) return;
               await pc.setRemoteDescription(envelope.sdp);
-              statusLabel.textContent = 'Answer received. Linking...';
+              this._updateStatus(statusLabel, 'Answer received. Negotiating transport...', '#0288d1');
               clearInterval(this.hostPollInterval);
             }
           } catch(err) {
@@ -864,14 +790,12 @@ class PeerToPeerRotation {
         }, 1500);
 
         this.cleanupFns.push(() => {
-          clearInterval(this.hostBeaconInterval);
-          clearInterval(this.hostPollInterval);
-          this._hostConnecting = false;
+          this._cleanupConnection(false);
         });
 
       } catch(err) {
-        statusLabel.textContent = 'Error: ' + err.message;
-        this._hostConnecting = false;
+        this._updateStatus(statusLabel, 'Setup error: ' + err.message, '#ff4444');
+        this._handleConnectionFailure(statusLabel);
       }
     }
 
@@ -942,36 +866,57 @@ class PeerToPeerRotation {
 
   _setupDataChannelEvents(channel, statusLabel) {
       channel.onopen = () => {
-        statusLabel.textContent = 'Linked to phone successfully.';
-        statusLabel.style.color = '#00e676';
+        this._updateStatus(statusLabel, '[v3.2] Data channel open. Verifying handshake...', '#0288d1');
+        this.isVerified = false;
+        this.lastHeartbeatTime = Date.now();
+        if (this.isHostMode) {
+          this._startHandshakeVerification(channel);
+        }
       };
+
       channel.onclose = () => {
-        statusLabel.textContent = 'Link closed.';
-        statusLabel.style.color = '#ff8800';
+        this._updateStatus(statusLabel, '[v3.2] Link closed.', '#ff8800');
+        this._handleConnectionFailure(statusLabel);
       };
+
+      channel.onerror = (err) => {
+        console.warn('Data channel error:', err);
+        this._handleConnectionFailure(statusLabel);
+      };
+
       channel.onmessage = (e) => {
         try {
           const payload = JSON.parse(e.data);
-          
-          if (payload.type === 'dragStart') {
+          this.lastHeartbeatTime = Date.now();
+
+          if (payload.type === 'h-pong') {
+            if (!this.isVerified) {
+              this.isVerified = true;
+              this._stopHandshakeVerification();
+              this._updateStatus(statusLabel, 'Connected', '#00e676');
+              channel.send(JSON.stringify({ type: 'h-verified' }));
+              this._startHeartbeat(channel, statusLabel);
+            }
+          } else if (payload.type === 'ping') {
+            channel.send(JSON.stringify({ type: 'pong' }));
+          } else if (payload.type === 'pong') {
+            // Heartbeat update
+          } else if (payload.type === 'dragStart') {
             if (payload.mode === 'paint') {
               this.isShiftDown = true;
               this.paintedObjectsThisStroke.clear();
             }
-          } 
-          else if (payload.type === 'drag') {
+          } else if (payload.type === 'drag') {
             this._handleRemoteDrag(payload.dx, payload.dy, payload.mode);
-          } 
-          else if (payload.type === 'dragEnd') {
+          } else if (payload.type === 'dragEnd') {
             if (payload.mode === 'paint' || this.isShiftDown) {
               this.isShiftDown = false;
             }
-          } 
-          else if (payload.type === 'zoom') {
+          } else if (payload.type === 'zoom') {
             this._handleRemoteZoom(payload.ratio);
           }
         } catch (err) {
-          console.error('Error handling channel frame:', err);
+          console.error('Error handling remote message:', err);
         }
       };
     }
@@ -1093,5 +1038,111 @@ class PeerToPeerRotation {
           }
         ]
       };
+    }
+
+  _updateStatus(statusLabel, text, color) {
+      if (statusLabel) {
+        statusLabel.textContent = `Status: ${text}`;
+        if (color) statusLabel.style.color = color;
+      }
+      console.log(`[P2PHost v3.2] Status: ${text}`);
+    }
+
+  _startHandshakeVerification(channel) {
+      if (this.handshakeInterval) clearInterval(this.handshakeInterval);
+      this.handshakeInterval = setInterval(() => {
+        if (channel && channel.readyState === 'open') {
+          try {
+            channel.send(JSON.stringify({ type: 'h-ping' }));
+          } catch(e) {
+            console.warn('Handshake ping send failed:', e);
+          }
+        }
+      }, 500);
+    }
+
+  _stopHandshakeVerification() {
+      if (this.handshakeInterval) clearInterval(this.handshakeInterval);
+      this.handshakeInterval = null;
+    }
+
+  _startHeartbeat(channel, statusLabel) {
+      if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+      this.lastHeartbeatTime = Date.now();
+
+      this.heartbeatInterval = setInterval(() => {
+        if (!this.isVerified || !this.dataChannel || this.dataChannel.readyState !== 'open') {
+          clearInterval(this.heartbeatInterval);
+          return;
+        }
+
+        try {
+          channel.send(JSON.stringify({ type: 'ping' }));
+        } catch (e) {
+          console.warn('Failed to send heartbeat ping:', e);
+          this._handleConnectionFailure(statusLabel);
+          return;
+        }
+
+        const silentTime = Date.now() - this.lastHeartbeatTime;
+        if (silentTime > 7000) {
+          console.warn(`Connection silent for ${silentTime}ms. Triggering reconnect.`);
+          this._handleConnectionFailure(statusLabel);
+        }
+      }, 3000);
+    }
+
+  _handleConnectionFailure(statusLabel) {
+      if (this.isHostMode && this.roomCode && statusLabel) {
+        this._updateStatus(statusLabel, '[v3.2] Connection lost. Auto-restarting...', '#ffaa00');
+        this._cleanupConnection(true);
+        setTimeout(() => {
+          if (this.isHostMode) {
+            this._startWirelessHost(this.roomCode, statusLabel, true);
+          }
+        }, 1500);
+      } else {
+        this._updateStatus(statusLabel, '[v3.2] Disconnected.', '#ff4444');
+        this._cleanupConnection(false);
+      }
+    }
+
+  _cleanupConnection(keepAdvertisingState = false) {
+      if (this.hostBeaconInterval) clearInterval(this.hostBeaconInterval);
+      if (this.hostPollInterval) clearInterval(this.hostPollInterval);
+      if (this.handshakeInterval) clearInterval(this.handshakeInterval);
+      if (this.heartbeatInterval) clearInterval(this.heartbeatInterval);
+
+      this.hostBeaconInterval = null;
+      this.hostPollInterval = null;
+      this.handshakeInterval = null;
+      this.heartbeatInterval = null;
+
+      if (this.peerConnection) {
+        try { this.peerConnection.close(); } catch(e) {}
+        this.peerConnection = null;
+      }
+      this.dataChannel = null;
+      this.isVerified = false;
+      this._hostConnecting = false;
+
+      if (!keepAdvertisingState) {
+        this.isHostMode = false;
+        this.roomCode = '';
+        this._updateButtonState(false);
+      }
+    }
+
+  _updateButtonState(active) {
+      if (!this.connectBtn) return;
+      if (active) {
+        this.connectBtn.textContent = 'Stop Sync';
+        this.connectBtn.style.background = '#e53935';
+        this.connectBtn.style.color = '#fff';
+      } else {
+        this.connectBtn.textContent = 'Start Host Sync';
+        this.connectBtn.style.background = '#00e676';
+        this.connectBtn.style.color = '#000';
+      }
     }
 }
