@@ -1001,11 +1001,20 @@ class AppUIManager {
         this.setStatus('EmberLogo is not available/loaded.', true);
         return;
       }
-      if (this.app.emberLogo && this.app.emberLogo._shell && this.app.emberLogo._shell.isConnected) {
-        this.app.emberLogo.setAwake(true);
-        this.setStatus('Logo is already active!');
-        return;
+      
+      // Clean up any stale or hidden logo instance to prevent reference deadlocks
+      if (this.app.emberLogo) {
+        try {
+          this.app.emberLogo.destroy();
+          if (this.app.emberLogo._shell) {
+            this.app.emberLogo._shell.remove();
+          }
+        } catch (e) {
+          console.warn('[showLogoAnimation] Clean up error:', e);
+        }
+        this.app.emberLogo = null;
       }
+
       EmberLogo._loadGoogleFont();
       this.app.emberLogo = EmberLogo.createFloatingPanel(document.body, {
         showSubtitle: false,
@@ -1020,12 +1029,14 @@ class AppUIManager {
           this.app.emberLogo = null;
         }
       });
+      
       if (this.app.emberLogo._shell) {
         this.app.emberLogo._shell.style.position = 'absolute';
         this.app.emberLogo._shell.style.left = '450px'; 
         this.app.emberLogo._shell.style.top = '2px'; 
         this.app.emberLogo._shell.style.zIndex = '9999999';
       }
+      
       this.setStatus('✨ Logo restored!');
     }
 }

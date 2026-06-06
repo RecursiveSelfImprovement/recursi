@@ -178,34 +178,42 @@ class AccuDrawInput {
   }
 
   setLocked(locked) {
-    if (this.isLocked === locked) return;
-    this.isLocked = locked;
+      if (this.isLocked === locked) return;
+      this.isLocked = locked;
 
-    if (locked) {
-      this.lockColorElem.style.backgroundColor = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, 1)`;
+      if (locked) {
+        this.lockColorElem.style.backgroundColor = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, 1)`;
 
-      this.lockElem.style.transition = 'none';
-      this.lockElem.style.opacity = '1';
-      this.lockElem.style.transform = 'scale3d(0.05, 0.05, 1)';
-      this.lockElem.style.display = 'block';
+        this.lockElem.style.transition = 'none';
+        this.lockElem.style.opacity = '1';
+        this.lockElem.style.transform = 'scale3d(0.05, 0.05, 1)';
+        this.lockElem.style.display = 'block';
 
-      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          // Amplified the curve to 1.5 and duration to 0.28s to produce a beautiful, highly visible bounce
+          this.lockElem.style.transition =
+            'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.5), opacity 0.28s ease-in';
+          this.lockElem.style.transform = 'scale3d(1, 1, 1)';
+        });
+
+        this.outerElem.style.zIndex = 200000;
+      } else {
         this.lockElem.style.transition =
-          'transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity 0.2s ease-in';
-        this.lockElem.style.transform = 'scale3d(0.19, 0.19, 1)';
-      });
+          'transform 0.15s ease-in, opacity 0.15s ease-in';
+        this.lockElem.style.opacity = '0';
+        this.lockElem.style.transform = 'scale3d(0, 0, 1)';
 
-      this.outerElem.style.zIndex = 200000;
-    } else {
-      this.lockElem.style.transition =
-        'transform 0.15s ease-in, opacity 0.15s ease-in';
-      this.lockElem.style.opacity = '0';
-      this.lockElem.style.transform = 'scale3d(0, 0, 1)';
+        // Clean up DOM layout boundaries once the transition completes
+        setTimeout(() => {
+          if (!this.isLocked) {
+            this.lockElem.style.display = 'none';
+          }
+        }, 150);
 
-      this.outerElem.style.zIndex =
-        document.activeElement === this.inputElem ? 100001 : 100000;
+        this.outerElem.style.zIndex =
+          document.activeElement === this.inputElem ? 100001 : 100000;
+      }
     }
-  }
 
   setSmartFocus(isActive) {
     if (this.isLocked || document.activeElement === this.inputElem) return;

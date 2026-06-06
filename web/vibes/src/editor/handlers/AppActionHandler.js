@@ -2100,4 +2100,10 @@ class AppActionHandler {
         window.location.reload();
       }, 1500);
     }
+
+  async handleShowLogo() {
+      if (this.app.uiManager && typeof this.app.uiManager.showLogoAnimation === 'function') {
+        this.app.uiManager.showLogoAnimation();
+      }
+    }
 }

@@ -196,6 +196,9 @@ class LogoExperiments {
         return;
       }
       this._showTimingLog(this.activeLogos[0]);
+      if (typeof this.activeLogos[0].openDiagnosticDialog === 'function') {
+        this.activeLogos[0].openDiagnosticDialog();
+      }
     }
 
   destroy() {
@@ -357,7 +360,9 @@ class LogoExperiments {
 
   _showTimingLog(logo) {
       if (!this.diagEl) return;
-      const report = logo.generateDiagnosticReport?.() ?? 'N/A';
+      const report = (typeof logo.generateDetailedDiagnosticReport === 'function')
+        ? logo.generateDetailedDiagnosticReport()
+        : (logo.generateDiagnosticReport?.() ?? 'N/A');
       this.diagEl.value = report;
       this.diagEl.style.display = 'block';
     }

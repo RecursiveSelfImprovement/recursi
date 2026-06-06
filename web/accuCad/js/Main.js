@@ -26,6 +26,24 @@ class Main {
       const parentElement = env.container;
       this.rootElement = parentElement;
 
+      // Reset any accidental focus-induced scrolling to keep the layout snapped to (0,0)
+      const resetScroll = () => {
+        if (this.rootElement) {
+          this.rootElement.scrollLeft = 0;
+          this.rootElement.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+        document.body.scrollLeft = 0;
+        document.body.scrollTop = 0;
+      };
+
+      this.rootElement.addEventListener('scroll', resetScroll);
+      window.addEventListener('scroll', resetScroll);
+      document.body.addEventListener('scroll', resetScroll);
+
+      // Store handler reference for proper destruction later
+      this._scrollResetHandler = resetScroll;
+
       const canvasId = 'accucad-canvas-' + Math.random().toString(36).slice(2);
       const canvasContainer = document.createElement('div');
       canvasContainer.id = canvasId;
@@ -106,10 +124,11 @@ class Main {
         }
       };
 
+      // FIX: pointed BufferGeometryUtils to '/utils/' instead of '/loaders/'
       await Promise.all([
         loadExtraAddon('/loaders/DRACOLoader.js', 'DRACOLoader'),
         loadExtraAddon('/loaders/SVGLoader.js', 'SVGLoader'),
-        loadExtraAddon('/loaders/BufferGeometryUtils.js', 'BufferGeometryUtils'),
+        loadExtraAddon('/utils/BufferGeometryUtils.js', 'BufferGeometryUtils'),
       ]);
 
       const target = new this.THREE.Vector3(0, 0.6, 0);

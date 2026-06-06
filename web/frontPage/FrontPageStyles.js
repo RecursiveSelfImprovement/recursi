@@ -684,11 +684,18 @@ class FrontPageStyles {
 
   static cssVideoButton() {
       return `
+        .hero-buttons-container {
+          display: flex;
+          gap: 1.2rem;
+          justify-content: center;
+          align-items: center;
+          margin-top: 1.6rem;
+          flex-wrap: wrap;
+        }
         .hero-video-btn {
           display: inline-flex;
           align-items: center;
           gap: 0.75rem;
-          margin-top: 1.6rem;
           padding: 0.75em 2em;
           background: rgba(255, 106, 0, 0.10);
           border: 1.5px solid rgba(255, 106, 0, 0.55);
@@ -744,6 +751,86 @@ class FrontPageStyles {
         }
         .video-btn-label {
           position: relative;
+        }
+        
+        .hero-github-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 0.75rem;
+          padding: 0.75em 2em;
+          background: rgba(0, 229, 255, 0.10);
+          border: 1.5px solid rgba(0, 229, 255, 0.55);
+          border-radius: 50px;
+          color: var(--neon-cyan);
+          font-family: 'Orbitron', sans-serif;
+          font-size: 0.65rem;
+          font-weight: 700;
+          letter-spacing: 0.22em;
+          text-transform: uppercase;
+          cursor: pointer;
+          text-decoration: none;
+          text-shadow: 0 0 18px rgba(0, 229, 255, 0.55);
+          box-shadow:
+            0 0 22px rgba(0, 229, 255, 0.16),
+            inset 0 0 16px rgba(0, 229, 255, 0.06),
+            0 2px 0 rgba(255,255,255,0.04);
+          transition: all 0.28s cubic-bezier(0.2, 0.8, 0.2, 1);
+          position: relative;
+          overflow: hidden;
+        }
+        .hero-github-btn::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(90deg, transparent 0%, rgba(0,229,255,0.12) 50%, transparent 100%);
+          transform: translateX(-100%);
+          transition: transform 0.5s ease;
+        }
+        .hero-github-btn:hover::before {
+          transform: translateX(100%);
+        }
+        .hero-github-btn:hover {
+          background: rgba(0, 229, 255, 0.20);
+          border-color: rgba(0, 229, 255, 0.85);
+          box-shadow:
+            0 0 34px rgba(0, 229, 255, 0.28),
+            inset 0 0 22px rgba(0, 229, 255, 0.10);
+          transform: translateY(-2px);
+          letter-spacing: 0.28em;
+        }
+        .hero-github-btn:active {
+          transform: translateY(0px);
+        }
+        .github-btn-icon {
+          font-size: 1.1rem;
+          line-height: 1;
+          filter: drop-shadow(0 0 6px rgba(0,229,255,0.7));
+        }
+        
+        .hero-contact-row {
+          margin-top: 1.4rem;
+          font-size: 0.85rem;
+          color: var(--text-muted);
+          font-weight: 500;
+          letter-spacing: 0.05em;
+        }
+        .hero-email-link {
+          color: var(--neon-cyan);
+          text-decoration: none;
+          font-weight: 600;
+          border-bottom: 1px solid rgba(0, 229, 255, 0.3);
+          transition: all 0.2s;
+          text-shadow: 0 0 10px rgba(0, 229, 255, 0.2);
+        }
+        .hero-email-link:hover {
+          color: #fff;
+          border-bottom-color: #fff;
+          text-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        
+        .project-card.no-image .project-info {
+          margin-left: 0 !important;
+          margin-right: 2rem !important;
         }
       `;
     }

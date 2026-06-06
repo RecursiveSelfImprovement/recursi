@@ -66,7 +66,14 @@ class FrontPage {
   _buildHeroOverlay() {
       const overlay = makeElement('div', { className: 'hero-text-overlay' });
       const inner = makeElement('div', { className: 'hero-text-inner' });
-      inner.append(this._buildHeroTagline(), this._buildVideoButton());
+      
+      const buttonContainer = makeElement('div', { className: 'hero-buttons-container' });
+      buttonContainer.append(this._buildVideoButton(), this._buildGitHubButton());
+      
+      const contactRow = makeElement('div', { className: 'hero-contact-row' });
+      contactRow.innerHTML = 'Get in touch: <a href="mailto:rjbrown@gmail.com" class="hero-email-link">rjbrown@gmail.com</a>';
+      
+      inner.append(this._buildHeroTagline(), buttonContainer, contactRow);
       overlay.appendChild(inner);
       return overlay;
     }
@@ -127,6 +134,7 @@ class FrontPage {
         side +
         (p.featured ? ' featured' : '') +
         (p.comingSoon ? ' coming-soon' : '') +
+        (p.hideImage ? ' no-image' : '') +
         ' fade-up delay-' +
         (i + 1);
 
@@ -136,10 +144,11 @@ class FrontPage {
         'aria-label': p.name,
       });
 
-      card.style.setProperty(
-        '--project-image-width',
-        (p.imageWidthPct || 29) + '%'
-      );
+      if (p.hideImage) {
+        card.style.setProperty('--project-image-width', '0%');
+      } else {
+        card.style.setProperty('--project-image-width', (p.imageWidthPct || 29) + '%');
+      }
       card.style.setProperty(
         '--project-image-hover-scale',
         String(p.imageHoverScale || 1.33)
@@ -280,7 +289,7 @@ class FrontPage {
 
   _buildFooterCopyright() {
       const p = makeElement('p');
-      p.innerHTML = FrontPageContent.footerCopyright();
+      p.innerHTML = FrontPageContent.footerCopyright() + ' · <a href="https://github.com/RecursiveSelfImprovement/recursi" target="_blank" style="color: var(--neon-cyan); text-decoration: none; border-bottom: 1px solid rgba(0, 229, 255, 0.3);">GitHub</a> · <a href="mailto:rjbrown@gmail.com" style="color: var(--neon-cyan); text-decoration: none; border-bottom: 1px solid rgba(0, 229, 255, 0.3);">rjbrown@gmail.com</a>';
       return p;
     }
 
@@ -352,13 +361,13 @@ class FrontPage {
         return;
       }
 
-      // 5 Video Chapters with 5-6 word descriptions each
       const chapters = [
-        { time: 0, label: 'Introduction to Vibes', desc: 'Learn about visual vibe-coding loops' },
-        { time: 75, label: 'Composable Architecture', desc: 'Build pages from small units' },
-        { time: 150, label: 'YouTube Music Sandbox', desc: 'Experience Aardvark synchronized 3D piano' },
-        { time: 225, label: 'Scratchy Local AI', desc: 'Surgically patch Scratch blocks offline' },
-        { time: 300, label: 'Markdown & Future', desc: 'Durable notebook keeps conversations alive' }
+        { time: 0, label: 'Introduction to Recursi', desc: 'Just an intro to everything here' },
+        { time: 288, label: 'Demo / How to use it', desc: 'How you can get started with a simple 3D project' },
+        { time: 881, label: 'The Vibes project itself', desc: 'Showing a BIG project: Recursi "Vibes" itself' },
+        { time: 1010, label: 'Random cool apps', desc: 'Showing some of the apps you can start with (or just use!)' },
+        { time: 1669, label: 'YouTube and music app!', desc: 'By frar the most impressive app other than Recursi Vibes itself' },
+        { time: 1981, label: 'AccuCad app', desc: 'Amazing CAD app. Work in progress, uses my AccuDraw tool from MicroStation (read CAD)' }
       ];
 
       const modalContent = makeElement('div', { className: 'video-modal-layout' });
@@ -395,7 +404,6 @@ class FrontPage {
         chapterItems.push(item);
       });
 
-      // Set the first one active initially
       chapterItems[0].classList.add('active');
 
       modalContent.append(playerWrapper, chaptersPane);
@@ -420,7 +428,7 @@ class FrontPage {
       this._videoPlayer = new VideoPlayer({
         container: playerContainer,
         playerType: 'youtube',
-        videoId: '1PIkWmj6SxA',
+        videoId: 'sDSFBj6MuzY',
         autoplay: true,
         controls: true,
         width: '100%',
@@ -474,6 +482,9 @@ class FrontPage {
     }
 
   _buildProjectMedia(p) {
+      if (p.hideImage) {
+        return makeElement('div', { style: 'display: none;' });
+      }
       const side = p.imageSide === 'right' ? 'right' : 'left';
       const media = makeElement('div', {
         className: 'project-media project-media-' + side,
@@ -818,5 +829,16 @@ class FrontPage {
       } catch (err) {
         console.warn('[FrontPage] Seek failed:', err);
       }
+    }
+
+  _buildGitHubButton() {
+      const btn = makeElement('a', {
+        className: 'hero-github-btn',
+        href: 'https://github.com/RecursiveSelfImprovement/recursi',
+        target: '_blank',
+        rel: 'noopener noreferrer'
+      });
+      btn.innerHTML = '<span class="github-btn-icon">🐙</span><span class="github-btn-label">GitHub Repo</span>';
+      return btn;
     }
 }

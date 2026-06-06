@@ -137,71 +137,77 @@ class DrawPathCommand {
   }
 
   updatePreviewShape(previewPoint) {
-    if (!this.tempElement?.vertices.length) return;
-    if (this.previewShape) {
-      this.base.view.scene.remove(this.previewShape);
-      this.disposeObject(this.previewShape);
-    }
-    this.tempElement.color = this.base.currentColor
-      ? parseInt(this.base.currentColor.replace('#', ''), 16)
-      : 0xff0000;
-    this.tempElement.lineWidth = this.base.lineWidth || 4;
-    const vertices = [...this.tempElement.vertices];
-    const firstVertex = vertices[0];
-    const previewVertex = {
-      point: [...previewPoint],
-      radius: this.base.commandControlValue || 0,
-      tentative: true,
-    };
-    const distance = Math.sqrt(
-      Math.pow(previewPoint[0] - firstVertex.point[0], 2) +
-        Math.pow(previewPoint[1] - firstVertex.point[1], 2) +
-        Math.pow((previewPoint[2] || 0) - (firstVertex.point[2] || 0), 2)
-    );
-    const shouldClose = distance <= 0.05 && vertices.length >= 2;
-    if (vertices.length >= 1 && this.tempElement.isTemporary) {
-      vertices[vertices.length - 1].radius = this.base.commandControlValue || 0;
-    }
-
-    let finalPoints;
-    if (shouldClose) {
-      const tempVertices = [...vertices, { ...firstVertex, radius: 0 }];
-      finalPoints = this.generateFinalPoints(tempVertices, true);
-      const group = new THREE.Group();
-      if (finalPoints.length >= 3) {
-        const shape = new THREE.Shape(
-          finalPoints.map((p) => new THREE.Vector2(p[0], p[1]))
-        );
-        const fillGeometry = new THREE.ShapeGeometry(shape);
-        const fillMaterial = new THREE.MeshPhongMaterial({
-          color: this.tempElement.color,
-          side: THREE.DoubleSide,
-          transparent: true,
-          opacity: 0.3,
-          emissive: this.tempElement.color,
-          emissiveIntensity: 0.1,
-        });
-        group.add(new THREE.Mesh(fillGeometry, fillMaterial));
+      if (!this.tempElement?.vertices.length) return;
+      if (this.previewShape) {
+        this.base.view.scene.remove(this.previewShape);
+        this.disposeObject(this.previewShape);
       }
-      const outlineGeometry = this.createLineGeometry(finalPoints);
-      const outlineMaterial = this.createLineMaterial(
-        this.tempElement.color,
-        this.tempElement.lineWidth
+      this.tempElement.color = this.base.currentColor
+        ? parseInt(this.base.currentColor.replace('#', ''), 16)
+        : 0xff0000;
+      this.tempElement.lineWidth = this.base.lineWidth || 4;
+      
+      // Temporarily hide the sharp permanent segments while drawing rounded previews
+      if (this.tempElement.threejsObject) {
+        this.tempElement.threejsObject.visible = false;
+      }
+
+      const vertices = [...this.tempElement.vertices];
+      const firstVertex = vertices[0];
+      const previewVertex = {
+        point: [...previewPoint],
+        radius: this.base.commandControlValue || 0,
+        tentative: true,
+      };
+      const distance = Math.sqrt(
+        Math.pow(previewPoint[0] - firstVertex.point[0], 2) +
+          Math.pow(previewPoint[1] - firstVertex.point[1], 2) +
+          Math.pow((previewPoint[2] || 0) - (firstVertex.point[2] || 0), 2)
       );
-      group.add(new Line2(outlineGeometry, outlineMaterial));
-      this.previewShape = group;
-    } else {
-      const tempVertices = [...vertices, previewVertex];
-      finalPoints = this.generateFinalPoints(tempVertices, false);
-      const geometry = this.createLineGeometry(finalPoints);
-      const material = this.createLineMaterial(
-        this.tempElement.color,
-        this.tempElement.lineWidth
-      );
-      this.previewShape = new Line2(geometry, material);
+      const shouldClose = distance <= 0.05 && vertices.length >= 2;
+      if (vertices.length >= 1 && this.tempElement.isTemporary) {
+        vertices[vertices.length - 1].radius = this.base.commandControlValue || 0;
+      }
+
+      let finalPoints;
+      if (shouldClose) {
+        const tempVertices = [...vertices, { ...firstVertex, radius: 0 }];
+        finalPoints = this.generateFinalPoints(tempVertices, true);
+        const group = new THREE.Group();
+        if (finalPoints.length >= 3) {
+          const shape = new THREE.Shape(
+            finalPoints.map((p) => new THREE.Vector2(p[0], p[1]))
+          );
+          const fillGeometry = new THREE.ShapeGeometry(shape);
+          const fillMaterial = new THREE.MeshPhongMaterial({
+            color: this.tempElement.color,
+            side: THREE.DoubleSide,
+            transparent: true,
+            opacity: 0.3,
+            emissive: this.tempElement.color,
+            emissiveIntensity: 0.1,
+          });
+          group.add(new THREE.Mesh(fillGeometry, fillMaterial));
+        }
+        const outlineGeometry = this.createLineGeometry(finalPoints);
+        const outlineMaterial = this.createLineMaterial(
+          this.tempElement.color,
+          this.tempElement.lineWidth
+        );
+        group.add(new Line2(outlineGeometry, outlineMaterial));
+        this.previewShape = group;
+      } else {
+        const tempVertices = [...vertices, previewVertex];
+        finalPoints = this.generateFinalPoints(tempVertices, false);
+        const geometry = this.createLineGeometry(finalPoints);
+        const material = this.createLineMaterial(
+          this.tempElement.color,
+          this.tempElement.lineWidth
+        );
+        this.previewShape = new Line2(geometry, material);
+      }
+      this.base.view.scene.add(this.previewShape);
     }
-    this.base.view.scene.add(this.previewShape);
-  }
 
   generateFinalPoints(vertices, closed) {
     if (vertices.length < 2) return [];
@@ -240,19 +246,30 @@ class DrawPathCommand {
   }
 
   reset() {
-    if (this.tempElement) {
-      if (this.tempElement.vertices.length >= 2) {
-        this.tempElement.isTemporary = false;
-        this.updatePermanentGeometry();
-      } else {
-        if (this.tempElement.threejsObject)
-          this.base.view.scene.remove(this.tempElement.threejsObject);
-        const idx = this.base.cadElements.indexOf(this.tempElement);
-        if (idx !== -1) this.base.cadElements.splice(idx, 1);
+      // Clear and dispose of the dynamic preview shape immediately on reset/finalize
+      if (this.previewShape) {
+        this.base.view.scene.remove(this.previewShape);
+        this.disposeObject(this.previewShape);
+        this.previewShape = null;
       }
+
+      if (this.tempElement) {
+        if (this.tempElement.vertices.length >= 2) {
+          this.tempElement.isTemporary = false;
+          this.updatePermanentGeometry();
+          // Restore visibility when finalizing or resetting the drawing action
+          if (this.tempElement.threejsObject) {
+            this.tempElement.threejsObject.visible = true;
+          }
+        } else {
+          if (this.tempElement.threejsObject)
+            this.base.view.scene.remove(this.tempElement.threejsObject);
+          const idx = this.base.cadElements.indexOf(this.tempElement);
+          if (idx !== -1) this.base.cadElements.splice(idx, 1);
+        }
+      }
+      this.tempElement = null;
     }
-    this.tempElement = null;
-  }
 
   initBase(baseController) {
     this.base = baseController;
@@ -270,6 +287,21 @@ class DrawPathCommand {
       }
     }
 
+
+  // Injected method to safely release geometry and material memory in ThreeJS
+    disposeObject(object) {
+      if (!object) return;
+      object.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((mat) => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    }
 }
 
 /* recursi-meta

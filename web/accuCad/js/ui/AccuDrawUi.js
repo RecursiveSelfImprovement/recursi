@@ -28,80 +28,79 @@ class AccuDrawUi {
   }
 
   _injectStyles() {
-    const css = `
-      .accudrawOuterBox {
-        position: absolute; top: 0; left: 0; z-index: 20000; pointer-events: none;
-      }
-      .accudrawDragger {
-        position: absolute; overflow: hidden; top: 0; left: 0;
-        width: 32px; height: 35px; background-color: rgba(0, 0, 0, 0);
-        border-radius: 5px; transition: .12s ease-out; cursor: grab; pointer-events: auto;
-      }
-      .accudrawDragger:active { cursor: grabbing; }
-      .accudrawDragger.stickyFullBox {
-        width: 225px; height: 164px; background-color: rgba(0, 0, 0, .5); border-radius: 5px;
-      }
-      .accudrawDragger.stickyFullBox:hover { background-color: rgba(0, 0, 0, .6); }
-      .accudrawIcon {
-        position: absolute; top: -32px; left: -32px; width: 100px; height: 100px;
-        transform-origin: center center; opacity: .8; transform: scale3d(.25, .25, 1);
-        transition: .12s ease-out; pointer-events: none;
-      }
-      .accudrawDragger:hover .accudrawIcon, .accudrawDragger.stickyFullBox .accudrawIcon {
-        opacity: 1; transform: scale3d(.3, .3, 1);
-      }
-      .accudrawTitle {
-        position: absolute; top: 9px; left: 34px; line-height: 24px;
-        font-size: 15px; font-family: 'Architects Daughter', sans-serif;
-        text-shadow: 2px 2px 2px #000; color: #bbb; pointer-events: none;
-        white-space: nowrap; opacity: 0; transition: opacity 0.2s;
-      }
-      .accudrawDragger.stickyFullBox .accudrawTitle { opacity: 1; }
-      .accudrawAllInputsContainer {
-        position: absolute; top: 36px; left: 10px; height: 122px; width: 208px;
-        pointer-events: none; overflow: visible !important;
-      }
-      .accudrawAllInputsContainer.interactive { pointer-events: auto; }
-      .accudrawInputContainer {
-        position: absolute; padding: -4px 8px 2px 8px; width: 200px; height: 32px;
-        border: 2px solid rgba(255, 255, 255, 0); border-radius: 5px;
-        box-shadow: 2px 2px 2px #000; transition: transform .15s ease-out, opacity .1s ease-in, border-color .1s ease-in;
-        transform-origin: center center; transform: scale3d(1, 1, 1);
-        display: block; overflow: visible !important;
-      }
-      .accudrawInput {
-        background-color: rgba(0, 0, 0, 0); outline: none; border: none;
-        width: 100%; height: 100%; position: absolute; left: 0px; top: 0px;
-        line-height: 32px; font-size: 25px; font-family: rounded, sans-serif;
-        text-align: left; text-shadow: 2px 2px 2px #000; color: #eee; padding-left: 8px;
-      }
+      const css = `
+        .accudrawOuterBox {
+          position: absolute; top: 0; left: 0; z-index: 20000; pointer-events: none;
+        }
+        .accudrawDragger {
+          position: absolute; overflow: hidden; top: 0; left: 0;
+          width: 32px; height: 35px; background-color: rgba(0, 0, 0, 0);
+          border-radius: 5px; transition: .12s ease-out; cursor: grab; pointer-events: auto;
+        }
+        .accudrawDragger:active { cursor: grabbing; }
+        .accudrawDragger.stickyFullBox {
+          width: 225px; height: 164px; background-color: rgba(0, 0, 0, .5); border-radius: 5px;
+        }
+        .accudrawDragger.stickyFullBox:hover { background-color: rgba(0, 0, 0, .6); }
+        .accudrawIcon {
+          position: absolute; top: -32px; left: -32px; width: 100px; height: 100px;
+          transform-origin: center center; opacity: .8; transform: scale3d(.25, .25, 1);
+          transition: .12s ease-out; pointer-events: none;
+        }
+        .accudrawDragger:hover .accudrawIcon, .accudrawDragger.stickyFullBox .accudrawIcon {
+          opacity: 1; transform: scale3d(.3, .3, 1);
+        }
+        .accudrawTitle {
+          position: absolute; top: 9px; left: 34px; line-height: 24px;
+          font-size: 15px; font-family: 'Architects Daughter', sans-serif;
+          text-shadow: 2px 2px 2px #000; color: #bbb; pointer-events: none;
+          white-space: nowrap; opacity: 0; transition: opacity 0.2s;
+        }
+        .accudrawDragger.stickyFullBox .accudrawTitle { opacity: 1; }
+        .accudrawAllInputsContainer {
+          position: absolute; top: 36px; left: 10px; height: 122px; width: 208px;
+          pointer-events: none; overflow: visible !important;
+        }
+        .accudrawAllInputsContainer.interactive { pointer-events: auto; }
+        .accudrawInputContainer {
+          position: absolute; padding: -4px 8px 2px 8px; width: 200px; height: 32px;
+          border: 2px solid rgba(255, 255, 255, 0); border-radius: 5px;
+          box-shadow: 2px 2px 2px #000; transition: transform .15s ease-out, opacity .1s ease-in, border-color .1s ease-in;
+          transform-origin: center center; transform: scale3d(1, 1, 1);
+          display: block; overflow: visible !important;
+        }
+        .accudrawInput {
+          background-color: rgba(0, 0, 0, 0); outline: none; border: none;
+          width: 100%; height: 100%; position: absolute; left: 0px; top: 0px;
+          line-height: 32px; font-size: 25px; font-family: rounded, sans-serif;
+          text-align: left; text-shadow: 2px 2px 2px #000; color: #eee; padding-left: 8px;
+        }
 
-      /* LOCK STYLING - DEBUGGING VISIBILITY */
-      div.lock {
-        width: 255px; height: 312px;
-        position: absolute;
-        /* Adjusted top to ensure it's not off-screen during testing */
-        top: -140px; right: -114px; 
-        pointer-events: none;
-        opacity: 0;
-        transform-origin: 50% 50%;
-        transform: scale3d(0, 0, 1);
-        z-index: 200002;
-        /* Debug border to see if element exists but is invisible */
-        border: 1px solid rgba(255, 255, 0, 0.3); 
-      }
-      div.lock div.lockColor {
-        width: 248px; height: 176px; position: absolute;
-        left: 3px; top: 133px; border-radius: 40px;
-        background-color: rgba(100, 100, 100, .7);
-        box-shadow: 3px 3px 3px #000;
-      }
-      div.lock img {
-        width: 255px; height: 312px; position: absolute; left: 0; top: 0;
-      }
-    `;
-    applyCss(css, 'accudraw-legacy-styles');
-  }
+        /* LOCK STYLING - RIGHT: -4px ALLOWS IT TO TOUCH AND SLIGHTLY OVERLAP THE RIGHT CONTAINER BORDER */
+        div.lock {
+          display: none;
+          width: 28px; height: 34px;
+          position: absolute;
+          top: -1px; right: -4px; 
+          pointer-events: none;
+          opacity: 0;
+          transform-origin: 50% 50%;
+          transform: scale3d(0, 0, 1);
+          z-index: 200002;
+          border: none;
+        }
+        div.lock div.lockColor {
+          width: 26px; height: 20px; position: absolute;
+          left: 1px; top: 14px; border-radius: 6px;
+          background-color: rgba(100, 100, 100, .7);
+          box-shadow: 1px 1px 1px #000;
+        }
+        div.lock img {
+          width: 28px; height: 34px; position: absolute; left: 0; top: 0;
+        }
+      `;
+      applyCss(css, 'accudraw-legacy-styles');
+    }
 
   _createElements() {
     this.draggerBox = makeElement(
@@ -310,16 +309,13 @@ class AccuDrawUi {
   }
 
   focusField(fieldName) {
-    const input = this.inputs.find((i) => i.name === fieldName);
-    if (input) {
-      // Temporarily force pointer-events so .focus() works even when the
-      // panel is in non-interactive (collapsed) mode. The AccuDraw philosophy
-      // is that typing activates the field without clicking.
-      input.outerElem.style.pointerEvents = 'auto';
-      input.inputElem.style.pointerEvents = 'auto';
-      input.inputElem.focus();
+      const input = this.inputs.find((i) => i.name === fieldName);
+      if (input) {
+        input.outerElem.style.pointerEvents = 'auto';
+        input.inputElem.style.pointerEvents = 'auto';
+        input.inputElem.focus({ preventScroll: true });
+      }
     }
-  }
 
   destroy() {
     if (this.outerBox && this.outerBox.isConnected) {

@@ -1,10 +1,10 @@
 class FrontPageContent {
   static heroTaglineLine1() {
-    return `<strong>recursi</strong> is a <em>recursive</em>, self-improving environment for building with AI.<br>`;
+    return `<strong>recursi</strong> is a <em>recursively self-improving</em> environment for building with AI.<br>`;
   }
 
   static heroTaglineLine2() {
-    return `Fast, visual, human-in-the-loop — and the whole thing was built by building itself. <em>Vibes built Vibes.</em>`;
+    return `Fast, visual, human-in-the-loop, free, no API fees — and the whole thing was built by building itself. <em>Yes, Recursi built Recursi.</em>`;
   }
 
   static heroTagline() {
@@ -14,11 +14,11 @@ class FrontPageContent {
   // ─── Manifesto ────────────────────────────────────────────────────────────
 
   static manifesto1() {
-    return `<strong>Vibes</strong> is the heart of recursi — a structured, visual vibe-coding recursi where you stay in the conversation while AI does the heavy lifting. It builds dynamic web pages out of small composable functions that can be revised cleanly, surgically, without trashing everything around them. <em>It built itself. That's not a metaphor.</em>`;
+    return `<strong>Vibes</strong> is the heart of recursi — a structured, visual vibe-coding environment where you stay in the conversation while AI does the heavy lifting. It builds dynamic web pages out of small composable functions that can be revised cleanly, surgically, without trashing everything around them. <em>It built itself. That's not a metaphor.</em>`;
   }
 
   static manifesto2() {
-    return `The rest of recursi is the ecosystem that grew around it: a legendary element inspector reborn, a YouTube playlist and music environment unlike anything else, a kid-friendly Scratch coding tool, a notebook for turning chatbot output into something you actually keep. All of it built fast, in the loop, with a human shaping every decision.`;
+    return `The rest of recursi is the ecosystem that grew around it: a legendary element inspector (Aardvark) reborn, a YouTube playlist and music environment unlike anything else, a kid-friendly Scratch coding tool, a CAD system, fun educational games, a notebook for turning chatbot output into something you actually keep. All of it built fast, in the loop, with a human shaping every decision.`;
   }
 
   static manifesto3() {
@@ -227,25 +227,25 @@ class FrontPageContent {
   // ─── Lightbox sold-out text ────────────────────────────────────────────────
 
   static soldOutText() {
-    return 'Physically nonexistent · AI-verified unavailable';
+    return 'Physically nonexistent';
   }
 
   // ─── Merch disclaimer ─────────────────────────────────────────────────────
 
   static merchDisclaimerText() {
-    return "[ These items were designed by an AI and do not exist. We think that's sort of the point. ]";
+    return "[ These items do not exist. ]";
   }
 
   // ─── Footer ───────────────────────────────────────────────────────────────
 
   static footerCopyright() {
-    return '&copy; 2026 Rob Brown &amp; Scratchy the Cyber Dog. All recursions reserved.';
+    return '&copy; 2026 Rob Brown &amp; Scratchy the Cyber Dog.';
   }
 
   // ─── Scratchy tagline (used in Scratchy card / elsewhere) ─────────────────
 
   static scratchyTagline() {
-    return 'A playful local environment for Scratch — built by a dog.';
+    return 'A playful local environment for Scratch — built by a.... dog?';
   }
 
   // ─── Helper ───────────────────────────────────────────────────────────────
@@ -285,7 +285,7 @@ class FrontPageContent {
       name: 'Aardvark Extension <span class="aardvark-playlist-parens">(YouTube Playlist)</span>',
       tag: 'live',
       tagClass: 'tag-live',
-      desc: 'A browser extension and YouTube playlist environment - clean playback, curated playlists, a full 3D piano with synchronized piano rolls, SVG tools, dictation, and more. The original Aardvark helped inspire Firebug. This one goes further.',
+      desc: 'A browser extension and YouTube playlist environment - clean playback, curated playlists, a full 3D piano with synchronized piano rolls, draw on web page tool, dictation, bookmark organizer, and more. The original Aardvark DOM tool inspired Firebug and Chrome dev tools. This one goes further. WAY further.',
       featured: true,
       isAardvark: true,
     });
@@ -304,6 +304,7 @@ class FrontPageContent {
         tagClass: 'tag-live',
         desc: "Spot the differences between twin 3D Lego structures in a playful, Where's Waldo style game. Designed to build 3D spatial awareness, featuring voxel explosion effects when you successfully identify anomalies.",
         featured: false,
+        hideImage: true
       });
     }
 
@@ -320,6 +321,7 @@ class FrontPageContent {
         tagClass: 'tag-live',
         desc: 'Playful musical interval ear training. Listen to a three-note sequence, see the first two highlighted on an interactive on-screen piano roll, and guess the third note to build your play-by-ear intuition.',
         featured: false,
+        hideImage: true
       });
     }
 
@@ -334,8 +336,9 @@ class FrontPageContent {
         name: 'AccuCAD',
         tag: 'beta preview',
         tagClass: 'tag-demo',
-        desc: 'A sophisticated web-based CAD system reviving the historic drafting paradigm of AccuDraw. Brings construction reference vectors, lockable constraint sweeps, and high-precision coordinate alignment to the browser.',
+        desc: 'A sophisticated web-based CAD system reviving the historic drafting paradigm of AccuDraw, the legendary drafting and 3d modeling tool originally built by yours truly, 30 years ago',
         featured: false,
+        hideImage: true
       });
     }
 }

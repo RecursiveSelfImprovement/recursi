@@ -552,32 +552,28 @@ class TentativePointHandler {
   }
 
   static _getSnappableThreeObjects(controller) {
-    const snappableObjects = [];
-    const activeCommand = controller.activeCommand;
-    const tempElement = activeCommand ? activeCommand.tempElement : null;
+      const snappableObjects = [];
+      const activeCommand = controller.activeCommand;
+      const tempElement = activeCommand ? activeCommand.tempElement : null;
 
-    console.log(
-      '   [Filter] Active command is:',
-      activeCommand ? activeCommand.constructor.name : 'none'
-    );
+      controller.cadElements.forEach((element) => {
+        const isSelfSnap = (element === tempElement && activeCommand && activeCommand.allowSelfSnap);
 
-    controller.cadElements.forEach((element) => {
-      // Per your instruction: it is correct to not snap to the thing we are drawing.
-      // This check ensures we skip the currently active temporary element.
-      if (element === tempElement) {
-        return;
-      }
-
-      if (element.threejsObject) {
-        // We only want to consider permanent, visible elements for snapping.
-        if (!element.isTemporary && element.threejsObject.visible) {
-          snappableObjects.push(element.threejsObject);
+        // If self-snapping is active, do not skip the temporary element
+        if (element === tempElement && !isSelfSnap) {
+          return;
         }
-      }
-    });
 
-    return snappableObjects;
-  }
+        if (element.threejsObject) {
+          // Allow snapping to visible objects OR self-snapping to the hidden temporary element
+          if (isSelfSnap || (!element.isTemporary && element.threejsObject.visible)) {
+            snappableObjects.push(element.threejsObject);
+          }
+        }
+      });
+
+      return snappableObjects;
+    }
 
   static _findClosestSnapPoint(controller, intersectionPoint) {
     let closestDistanceSq = Infinity;
@@ -740,134 +736,137 @@ class TentativePointHandler {
   }
 
   static _findClosestElementVertexScreenSpaceGlobal(
-    controller,
-    clientX,
-    clientY,
-    thresholdPx
-  ) {
-    const activeCommand = controller.activeCommand;
-    const tempElement = activeCommand ? activeCommand.tempElement : null;
+      controller,
+      clientX,
+      clientY,
+      thresholdPx
+    ) {
+      const activeCommand = controller.activeCommand;
+      const tempElement = activeCommand ? activeCommand.tempElement : null;
 
-    let globalBestDistSq = thresholdPx * thresholdPx;
-    let globalBest = null;
+      let globalBestDistSq = thresholdPx * thresholdPx;
+      let globalBest = null;
 
-    for (const el of controller.cadElements) {
-      // Filter: Must have visible object
-      if (!el.threejsObject || !el.threejsObject.visible) continue;
-      // Filter: Self-snap check
-      if (el === tempElement && !activeCommand.allowSelfSnap) continue;
+      for (const el of controller.cadElements) {
+        const isSelfSnap = (el === tempElement && activeCommand && activeCommand.allowSelfSnap);
 
-      const result = this._findClosestVertexScreenSpace(
-        controller,
-        el,
-        clientX,
-        clientY
-      );
+        // Filter: Must have visible object (or be the self-snappable element)
+        if (!el.threejsObject || (!el.threejsObject.visible && !isSelfSnap)) continue;
+        if (el === tempElement && !isSelfSnap) continue;
 
-      if (result && result.distSq < globalBestDistSq) {
-        globalBestDistSq = result.distSq;
-        globalBest = { element: el, point: result.point };
-      }
-    }
+        const result = this._findClosestVertexScreenSpace(
+          controller,
+          el,
+          clientX,
+          clientY
+        );
 
-    return globalBest;
-  }
-
-  static _findClosestElementByScreenSegments(
-    controller,
-    clientX,
-    clientY,
-    threshold
-  ) {
-    const camera = controller.view.camera;
-    const canvas = controller.domElement;
-    const rect = canvas.getBoundingClientRect();
-    const activeCommand = controller.activeCommand;
-    const tempElement = activeCommand ? activeCommand.tempElement : null;
-
-    let bestElement = null;
-    let bestDistSq = threshold * threshold; // Start within tolerance
-
-    const v1 = new THREE.Vector3();
-    const v2 = new THREE.Vector3();
-
-    // Helper to project 3D -> Screen
-    const toScreen = (vec) => {
-      vec.project(camera);
-      return {
-        x: (vec.x * 0.5 + 0.5) * rect.width + rect.left,
-        y: (1 - (vec.y * 0.5 + 0.5)) * rect.height + rect.top,
-        z: vec.z, // Keep Z for clipping check
-      };
-    };
-
-    // Distance from point (p) to line segment (v-w)
-    const distToSegmentSq = (px, py, vx, vy, wx, wy) => {
-      const l2 = (vx - wx) ** 2 + (vy - wy) ** 2;
-      if (l2 === 0) return (px - vx) ** 2 + (py - vy) ** 2;
-      let t = ((px - vx) * (wx - vx) + (py - vy) * (wy - vy)) / l2;
-      t = Math.max(0, Math.min(1, t));
-      return (
-        (px - (vx + t * (wx - vx))) ** 2 + (py - (vy + t * (wy - vy))) ** 2
-      );
-    };
-
-    for (const el of controller.cadElements) {
-      // Filter: Must be visible and linear-ish (has points)
-      if (
-        !el.threejsObject ||
-        !el.threejsObject.visible ||
-        !el.points ||
-        el.points.length < 2
-      )
-        continue;
-      if (el === tempElement && !activeCommand.allowSelfSnap) continue;
-
-      // Skip closed shapes like Rectangles if they are filled (Mesh check handled by Raycast)
-      // But for Paths/Arcs, this is critical.
-
-      const pts = el.points;
-      for (let i = 0; i < pts.length - 1; i++) {
-        v1.set(pts[i][0], pts[i][1], pts[i][2]);
-        v2.set(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
-
-        const s1 = toScreen(v1);
-        const s2 = toScreen(v2);
-
-        // Clip if behind camera
-        if (s1.z > 1 || s2.z > 1 || s1.z < -1 || s2.z < -1) continue;
-
-        const dSq = distToSegmentSq(clientX, clientY, s1.x, s1.y, s2.x, s2.y);
-
-        if (dSq < bestDistSq) {
-          bestDistSq = dSq;
-          bestElement = el;
+        if (result && result.distSq < globalBestDistSq) {
+          globalBestDistSq = result.distSq;
+          globalBest = { element: el, point: result.point };
         }
       }
 
-      // For closed paths/loops, check last segment
-      if (el.closed || el.type === 'rectangle' || el.type === 'circle') {
-        // simplified check
-        v1.set(
-          pts[pts.length - 1][0],
-          pts[pts.length - 1][1],
-          pts[pts.length - 1][2]
+      return globalBest;
+    }
+
+  static _findClosestElementByScreenSegments(
+      controller,
+      clientX,
+      clientY,
+      threshold
+    ) {
+      const camera = controller.view.camera;
+      const canvas = controller.domElement;
+      const rect = canvas.getBoundingClientRect();
+      const activeCommand = controller.activeCommand;
+      const tempElement = activeCommand ? activeCommand.tempElement : null;
+
+      let bestElement = null;
+      let bestDistSq = threshold * threshold; // Start within tolerance
+
+      const v1 = new THREE.Vector3();
+      const v2 = new THREE.Vector3();
+
+      // Helper to project 3D -> Screen
+      const toScreen = (vec) => {
+        vec.project(camera);
+        return {
+          x: (vec.x * 0.5 + 0.5) * rect.width + rect.left,
+          y: (1 - (vec.y * 0.5 + 0.5)) * rect.height + rect.top,
+          z: vec.z, // Keep Z for clipping check
+        };
+      };
+
+      // Distance from point (p) to line segment (v-w)
+      const distToSegmentSq = (px, py, vx, vy, wx, wy) => {
+        const l2 = (vx - wx) ** 2 + (vy - wy) ** 2;
+        if (l2 === 0) return (px - vx) ** 2 + (py - vy) ** 2;
+        let t = ((px - vx) * (wx - vx) + (py - vy) * (wy - vy)) / l2;
+        t = Math.max(0, Math.min(1, t));
+        return (
+          (px - (vx + t * (wx - vx))) ** 2 + (py - (vy + t * (wy - vy))) ** 2
         );
-        v2.set(pts[0][0], pts[0][1], pts[0][2]);
-        const s1 = toScreen(v1);
-        const s2 = toScreen(v2);
-        if (s1.z <= 1 && s2.z <= 1 && s1.z >= -1 && s2.z >= -1) {
+      };
+
+      for (const el of controller.cadElements) {
+        const isSelfSnap = (el === tempElement && activeCommand && activeCommand.allowSelfSnap);
+
+        // Filter: Must be visible and linear-ish (has points), or the self-snappable element
+        if (
+          !el.threejsObject ||
+          (!el.threejsObject.visible && !isSelfSnap) ||
+          !el.points ||
+          el.points.length < 2
+        )
+          continue;
+        if (el === tempElement && !isSelfSnap) continue;
+
+        // Skip closed shapes like Rectangles if they are filled (Mesh check handled by Raycast)
+        // But for Paths/Arcs, this is critical.
+
+        const pts = el.points;
+        for (let i = 0; i < pts.length - 1; i++) {
+          v1.set(pts[i][0], pts[i][1], pts[i][2]);
+          v2.set(pts[i + 1][0], pts[i + 1][1], pts[i + 1][2]);
+
+          const s1 = toScreen(v1);
+          const s2 = toScreen(v2);
+
+          // Clip if behind camera
+          if (s1.z > 1 || s2.z > 1 || s1.z < -1 || s2.z < -1) continue;
+
           const dSq = distToSegmentSq(clientX, clientY, s1.x, s1.y, s2.x, s2.y);
+
           if (dSq < bestDistSq) {
             bestDistSq = dSq;
             bestElement = el;
           }
         }
-      }
-    }
 
-    return bestElement;
-  }
+        // For closed paths/loops, check last segment
+        if (el.closed || el.type === 'rectangle' || el.type === 'circle') {
+          // simplified check
+          v1.set(
+            pts[pts.length - 1][0],
+            pts[pts.length - 1][1],
+            pts[pts.length - 1][2]
+          );
+          v2.set(pts[0][0], pts[0][1], pts[0][2]);
+          const s1 = toScreen(v1);
+          const s2 = toScreen(v2);
+          if (s1.z <= 1 && s2.z <= 1 && s1.z >= -1 && s2.z >= -1) {
+            const dSq = distToSegmentSq(clientX, clientY, s1.x, s1.y, s2.x, s2.y);
+            if (dSq < bestDistSq) {
+              bestDistSq = dSq;
+              bestElement = el;
+            }
+          }
+        }
+      }
+
+      return bestElement;
+    }
 
 }
 
