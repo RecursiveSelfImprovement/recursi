@@ -76,7 +76,24 @@ class AccuDrawUi {
           text-align: left; text-shadow: 2px 2px 2px #000; color: #eee; padding-left: 8px;
         }
 
-        /* LOCK STYLING - RIGHT: -4px ALLOWS IT TO TOUCH AND SLIGHTLY OVERLAP THE RIGHT CONTAINER BORDER */
+        /* CUSTOM CARET ANIMATION - GLOWING NEON GREEN TEXT CURSOR */
+        @keyframes accudraw-blink {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0; }
+        }
+        .accudrawCaret {
+          display: inline-block;
+          width: 2.5px;
+          height: 1.1em;
+          background-color: #00ff66;
+          margin-left: 1px;
+          margin-right: 1px;
+          vertical-align: middle;
+          animation: accudraw-blink 1s infinite;
+          box-shadow: 0 0 5px #00ff66; /* Futuristic glowing look */
+        }
+
+        /* LOCK STYLING */
         div.lock {
           display: none;
           width: 28px; height: 34px;
@@ -311,9 +328,8 @@ class AccuDrawUi {
   focusField(fieldName) {
       const input = this.inputs.find((i) => i.name === fieldName);
       if (input) {
-        input.outerElem.style.pointerEvents = 'auto';
-        input.inputElem.style.pointerEvents = 'auto';
-        input.inputElem.focus({ preventScroll: true });
+        this.setFocus(input);
+        this.inputs.forEach((i) => i.renderText());
       }
     }
 
@@ -322,4 +338,44 @@ class AccuDrawUi {
       this.outerBox.remove();
     }
   }
+
+  navigateField(direction) {
+      const logic = this.accuDraw?.baseController?.accuDrawLogic;
+      if (!logic) return;
+
+      const currentField = logic.currentAxis;
+      
+      // Get the list of currently visible fields in layout order
+      const visibleFields = this.fieldsDef.map(f => f.name).filter(name => {
+        const input = this.inputs.find(i => i.name === name);
+        return input && input.outerElem.style.display !== 'none';
+      });
+
+      const currentIndex = visibleFields.indexOf(currentField);
+      if (currentIndex === -1) return;
+
+      let nextIndex = direction === 'next' ? currentIndex + 1 : currentIndex - 1;
+      if (nextIndex >= visibleFields.length) nextIndex = 0;
+      if (nextIndex < 0) nextIndex = visibleFields.length - 1;
+
+      const nextField = visibleFields[nextIndex];
+
+      // --- SMART LOCK ON EXIT ---
+      if (logic.inputActive) {
+        // User actively typed: Lock this field and confirm input
+        logic.confirmInput();
+      } else {
+        // User did not type: Free up this field so it tracks the cursor
+        logic.isLocked[currentField] = false;
+        this.setLocked(currentField, false);
+      }
+
+      // Switch focus and update active axis states
+      logic.currentAxis = nextField;
+      this.focusField(nextField);
+      this.setSmartFocus(nextField);
+
+      // Force view refresh to update coordinate guides
+      this.accuDraw.baseController.refreshMousePosition();
+    }
 }

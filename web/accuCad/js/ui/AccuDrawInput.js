@@ -1,181 +1,101 @@
 class AccuDrawInput {
   constructor(name, color, parentUi) {
-    this.name = name;
-    this.color = color;
-    this.parent = parentUi;
-    this.isLocked = false;
+      this.name = name;
+      this.color = color;
+      this.parent = parentUi;
+      this.isLocked = false;
+      this.caretIndex = 0;
+      this.currentValueStr = '0.0000';
 
-    this.outerElem = makeElement('div', {
-      className: 'accudrawInputContainer',
-      style: {
-        backgroundColor: `rgba(${color[0]}, ${color[1]}, ${color[2]}, .4)`,
-        borderColor: `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`,
-        top: '0px',
-      },
-    });
+      this.outerElem = makeElement('div', {
+        className: 'accudrawInputContainer',
+        style: {
+          backgroundColor: `rgba(${color[0]}, ${color[1]}, ${color[2]}, .4)`,
+          borderColor: `rgba(${color[0]}, ${color[1]}, ${color[2]}, 0)`,
+          top: '0px',
+        },
+      });
 
-    this.inputElem = makeElement('input', {
-      className: 'accudrawInput',
-      type: 'text',
-      value: '0.0000',
-      spellcheck: false,
-      autocomplete: 'off',
-      autocapitalize: 'off',
-      autocorrect: 'off',
-    });
-
-    this.lockColorElem = makeElement('div', { className: 'lockColor' });
-    this.lockImg = makeElement('img', {
-      src: 'https://sniplets.org/resources/lock.png',
-    });
-
-    this.lockElem = makeElement(
-      'div',
-      { className: 'lock' },
-      this.lockColorElem,
-      this.lockImg
-    );
-
-    this.outerElem.appendChild(this.inputElem);
-    this.outerElem.appendChild(this.lockElem);
-
-    this.inputElem.addEventListener('focus', () => {
-      this.parent.setFocus(this);
-    });
-
-    this.inputElem.addEventListener('keydown', (e) => {
-      const accuDraw = this.parent.accuDraw;
-      const logic =
-        accuDraw && accuDraw.baseController
-          ? accuDraw.baseController.accuDrawLogic
-          : null;
-
-      if (
-        e.key.length === 1 &&
-        /[a-zA-Z]/.test(e.key) &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        e.stopPropagation();
-        KeyCommandHandler.processKey(e.key.toUpperCase());
-        return;
-      }
-
-      if (
-        /[0-9.\-+]/.test(e.key) &&
-        e.key.length === 1 &&
-        !e.ctrlKey &&
-        !e.altKey &&
-        !e.metaKey
-      ) {
-        e.preventDefault();
-        return;
-      }
-
-      if (e.key === 'Backspace' || e.key === 'Delete') {
-        e.preventDefault();
-        return;
-      }
-
-      if (e.key === 'Enter') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (logic) {
-          logic.handleSmartLock();
+      // Pure CSS text box representation
+      this.inputElem = makeElement('div', {
+        className: 'accudrawInput',
+        style: {
+          lineHeight: '32px',
+          fontSize: '25px',
+          fontFamily: 'rounded, sans-serif',
+          textShadow: '2px 2px 2px #000',
+          color: '#eee',
+          paddingLeft: '8px',
+          userSelect: 'none',
+          pointerEvents: 'none',
+          position: 'absolute',
+          left: '0px',
+          top: '0px',
+          width: '100%',
+          height: '100%'
         }
-        return;
-      }
+      });
 
-      if (e.key === ' ') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (logic) {
-          logic.switchMode();
+      this.textContainerElem = makeElement('div', {
+        style: {
+          display: 'inline-block',
+          width: '100%',
+          height: '100%'
         }
-        return;
-      }
+      });
+      this.inputElem.appendChild(this.textContainerElem);
 
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (logic) logic.handleInput('Tab');
-        return;
-      }
+      this.lockColorElem = makeElement('div', { className: 'lockColor' });
+      this.lockImg = makeElement('img', {
+        src: 'https://sniplets.org/resources/lock.png',
+      });
 
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        if (logic) logic.handleInput('Escape');
-        return;
-      }
+      this.lockElem = makeElement(
+        'div',
+        { className: 'lock' },
+        this.lockColorElem,
+        this.lockImg
+      );
 
-      const navKeys = [
-        'ArrowLeft',
-        'ArrowRight',
-        'ArrowUp',
-        'ArrowDown',
-        'Home',
-        'End',
-      ];
-      if (navKeys.includes(e.key)) {
-        if (logic && !logic.isInputActive(this.name)) {
-          logic.notifyExplicitEdit(this.name, this.inputElem.value);
-        }
-        return;
-      }
-    });
-
-    this.inputElem.addEventListener('input', (e) => {
-      e.preventDefault();
-    });
-  }
+      this.outerElem.appendChild(this.inputElem);
+      this.outerElem.appendChild(this.lockElem);
+      
+      this.renderText();
+    }
 
   setValue(val) {
-    let displayVal = val;
+      let displayVal = val;
+      if (typeof val === 'number') {
+        if (Math.abs(val) < 0.0001) displayVal = '0.0000';
+        else displayVal = val.toFixed(4);
+      }
+      this.currentValueStr = displayVal.toString();
 
-    if (typeof val === 'number') {
-      if (Math.abs(val) < 0.0001) displayVal = '0.0000';
-      else displayVal = val.toFixed(4);
+      // ALWAYS run the renderer to guarantee the caret and offsets are synchronized on every browser paint tick
+      this.renderText();
     }
-
-    if (this.inputElem.value !== displayVal.toString()) {
-      this.inputElem.value = displayVal;
-    }
-  }
 
   setFocusState(isFocused) {
-    const s = this.outerElem.style;
-    const c = this.color;
+      const s = this.outerElem.style;
+      const c = this.color;
 
-    if (isFocused) {
-      this.outerElem.style.pointerEvents = 'auto';
-      this.inputElem.style.pointerEvents = 'auto';
-    } else {
-      if (this.parent && !this.parent.isClickable) {
-        this.outerElem.style.pointerEvents = '';
-        this.inputElem.style.pointerEvents = '';
+      const baseZ = this.isLocked ? 200000 : isFocused ? 100001 : 100000;
+
+      if (isFocused) {
+        s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.9)`;
+        s.zIndex = baseZ;
+        const scale = 1.25;
+        s.transform = `scale3d(${scale}, ${scale}, 1)`;
+      } else {
+        s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0)`;
+        s.zIndex = baseZ;
+        s.transform = 'scale3d(1, 1, 1)';
       }
     }
 
-    const baseZ = this.isLocked ? 200000 : isFocused ? 100001 : 100000;
-
-    if (isFocused) {
-      s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.9)`;
-      s.zIndex = baseZ;
-      const scale = 1.25;
-      s.transform = `scale3d(${scale}, ${scale}, 1)`;
-    } else {
-      s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0)`;
-      s.zIndex = baseZ;
-      s.transform = 'scale3d(1, 1, 1)';
-    }
-  }
-
   toggleLock() {
-    this.setLocked(!this.isLocked);
-  }
+      this.setLocked(!this.isLocked);
+    }
 
   setLocked(locked) {
       if (this.isLocked === locked) return;
@@ -185,14 +105,16 @@ class AccuDrawInput {
         this.lockColorElem.style.backgroundColor = `rgba(${this.color[0]}, ${this.color[1]}, ${this.color[2]}, 1)`;
 
         this.lockElem.style.transition = 'none';
-        this.lockElem.style.opacity = '1';
+        this.lockElem.style.opacity = '0';
         this.lockElem.style.transform = 'scale3d(0.05, 0.05, 1)';
         this.lockElem.style.display = 'block';
 
+        this.lockElem.offsetHeight;
+
         requestAnimationFrame(() => {
-          // Amplified the curve to 1.5 and duration to 0.28s to produce a beautiful, highly visible bounce
           this.lockElem.style.transition =
-            'transform 0.28s cubic-bezier(0.175, 0.885, 0.32, 1.5), opacity 0.28s ease-in';
+            'transform 0.36s cubic-bezier(0.175, 0.885, 0.32, 1.8), opacity 0.36s ease-in';
+          this.lockElem.style.opacity = '1';
           this.lockElem.style.transform = 'scale3d(1, 1, 1)';
         });
 
@@ -203,34 +125,59 @@ class AccuDrawInput {
         this.lockElem.style.opacity = '0';
         this.lockElem.style.transform = 'scale3d(0, 0, 1)';
 
-        // Clean up DOM layout boundaries once the transition completes
         setTimeout(() => {
           if (!this.isLocked) {
             this.lockElem.style.display = 'none';
           }
         }, 150);
 
-        this.outerElem.style.zIndex =
-          document.activeElement === this.inputElem ? 100001 : 100000;
+        this.outerElem.style.zIndex = 100000;
       }
     }
 
   setSmartFocus(isActive) {
-    if (this.isLocked || document.activeElement === this.inputElem) return;
+      if (this.isLocked) return;
 
-    const s = this.outerElem.style;
-    const c = this.color;
+      const s = this.outerElem.style;
+      const c = this.color;
 
-    if (isActive) {
-      s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.6)`;
-      s.boxShadow = `0 0 6px rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.4)`;
-      s.transform = 'scale3d(1.05, 1.05, 1)';
-      s.zIndex = 100005;
-    } else {
-      s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0)`;
-      s.boxShadow = 'none';
-      s.transform = 'scale3d(1, 1, 1)';
-      s.zIndex = 100000;
+      if (isActive) {
+        s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.6)`;
+        s.boxShadow = `0 0 6px rgba(${c[0]}, ${c[1]}, ${c[2]}, 0.4)`;
+        s.transform = 'scale3d(1.05, 1.05, 1)';
+        s.zIndex = 100005;
+      } else {
+        s.borderColor = `rgba(${c[0]}, ${c[1]}, ${c[2]}, 0)`;
+        s.boxShadow = 'none';
+        s.transform = 'scale3d(1, 1, 1)';
+        s.zIndex = 100000;
+      }
     }
-  }
+
+  renderText() {
+      this.textContainerElem.innerHTML = '';
+
+      const logic = this.parent.accuDraw?.baseController?.accuDrawLogic;
+      const isEditing = logic && logic.inputActive && logic.currentAxis === this.name;
+
+      if (isEditing) {
+        const buffer = logic.inputBuffer || '';
+        const caretIdx = Math.max(0, Math.min(buffer.length, this.caretIndex));
+
+        const before = buffer.slice(0, caretIdx);
+        const after = buffer.slice(caretIdx);
+
+        const beforeNode = document.createTextNode(before);
+        // Added zero-width space unicode character to force native line height rendering
+        const caretNode = makeElement('span', { className: 'accudrawCaret' }, '\u200b');
+        const afterNode = document.createTextNode(after);
+
+        this.textContainerElem.appendChild(beforeNode);
+        this.textContainerElem.appendChild(caretNode);
+        this.textContainerElem.appendChild(afterNode);
+      } else {
+        const valText = document.createTextNode(this.currentValueStr || '0.0000');
+        this.textContainerElem.appendChild(valText);
+      }
+    }
 }

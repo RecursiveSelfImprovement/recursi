@@ -164,12 +164,53 @@ class ViewControls {
       this.compassBox.contentElement.appendChild(this.sliders.bg.container);
 
       this._applyAllSavedSettings(savedSettings);
+
+      // ADDED: Glowing Diagnostics Launcher Button for Bentley Presenters
+      const diagBtn = makeElement('button', {
+        className: 'accudraw-diag-btn',
+        style: {
+          display: 'block',
+          width: '100%',
+          padding: '8px',
+          marginTop: '12px',
+          background: '#0a0d0a',
+          border: '1px dashed #00ff66',
+          color: '#00ff66',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 6px rgba(0,255,102,0.15)',
+          transition: 'all 0.15s ease'
+        },
+        onclick: () => {
+          if (!this.baseController.accuDrawDiagnostics) {
+            this.baseController.accuDrawDiagnostics = new AccuDrawDiagnostics(
+              this.baseController
+            );
+          }
+          this.baseController.accuDrawDiagnostics.toggle();
+        }
+      }, 'AccuDraw Diagnostics \u25b6');
+
+      diagBtn.onmouseover = () => {
+        diagBtn.style.background = '#0e240e';
+        diagBtn.style.boxShadow = '0 2px 10px rgba(0,255,102,0.3)';
+      };
+      diagBtn.onmouseout = () => {
+        diagBtn.style.background = '#0a0d0a';
+        diagBtn.style.boxShadow = '0 2px 6px rgba(0,255,102,0.15)';
+      };
+
+      this.compassBox.contentElement.appendChild(diagBtn);
     }
 
   _createSpinnerControls() {
       const hostContainer = this.baseController?.domElement?.parentElement || document.body;
       const parentHeight = hostContainer.clientHeight || window.innerHeight;
-      const width = 690;
+      const width = 740;
       
       const left = 20;
       const top = Math.max(20, parentHeight - 85);
@@ -205,6 +246,31 @@ class ViewControls {
       create('diagonal', 'diagonal', (inc) => this._transformView(inc * this.spinnerMoveMult, 'ddiag'));
       create('perspective', 'perspective', (inc) => this._transformView(inc, 'dfov'));
       create('accudraw Z', 'accudraw Z', (inc) => this._transformView(inc, 'accudrawZ'));
+
+      const p2pBtn = makeElement('button', {
+        style: {
+          width: '50px',
+          height: '100%',
+          background: '#090a0f',
+          border: 'none',
+          borderLeft: '1px solid #333',
+          color: '#00e676',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          boxSizing: 'border-box'
+        },
+        onclick: () => {
+          if (this.baseController && this.baseController.p2pConnector) {
+            this.baseController.p2pConnector.showDialog();
+          }
+        }
+      }, 'P2P');
+      this.spinnerBox.contentElement.appendChild(p2pBtn);
     }
 
   _hueToRgb(h) {

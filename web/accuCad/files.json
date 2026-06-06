@@ -48,6 +48,7 @@
     "js/ui/AccuDrawInput.js",
     "js/ui/AccuDrawTestHarness.js",
     "js/ui/AccuDrawUi.js",
+    "js/ui/P2PConnector.js",
     "js/ui/ViewControls.js",
     "js/ui/ViewControlsManager.js"
   ],

@@ -25,108 +25,74 @@ class EventHandlers {
     }
 
   static handleMouseDown(controller, event) {
-    const now = performance.now();
+      const now = performance.now();
 
-    if (event.button === 0) {
-      // Left Button (Data Button)
-      controller.leftDownTime = now;
+      if (event.button === 0) {
+        // Left Button (Data Button)
+        controller.leftDownTime = now;
 
-      if (
-        controller.rightDownTime !== null &&
-        now - controller.rightDownTime < controller.chordThreshold
-      ) {
-        // Chord detected (R -> L)
-        event.preventDefault();
-        clearTimeout(controller.pendingClickTimer);
-        controller.pendingClickTimer = null;
-
-        TentativePointHandler._clearTentativePoint(controller, true);
-        TentativePointHandler.handleTentativePoint(controller, event);
-
-        controller.leftDownTime = null;
-        controller.rightDownTime = null;
-      } else {
-        // Left Single Click Timer
-        clearTimeout(controller.pendingClickTimer);
-        controller.pendingClickTimer = setTimeout(() => {
-          if (
-            controller.leftDownTime !== null &&
-            controller.rightDownTime === null
-          ) {
-            // SAFETY CHECK: If we have a tentative point, ensure we process the click
-            // even if something else state-wise is weird.
-            this._processSingleLeftClick(controller, event);
-            controller.leftDownTime = null;
-          }
+        if (
+          controller.rightDownTime !== null &&
+          now - controller.rightDownTime < controller.chordThreshold
+        ) {
+          // Chord detected (R -> L)
+          event.preventDefault();
+          clearTimeout(controller.pendingClickTimer);
           controller.pendingClickTimer = null;
-        }, controller.chordThreshold);
-      }
-    } else if (event.button === 2) {
-      // Right Button (Reset Button)
-      controller.rightDownTime = now;
 
-      if (
-        controller.leftDownTime !== null &&
-        now - controller.leftDownTime < controller.chordThreshold
-      ) {
-        // Chord detected (L -> R)
-        event.preventDefault();
-        clearTimeout(controller.pendingClickTimer);
-        controller.pendingClickTimer = null;
+          TentativePointHandler._clearTentativePoint(controller, true);
+          TentativePointHandler.handleTentativePoint(controller, event);
 
-        TentativePointHandler._clearTentativePoint(controller, true);
-        TentativePointHandler.handleTentativePoint(controller, event);
+          controller.leftDownTime = null;
+          controller.rightDownTime = null;
+        } else {
+          // Left Single Click Timer
+          clearTimeout(controller.pendingClickTimer);
+          controller.pendingClickTimer = setTimeout(() => {
+            if (
+              controller.leftDownTime !== null &&
+              controller.rightDownTime === null
+            ) {
+              this._processSingleLeftClick(controller, event);
+              controller.leftDownTime = null;
+            }
+            controller.pendingClickTimer = null;
+          }, controller.chordThreshold);
+        }
+      } else if (event.button === 2) {
+        // Right Button (Reset Button)
+        controller.rightDownTime = now;
 
-        controller.leftDownTime = null;
-        controller.rightDownTime = null;
-      } else {
-        // Right Single Click Timer (Reset Hierarchy)
-        clearTimeout(controller.pendingClickTimer);
-        controller.pendingClickTimer = setTimeout(() => {
-          if (
-            controller.rightDownTime !== null &&
-            controller.leftDownTime === null
-          ) {
-            // --- HIERARCHY START ---
+        if (
+          controller.leftDownTime !== null &&
+          now - controller.leftDownTime < controller.chordThreshold
+        ) {
+          // Chord detected (L -> R)
+          event.preventDefault();
+          clearTimeout(controller.pendingClickTimer);
+          controller.pendingClickTimer = null;
 
-            // 1. Release Tentative Point (Force Clear)
-            if (controller._tentativeOriginalPoint) {
-              console.log(
-                '%cRight Click: Released Tentative Point',
-                'color: yellow'
-              );
-              TentativePointHandler._clearTentativePoint(controller);
+          TentativePointHandler._clearTentativePoint(controller, true);
+          TentativePointHandler.handleTentativePoint(controller, event);
+
+          controller.leftDownTime = null;
+          controller.rightDownTime = null;
+        } else {
+          // Right Single Click Timer
+          clearTimeout(controller.pendingClickTimer);
+          controller.pendingClickTimer = setTimeout(() => {
+            if (
+              controller.rightDownTime !== null &&
+              controller.leftDownTime === null
+            ) {
+              this._processSingleRightClick(controller, event);
               controller.rightDownTime = null;
-              controller.pendingClickTimer = null;
-              // Ensure mouse position is refreshed to update cursor
-              controller.refreshMousePosition();
-              return;
             }
-
-            // 2. Unlock AccuDraw / Clear Input
-            let consumed = false;
-            if (controller.accuDrawLogic) {
-              consumed = controller.accuDrawLogic.handleInput('Escape');
-            }
-
-            // 3. Reset Command
-            if (!consumed) {
-              console.log('%cRight Click: Resetting Command', 'color: orange');
-              if (controller.activeCommand?.reset) {
-                controller.activeCommand.reset();
-              }
-            } else {
-              console.log('%cRight Click: Unlocked AccuDraw', 'color: cyan');
-            }
-            // --- HIERARCHY END ---
-
-            controller.rightDownTime = null;
-          }
-          controller.pendingClickTimer = null;
-        }, controller.chordThreshold);
+            controller.pendingClickTimer = null;
+          }, controller.chordThreshold);
+        }
       }
     }
-  }
 
   static handleMouseWheel(controller, event) {
     if (event.altKey || event.metaKey) {
@@ -337,20 +303,14 @@ class EventHandlers {
   }
 
   static handleKeyDown(controller, event) {
-      // 1. Absolute Release: Bypass completely if capturing is disabled
       if (controller.isKeystrokeCaptureActive === false) {
         return;
       }
 
       const target = event.target;
       const isTextInput = target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable);
-      
       if (isTextInput) {
-        // 2. Absolute Grab: Actively prevent characters from writing to external text containers
-        if (!target.classList || !target.classList.contains('accudrawInput')) {
-          event.preventDefault();
-          event.stopPropagation();
-        }
+        return;
       }
 
       if (event.key === 'Alt' || event.key === 'Meta') {
@@ -360,29 +320,284 @@ class EventHandlers {
         controller._shiftDown = true;
       }
 
-      // Escape Hierarchy
-      if (event.key === 'Escape') {
-        // 1. Release Tentative Point
-        if (controller._tentativeOriginalPoint) {
-          TentativePointHandler._clearTentativePoint(controller);
+      const logic = controller.accuDrawLogic;
+      const activeInput = controller.accuDraw?.ui?.inputs?.find(i => i.name === logic?.currentAxis);
+      const diag = controller.accuDrawDiagnostics;
+
+      if (logic && activeInput) {
+        // --- 1. NUMERICAL & DECIMAL INSETS ---
+        if (/[0-9.\-+]/.test(event.key) && event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (!logic.inputActive) {
+            logic.inputActive = true;
+            logic.stickyFocus = true;
+            logic.inputBuffer = '';
+            activeInput.caretIndex = 0;
+            if (!logic.typingMouseAnchor) {
+              logic.typingMouseAnchor = { ...logic.lastLocalDelta };
+            }
+          }
+
+          const buffer = logic.inputBuffer || '';
+          const idx = activeInput.caretIndex;
+          const newBuffer = buffer.slice(0, idx) + event.key + buffer.slice(idx);
+
+          logic.inputBuffer = newBuffer;
+          activeInput.caretIndex = idx + 1;
+          logic.isLocked[logic.currentAxis] = true;
+          controller.accuDraw.ui.setLocked(logic.currentAxis, true);
+
+          // LOG EVENT: keystroke tracking
+          if (diag) {
+            diag.logEvent('key:insert', `char="${event.key}" buffer="${newBuffer}" caret=${activeInput.caretIndex}`);
+          }
+
+          logic.onUiValueChange(logic.currentAxis, newBuffer);
+          activeInput.renderText();
           return;
         }
 
-        // 2. Unlock AccuDraw
-        if (
-          controller.accuDrawLogic &&
-          controller.accuDrawLogic.handleInput('Escape')
-        ) {
+        // --- 2. THE CAD SMART BACKSPACE ---
+        if (event.key === 'Backspace') {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (logic.inputActive) {
+            const buffer = logic.inputBuffer || '';
+            const idx = activeInput.caretIndex;
+            if (idx > 0) {
+              const newBuffer = buffer.slice(0, idx - 1) + buffer.slice(idx);
+              logic.inputBuffer = newBuffer;
+              activeInput.caretIndex = idx - 1;
+
+              // LOG EVENT: backspace tracking
+              if (diag) {
+                diag.logEvent('key:backspace', `buffer="${newBuffer}" caret=${activeInput.caretIndex}`);
+              }
+
+              if (newBuffer.length === 0) {
+                logic.inputActive = false;
+                logic.stickyFocus = false;
+                logic.isLocked[logic.currentAxis] = false;
+                controller.accuDraw.ui.setLocked(logic.currentAxis, false);
+                controller.refreshMousePosition();
+              } else {
+                logic.onUiValueChange(logic.currentAxis, newBuffer);
+              }
+              activeInput.renderText();
+            }
+          } else {
+            // Initiate Smart Edit from dynamic coordinate tracking
+            const currentVal = parseFloat(activeInput.currentValueStr);
+            if (!isNaN(currentVal)) {
+              let valStr = currentVal.toFixed(4);
+              if (valStr.endsWith('.0000')) {
+                valStr = Math.floor(currentVal).toString();
+              }
+              const truncatedStr = valStr.slice(0, -1);
+
+              logic.inputActive = true;
+              logic.stickyFocus = true;
+              logic.inputBuffer = truncatedStr;
+              activeInput.caretIndex = truncatedStr.length;
+              logic.isLocked[logic.currentAxis] = true;
+              controller.accuDraw.ui.setLocked(logic.currentAxis, true);
+
+              // LOG EVENT: smart edit tracking
+              if (diag) {
+                diag.logEvent('key:smart-backspace', `from="${valStr}" to="${truncatedStr}"`);
+              }
+
+              logic.onUiValueChange(logic.currentAxis, truncatedStr);
+              activeInput.renderText();
+            }
+          }
           return;
         }
 
-        // 3. Reset Command
-        if (controller.activeCommand?.reset) {
-          controller.activeCommand.reset();
+        // --- 3. DELETE CHARACTER ---
+        if (event.key === 'Delete') {
+          event.preventDefault();
+          event.stopPropagation();
+
+          if (logic.inputActive) {
+            const buffer = logic.inputBuffer || '';
+            const idx = activeInput.caretIndex;
+            if (idx < buffer.length) {
+              const newBuffer = buffer.slice(0, idx) + buffer.slice(idx + 1);
+              logic.inputBuffer = newBuffer;
+
+              // LOG EVENT: delete key
+              if (diag) {
+                diag.logEvent('key:delete', `buffer="${newBuffer}" caret=${activeInput.caretIndex}`);
+              }
+
+              if (newBuffer.length === 0) {
+                logic.inputActive = false;
+                logic.stickyFocus = false;
+                logic.isLocked[logic.currentAxis] = false;
+                controller.accuDraw.ui.setLocked(logic.currentAxis, false);
+                controller.refreshMousePosition();
+              } else {
+                logic.onUiValueChange(logic.currentAxis, newBuffer);
+              }
+              activeInput.renderText();
+            }
+          }
+          return;
+        }
+
+        // --- 4. NAVIGATION KEYS (Caret & Tab shifts) ---
+        if (event.key === 'ArrowLeft') {
+          if (logic.inputActive) {
+            event.preventDefault();
+            event.stopPropagation();
+            activeInput.caretIndex = Math.max(0, activeInput.caretIndex - 1);
+            
+            // LOG EVENT: caret navigation
+            if (diag) {
+              diag.logEvent('key:arrow-left', `caret=${activeInput.caretIndex}`);
+            }
+            
+            activeInput.renderText();
+          }
+          return;
+        }
+
+        if (event.key === 'ArrowRight') {
+          if (logic.inputActive) {
+            event.preventDefault();
+            event.stopPropagation();
+            const buffer = logic.inputBuffer || '';
+            activeInput.caretIndex = Math.min(buffer.length, activeInput.caretIndex + 1);
+            
+            // LOG EVENT: caret navigation
+            if (diag) {
+              diag.logEvent('key:arrow-right', `caret=${activeInput.caretIndex}`);
+            }
+
+            activeInput.renderText();
+          }
+          return;
+        }
+
+        if (event.key === 'Home') {
+          if (logic.inputActive) {
+            event.preventDefault();
+            event.stopPropagation();
+            activeInput.caretIndex = 0;
+            activeInput.renderText();
+          }
+          return;
+        }
+
+        if (event.key === 'End') {
+          if (logic.inputActive) {
+            event.preventDefault();
+            event.stopPropagation();
+            activeInput.caretIndex = (logic.inputBuffer || '').length;
+            activeInput.renderText();
+          }
+          return;
+        }
+
+        if (event.key === 'Enter') {
+          if (logic.inputActive) {
+            event.preventDefault();
+            event.stopPropagation();
+            
+            // LOG EVENT: enter confirmation
+            if (diag) {
+              diag.logEvent('key:enter', `confirmed="${logic.inputBuffer}" on ${logic.currentAxis}`);
+            }
+
+            logic.confirmInput();
+          }
+          return;
         }
       }
 
-      // Pass input to AccuDraw Logic (Numbers)
+      // --- GLOBAL FIELD NAVIGATION (Tab) ---
+      if (event.key === 'Tab') {
+        event.preventDefault();
+        event.stopPropagation();
+        const dir = event.shiftKey ? 'prev' : 'next';
+        
+        // LOG EVENT: field shift
+        if (diag) {
+          diag.logEvent('key:tab', `dir="${dir}"`);
+        }
+
+        if (controller.accuDraw?.ui && typeof controller.accuDraw.ui.navigateField === 'function') {
+          controller.accuDraw.ui.navigateField(dir);
+        }
+        return;
+      }
+
+      // --- THE ACCUDRAW ESCAPE HIERARCHY ---
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+
+        // Priority 1: Clear active typing and restore dynamic tracking
+        if (logic && logic.inputActive) {
+          // LOG EVENT: cancel typing
+          if (diag) {
+            diag.logEvent('lock:escape', `canceled typing on ${logic.currentAxis}`);
+          }
+
+          logic.inputActive = false;
+          logic.inputBuffer = '';
+          logic.stickyFocus = false;
+          logic.typingMouseAnchor = null;
+
+          const currentAxis = logic.currentAxis;
+          logic.isLocked[currentAxis] = false;
+          if (controller.accuDraw?.ui) {
+            controller.accuDraw.ui.setLocked(currentAxis, false);
+            controller.accuDraw.ui.focusField(currentAxis);
+          }
+          controller.refreshMousePosition();
+          return;
+        }
+
+        // Priority 2: Unlock ONLY the currently active/focused field
+        if (logic) {
+          const currentAxis = logic.currentAxis;
+          if (logic.isLocked[currentAxis]) {
+            // LOG EVENT: unlock field
+            if (diag) {
+              diag.logEvent('lock:escape', `unlocked ${currentAxis}`);
+            }
+
+            logic.isLocked[currentAxis] = false;
+            logic.stickyFocus = false;
+            if (controller.accuDraw?.ui) {
+              controller.accuDraw.ui.setLocked(currentAxis, false);
+              controller.accuDraw.ui.focusField(currentAxis);
+            }
+            controller.refreshMousePosition();
+            return;
+          }
+        }
+
+        // Priority 3: Close active key command popups
+        if (controller._helpDialog) {
+          controller._helpDialog.close();
+          controller._helpDialog = null;
+          return;
+        }
+
+        // Priority 4: Reset active drawing tool
+        if (controller.activeCommand?.reset) {
+          controller.activeCommand.reset();
+        }
+        return;
+      }
+
+      // Pass input to AccuDraw Logic (Alphabetical Shortcuts, etc)
       if (controller.accuDrawLogic) {
         const handled = controller.accuDrawLogic.handleInput(event.key);
         if (handled) {
@@ -514,22 +729,32 @@ class EventHandlers {
   }
 
   static handleMouseUp(controller, event) {
-    if (event.button === 0) {
-      controller.leftDownTime = null;
-    } else if (event.button === 2) {
-      controller.rightDownTime = null;
-    }
-
-    // If both buttons are now up, ensure no lingering timer can fire.
-    // This is mainly for cases where a chord was started but one button was released
-    // before the other was pressed, aborting the chord.
-    if (controller.leftDownTime === null && controller.rightDownTime === null) {
-      if (controller.pendingClickTimer) {
-        clearTimeout(controller.pendingClickTimer);
-        controller.pendingClickTimer = null;
+      if (event.button === 0) {
+        // Process Left single click instantly on release if chord timer is still active
+        if (
+          controller.pendingClickTimer &&
+          controller.leftDownTime !== null &&
+          controller.rightDownTime === null
+        ) {
+          clearTimeout(controller.pendingClickTimer);
+          controller.pendingClickTimer = null;
+          this._processSingleLeftClick(controller, event);
+        }
+        controller.leftDownTime = null;
+      } else if (event.button === 2) {
+        // Process Right single click instantly on release if chord timer is still active
+        if (
+          controller.pendingClickTimer &&
+          controller.rightDownTime !== null &&
+          controller.leftDownTime === null
+        ) {
+          clearTimeout(controller.pendingClickTimer);
+          controller.pendingClickTimer = null;
+          this._processSingleRightClick(controller, event);
+        }
+        controller.rightDownTime = null;
       }
     }
-  }
 
 
   static removeEventListeners(controller) {
@@ -545,6 +770,36 @@ class EventHandlers {
       document.removeEventListener('keyup', controller._listeners.keyup);
 
       delete controller._listeners;
+    }
+
+  static _processSingleRightClick(controller, event) {
+      // 1. Release Tentative Point (Force Clear)
+      if (controller._tentativeOriginalPoint) {
+        console.log(
+          '%cRight Click: Released Tentative Point',
+          'color: yellow'
+        );
+        TentativePointHandler._clearTentativePoint(controller);
+        // Ensure mouse position is refreshed to update cursor
+        controller.refreshMousePosition();
+        return;
+      }
+
+      // 2. Unlock AccuDraw / Clear Input
+      let consumed = false;
+      if (controller.accuDrawLogic) {
+        consumed = controller.accuDrawLogic.handleInput('Escape');
+      }
+
+      // 3. Reset Command
+      if (!consumed) {
+        console.log('%cRight Click: Resetting Command', 'color: orange');
+        if (controller.activeCommand?.reset) {
+          controller.activeCommand.reset();
+        }
+      } else {
+        console.log('%cRight Click: Unlocked AccuDraw', 'color: cyan');
+      }
     }
 }
 

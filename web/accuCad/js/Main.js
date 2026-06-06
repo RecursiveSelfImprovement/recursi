@@ -151,6 +151,11 @@ class Main {
         this.threeDView.scene
       );
 
+      // Initialize P2PConnector on the controller
+      if (typeof P2PConnector !== 'undefined') {
+        this.baseController.p2pConnector = new P2PConnector(this.baseController);
+      }
+
       if (typeof ViewControlsManager !== 'undefined') {
         ViewControlsManager.init(this.baseController, this.threeDView);
       }
@@ -215,6 +220,13 @@ class Main {
 
   destroy() {
       console.log('[accuCad] destroy() called.');
+
+      // Close the P2P connection and dialog
+      if (this.baseController && this.baseController.p2pConnector) {
+        try {
+          this.baseController.p2pConnector.destroy();
+        } catch(e) {}
+      }
 
       // Surgically close the active keyboard shortcut help dialog if present
       if (this.baseController && this.baseController._helpDialog) {

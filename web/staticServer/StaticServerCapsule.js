@@ -59,75 +59,81 @@ static createServer(options = {}) {
   }
 
   static handleRequest(context = {}) {
-    const request = context.request;
-    const response = context.response;
-    const config = context.config;
-    const modules = context.modules || {};
-    const fs = modules.fs;
-    const path = modules.path;
-    const url = modules.url;
+      const request = context.request;
+      const response = context.response;
+      const config = context.config;
+      const modules = context.modules || {};
+      const fs = modules.fs;
+      const path = modules.path;
+      const url = modules.url;
 
-    try {
-      if (!request || !response) {
-        throw new Error("Missing request or response.");
-      }
+      try {
+        if (!request || !response) throw new Error('Missing request or response.');
 
-      const parsed = url.parse(request.url || "/");
-      const pathname = this.decodePathname(parsed.pathname || "/");
+        const parsed = url.parse(request.url || '/');
+        const pathname = this.decodePathname(parsed.pathname || '/');
 
-      if (this.isApiPath(pathname)) {
-        this.sendText(response, 410, "Node API disabled on Vibes static test server.\n", "text/plain");
-        return;
-      }
+        // CORS headers for all requests so phone can reach computer across LAN
+        response.setHeader('Access-Control-Allow-Origin', '*');
+        response.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
 
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        this.sendText(response, 405, "Method not allowed. Static server supports GET and HEAD only.\n", "text/plain");
-        return;
-      }
-
-      const resolved = this.resolveRequestPath(pathname, config, modules);
-
-      if (!resolved.ok) {
-        this.sendText(response, resolved.status || 403, resolved.message || "Forbidden.\n", "text/plain");
-        return;
-      }
-
-      let filePath = resolved.filePath;
-
-      if (!fs.existsSync(filePath)) {
-        if (pathname === "/" || pathname === "") {
-          filePath = path.join(config.webRoot, config.defaultDocument);
-        }
-      }
-
-      if (!fs.existsSync(filePath)) {
-        this.sendText(response, 404, "Not found: " + pathname + "\n", "text/plain");
-        return;
-      }
-
-      const stat = fs.statSync(filePath);
-
-      if (stat.isDirectory()) {
-        const indexPath = this.findIndexFile(filePath, config, modules);
-        if (!indexPath) {
-          this.sendText(response, 403, "Directory listing disabled.\n", "text/plain");
+        if (request.method === 'OPTIONS') {
+          response.writeHead(204);
+          response.end();
           return;
         }
 
-        filePath = indexPath;
-      }
+        // Signal corkboard: POST /signal/:topic  →  store message
+        //                    GET  /signal/:topic  →  retrieve message
+        if (pathname.startsWith('/signal/')) {
+          this._handleSignal(request, response, pathname, config);
+          return;
+        }
 
-      this.sendFile({
-        request,
-        response,
-        filePath,
-        config,
-        modules
-      });
-    } catch (error) {
-      this.sendText(response, 500, "Static server error: " + error.message + "\n", "text/plain");
+        if (this.isApiPath(pathname)) {
+          this.sendText(response, 410, 'Node API disabled on Vibes static test server.\n', 'text/plain');
+          return;
+        }
+
+        if (request.method !== 'GET' && request.method !== 'HEAD') {
+          this.sendText(response, 405, 'Method not allowed.\n', 'text/plain');
+          return;
+        }
+
+        const resolved = this.resolveRequestPath(pathname, config, modules);
+        if (!resolved.ok) {
+          this.sendText(response, resolved.status || 403, resolved.message || 'Forbidden.\n', 'text/plain');
+          return;
+        }
+
+        let filePath = resolved.filePath;
+        if (!fs.existsSync(filePath)) {
+          if (pathname === '/' || pathname === '') {
+            filePath = path.join(config.webRoot, config.defaultDocument);
+          }
+        }
+
+        if (!fs.existsSync(filePath)) {
+          this.sendText(response, 404, 'Not found: ' + pathname + '\n', 'text/plain');
+          return;
+        }
+
+        const stat = fs.statSync(filePath);
+        if (stat.isDirectory()) {
+          const indexPath = this.findIndexFile(filePath, config, modules);
+          if (!indexPath) {
+            this.sendText(response, 403, 'Directory listing disabled.\n', 'text/plain');
+            return;
+          }
+          filePath = indexPath;
+        }
+
+        this.sendFile({ request, response, filePath, config, modules });
+
+      } catch (error) {
+        this.sendText(response, 500, 'Static server error: ' + error.message + '\n', 'text/plain');
+      }
     }
-  }
 
   static decodePathname(pathname) {
     try {
@@ -284,4 +290,33 @@ static createServer(options = {}) {
 
     processObject.stdout.write(lines.join("\n"));
   }
+
+  static _handleSignal(request, response, pathname, config) {
+      // Lazy-init the in-memory store on the config object
+      if (!config._signalStore) config._signalStore = {};
+
+      const topic = pathname.replace('/signal/', '').split('?')[0];
+      if (!topic) {
+        this.sendText(response, 400, 'No topic.\n', 'text/plain');
+        return;
+      }
+
+      if (request.method === 'POST') {
+        let body = '';
+        request.on('data', chunk => { body += chunk; });
+        request.on('end', () => {
+          config._signalStore[topic] = { body, ts: Date.now() };
+          this.sendText(response, 200, 'ok', 'text/plain');
+        });
+      } else if (request.method === 'GET') {
+        const entry = config._signalStore[topic];
+        if (!entry) {
+          this.sendText(response, 200, '', 'text/plain');
+        } else {
+          this.sendText(response, 200, entry.body, 'text/plain');
+        }
+      } else {
+        this.sendText(response, 405, 'Method not allowed.\n', 'text/plain');
+      }
+    }
 }

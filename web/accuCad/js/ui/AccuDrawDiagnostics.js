@@ -14,69 +14,84 @@ class AccuDrawDiagnostics {
   }
 
   _injectStyles() {
-    const css = `
-      .ad-diag-wrap {
-        font-family: 'Courier New', monospace;
-        font-size: 11px;
-        line-height: 1.4;
-        color: #ccc;
-        user-select: text;
-        cursor: text;
-      }
-      .ad-diag-section {
-        margin-bottom: 6px;
-        padding: 4px 6px;
-        background: rgba(0,0,0,0.3);
-        border-radius: 3px;
-        border-left: 3px solid #555;
-      }
-      .ad-diag-section.state { border-left-color: #4af; }
-      .ad-diag-section.visual { border-left-color: #fa4; }
-      .ad-diag-section.events { border-left-color: #4f4; }
-      .ad-diag-section.history { border-left-color: #a4f; }
-      .ad-diag-label {
-        font-weight: bold;
-        color: #fff;
-        font-size: 10px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        margin-bottom: 2px;
-      }
-      .ad-diag-row {
-        display: flex;
-        justify-content: space-between;
-        padding: 1px 0;
-      }
-      .ad-diag-key { color: #888; }
-      .ad-diag-val { color: #eee; text-align: right; }
-      .ad-diag-val.active { color: #ff0; font-weight: bold; }
-      .ad-diag-val.locked { color: #f44; font-weight: bold; }
-      .ad-diag-val.on { color: #4f4; }
-      .ad-diag-val.off { color: #666; }
-      .ad-diag-event-line {
-        padding: 1px 0;
-        border-bottom: 1px solid rgba(255,255,255,0.05);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-      .ad-diag-event-line .timestamp { color: #666; margin-right: 6px; }
-      .ad-diag-event-line .action { color: #4f4; }
-      .ad-diag-event-line .detail { color: #aaa; }
-      .ad-diag-copy-btn {
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        color: #ccc;
-        font-size: 10px;
-        padding: 2px 8px;
-        border-radius: 3px;
-        cursor: pointer;
-        margin: 2px;
-      }
-      .ad-diag-copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
-    `;
-    applyCss(css, 'accudraw-diagnostics-styles');
-  }
+      const css = `
+        .ad-diag-wrap {
+          font-family: 'Courier New', monospace;
+          font-size: 11px;
+          line-height: 1.4;
+          color: #00ff66;
+          background-color: #050608;
+          user-select: text;
+          cursor: text;
+        }
+        .ad-diag-section {
+          margin-bottom: 8px;
+          padding: 6px 8px;
+          background: #090a0f;
+          border-radius: 4px;
+          border: 1px solid #113311;
+          box-shadow: inset 0 0 10px rgba(0,255,102,0.05);
+        }
+        .ad-diag-label {
+          font-weight: bold;
+          color: #00ff66;
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          margin-bottom: 4px;
+          border-bottom: 1px solid #113311;
+          padding-bottom: 2px;
+        }
+        .ad-diag-row {
+          display: flex;
+          justify-content: space-between;
+          padding: 1px 0;
+        }
+        .ad-diag-key { color: rgba(0, 255, 102, 0.6); }
+        .ad-diag-val { color: #00ff66; text-align: right; }
+        .ad-diag-val.active { color: #ffffff; font-weight: bold; text-shadow: 0 0 4px #00ff66; }
+        .ad-diag-val.locked { color: #ff3333; font-weight: bold; }
+        .ad-diag-val.on { color: #00ff66; }
+        .ad-diag-val.off { color: #224422; }
+        .ad-diag-event-line {
+          padding: 2px 0;
+          border-bottom: 1px solid rgba(0,255,102,0.05);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+        .ad-diag-event-line .timestamp { color: #225522; margin-right: 6px; }
+        .ad-diag-event-line .action { color: #ffffff; font-weight: bold; }
+        .ad-diag-event-line .detail { color: #00ff66; }
+        
+        /* SCROLL RULES: Keeps logs and history fully scroll-contained inside 110px */
+        .ad-diag-section.events {
+          border-left: 3px solid #00ff66;
+          max-height: 110px;
+          overflow-y: auto;
+        }
+        .ad-diag-section.history {
+          border-left: 3px solid #a4f;
+          max-height: 110px;
+          overflow-y: auto;
+        }
+
+        .ad-diag-copy-btn {
+          background: #090a0f;
+          border: 1px solid #113311;
+          color: #00ff66;
+          font-family: 'Courier New', monospace;
+          font-size: 10px;
+          padding: 3px 8px;
+          border-radius: 3px;
+          cursor: pointer;
+          margin: 2px;
+          transition: all 0.15s ease;
+        }
+        .ad-diag-copy-btn:hover { background: #00ff66; color: #050608; box-shadow: 0 0 6px #00ff66; }
+      `;
+      applyCss(css, 'accudraw-diagnostics-styles');
+    }
 
   toggle() {
     if (this.isVisible) {
@@ -109,49 +124,81 @@ class AccuDrawDiagnostics {
       this.contentEl = makeElement('div', { className: 'ad-diag-wrap' });
 
       const toolbar = makeElement('div', {
-        style: { marginBottom: '4px', display: 'flex', gap: '4px' },
+        style: { marginBottom: '6px', display: 'flex', gap: '4px', flexWrap: 'wrap' },
       });
 
       const copyStateBtn = makeElement('button', {
-          className: 'ad-diag-copy-btn',
-          onclick: () => this._copyToClipboard('state'),
-        }, 'Copy State');
+        className: 'ad-diag-copy-btn',
+        onclick: () => this._copyToClipboard('state'),
+      }, 'Copy State');
 
       const copyLogBtn = makeElement('button', {
-          className: 'ad-diag-copy-btn',
-          onclick: () => this._copyToClipboard('log'),
-        }, 'Copy Log');
+        className: 'ad-diag-copy-btn',
+        onclick: () => this._copyToClipboard('log'),
+      }, 'Copy Log');
 
       const clearBtn = makeElement('button', {
-          className: 'ad-diag-copy-btn',
-          onclick: () => {
-            this._eventLog = [];
-            this._historyLines = [];
-          },
-        }, 'Clear');
+        className: 'ad-diag-copy-btn',
+        onclick: () => {
+          this._eventLog = [];
+          this._historyLines = [];
+        },
+      }, 'Clear');
 
       toolbar.appendChild(copyStateBtn);
       toolbar.appendChild(copyLogBtn);
       toolbar.appendChild(clearBtn);
+
+      const filterBox = makeElement('div', {
+        style: {
+          display: 'flex',
+          gap: '12px',
+          padding: '4px 8px',
+          background: '#090a0f',
+          border: '1px solid #113311',
+          marginBottom: '8px',
+          borderRadius: '3px'
+        }
+      });
+      
+      const createCheckbox = (label, propName, defaultVal) => {
+        this[propName] = defaultVal;
+        const cb = makeElement('input', {
+          type: 'checkbox',
+          checked: defaultVal,
+          style: { cursor: 'pointer', accentColor: '#00ff66', verticalAlign: 'middle' },
+          onchange: (e) => { this[propName] = e.target.checked; }
+        });
+        const lbl = makeElement('label', {
+          style: { color: '#00ff66', fontSize: '10px', cursor: 'pointer', userSelect: 'none' }
+        }, cb, ' ' + label);
+        return lbl;
+      };
+
+      filterBox.appendChild(createCheckbox('Keys', 'logKeys', true));
+      filterBox.appendChild(createCheckbox('Locks', 'logLocks', true));
+      filterBox.appendChild(createCheckbox('Coords', 'logCoords', false));
 
       this.stateSection = makeElement('div', { className: 'ad-diag-section state' });
       this.visualSection = makeElement('div', { className: 'ad-diag-section visual' });
       this.eventsSection = makeElement('div', { className: 'ad-diag-section events' });
       this.historySection = makeElement('div', { className: 'ad-diag-section history' });
 
-      const wrap = makeElement('div');
+      const wrap = makeElement('div', { style: { background: '#050608', padding: '6px' } });
       wrap.appendChild(toolbar);
+      wrap.appendChild(filterBox);
       wrap.appendChild(this.stateSection);
       wrap.appendChild(this.visualSection);
       wrap.appendChild(this.eventsSection);
       wrap.appendChild(this.historySection);
       this.contentEl.appendChild(wrap);
 
+      // BOUNDED HEIGHT: Setting fixed height of 480px keeps the window perfectly constrained
       this.dialog = UITools.makeDialog({
         stateId: 'accuCad-diagnostics',
-        title: 'AccuDraw Diagnostics',
+        title: 'AccuDraw Console Diagnostics',
         width: '340px',
-        height: '500px',
+        height: '480px',
         position: [parentWidth - 360, 80],
         content: this.contentEl,
         transparent: true,
@@ -161,17 +208,22 @@ class AccuDrawDiagnostics {
       });
 
       this.dialog.contentElement.style.overflow = 'auto';
-      this.dialog.contentElement.style.padding = '6px';
+      this.dialog.contentElement.style.background = '#050608';
     }
 
   logEvent(action, detail) {
-    const now = performance.now();
-    const ts = (now / 1000).toFixed(2);
-    this._eventLog.unshift({ ts, action, detail: detail || '' });
-    if (this._eventLog.length > this._maxEventLog) {
-      this._eventLog.length = this._maxEventLog;
+      // Dynamic filters based on checkbox state
+      if (action.includes('key') && !this.logKeys) return;
+      if (action.includes('lock') && !this.logLocks) return;
+      if (action.includes('coord') && !this.logCoords) return;
+
+      const now = performance.now();
+      const ts = (now / 1000).toFixed(2);
+      this._eventLog.unshift({ ts, action, detail: detail || '' });
+      if (this._eventLog.length > this._maxEventLog) {
+        this._eventLog.length = this._maxEventLog;
+      }
     }
-  }
 
   _startUpdateLoop() {
     const update = () => {
