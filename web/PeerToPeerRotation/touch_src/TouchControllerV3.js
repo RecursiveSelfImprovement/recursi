@@ -2,19 +2,40 @@ class TouchControllerV3 {
     constructor() {
       this.env = null;
       this.rootElement = null;
-      this.svgEl = null;
+      this.trackpadView = null;
+      this.trackpadControls = null;
       this.statusText = null;
       
-      this.currentMode = 'rotate';
+      this.viewMode = 'rotate'; // 'rotate' | 'pan'
+      this.controlMode = 'sliders'; // 'sliders' | 'paint'
       
-      this.isDragging = false;
-      this.isPinching = false;
-      this.lastTouchX = 0;
-      this.lastTouchY = 0;
-      this.lastPinchDist = 0;
+      this.viewDragging = false;
+      this.viewPinching = false;
+      this.viewThreeFingerDragging = false;
+      this.viewLastX = 0;
+      this.viewLastY = 0;
+      this.viewLastPinchDist = 0;
+      this.viewLastThreeFingerY = 0;
+      this.viewLastTapTime = 0;
+      this.viewLastTapX = 0;
+      this.viewLastTapY = 0;
+
+      // Velocity tracker and inertia fields
+      this.viewVelocityX = 0;
+      this.viewVelocityY = 0;
+      this.viewInertiaFrameId = null;
       
-      this.lastMouseX = 0;
-      this.lastMouseY = 0;
+      this.ctrlDragging = false;
+      this.ctrlLastX = 0;
+      this.ctrlLastY = 0;
+      this.ctrlLastTapTime = 0;
+      this.ctrlLastTapX = 0;
+      this.ctrlLastTapY = 0;
+      this.ctrlTouchStartX = 0;
+      this.ctrlTouchStartY = 0;
+      this.ctrlGestureLock = null; // 'horizontal' | 'vertical' | null
+      this.ctrlSliderSelectAccumulator = 0;
+      this.ctrlLastAdjustmentTime = 0;
 
       this.peerConnection = null;
       this.dataChannel = null;
@@ -29,10 +50,13 @@ class TouchControllerV3 {
       this.onTouchStartHandler = null;
       this.onTouchMoveHandler = null;
       this.onTouchEndHandler = null;
-      this.onPointerDownHandler = null;
-      this.onPointerMoveHandler = null;
-      this.onPointerUpHandler = null;
+      this.onCtrlTouchStartHandler = null;
+      this.onCtrlTouchMoveHandler = null;
+      this.onCtrlTouchEndHandler = null;
       this.onResizeHandler = null;
+
+      this.longPressTimeout = null;
+      this.ctrlGestureStartX = 0;
     }
 
     async run(env) {
@@ -46,7 +70,6 @@ class TouchControllerV3 {
       }, 'Offline');
 
       this._initUI(parentElement, statusSpan);
-      this._initDebugLog();
       this._setupEvents();
 
       this._log('TouchController initialized [v3.2]');
@@ -60,80 +83,35 @@ class TouchControllerV3 {
     
 
     _setupEvents() {
-      const pad = this.trackpadSection;
+      // 1. View trackpad listeners
+      this.onTouchStartHandler = (e) => this._onViewTouchStart(e);
+      this.onTouchMoveHandler = (e) => this._onViewTouchMove(e);
+      this.onTouchEndHandler = (e) => this._onViewTouchEnd(e);
 
-      this.onTouchStartHandler = (e) => this._onTouchStart(e);
-      this.onTouchMoveHandler = (e) => this._onTouchMove(e);
-      this.onTouchEndHandler = (e) => this._onTouchEnd(e);
+      this.trackpadView.addEventListener('touchstart', this.onTouchStartHandler, { passive: false });
+      this.trackpadView.addEventListener('touchmove', this.onTouchMoveHandler, { passive: false });
+      this.trackpadView.addEventListener('touchend', this.onTouchEndHandler, { passive: false });
+      this.trackpadView.addEventListener('touchcancel', this.onTouchEndHandler, { passive: false });
+
+      // 2. Controls trackpad listeners
+      this.onCtrlTouchStartHandler = (e) => this._onCtrlTouchStart(e);
+      this.onCtrlTouchMoveHandler = (e) => this._onCtrlTouchMove(e);
+      this.onCtrlTouchEndHandler = (e) => this._onCtrlTouchEnd(e);
+
+      this.trackpadControls.addEventListener('touchstart', this.onCtrlTouchStartHandler, { passive: false });
+      this.trackpadControls.addEventListener('touchmove', this.onCtrlTouchMoveHandler, { passive: false });
+      this.trackpadControls.addEventListener('touchend', this.onCtrlTouchEndHandler, { passive: false });
+      this.trackpadControls.addEventListener('touchcancel', this.onCtrlTouchEndHandler, { passive: false });
+
       this.onResizeHandler = () => this._onResize();
-
-      pad.addEventListener('touchstart', this.onTouchStartHandler, { passive: false });
-      pad.addEventListener('touchmove', this.onTouchMoveHandler, { passive: false });
-      pad.addEventListener('touchend', this.onTouchEndHandler, { passive: false });
-      pad.addEventListener('touchcancel', this.onTouchEndHandler, { passive: false });
-
-      this.onPointerDownHandler = (e) => this._onPointerDown(e);
-      this.onPointerMoveHandler = (e) => this._onPointerMove(e);
-      this.onPointerUpHandler = (e) => this._onPointerUp(e);
-
-      pad.addEventListener('pointerdown', this.onPointerDownHandler);
-      window.addEventListener('pointermove', this.onPointerMoveHandler);
-      window.addEventListener('pointerup', this.onPointerUpHandler);
-
       window.addEventListener('resize', this.onResizeHandler);
     }
 
-    _onTouchStart(e) {
-      e.preventDefault();
-      
-      if (e.touches.length === 1) {
-        this.isDragging = true;
-        this.lastTouchX = e.touches[0].clientX;
-        this.lastTouchY = e.touches[0].clientY;
-        this.isPinching = false;
-        this.sendDragStart();
-      } else if (e.touches.length === 2) {
-        this.isDragging = false;
-        this.isPinching = true;
-        this.lastPinchDist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-      }
-    }
+    _onTouchStart() {}
 
-    _onTouchMove(e) {
-      e.preventDefault();
+    _onTouchMove() {}
 
-      if (e.touches.length === 1 && this.isDragging) {
-        const touch = e.touches[0];
-        const dx = touch.clientX - this.lastTouchX;
-        const dy = touch.clientY - this.lastTouchY;
-
-        this.lastTouchX = touch.clientX;
-        this.lastTouchY = touch.clientY;
-
-        this.sendDrag(dx, dy);
-      } else if (e.touches.length === 2 && this.isPinching) {
-        const dist = Math.hypot(
-          e.touches[0].clientX - e.touches[1].clientX,
-          e.touches[0].clientY - e.touches[1].clientY
-        );
-        if (this.lastPinchDist > 0) {
-          const ratio = dist / this.lastPinchDist;
-          this.sendZoom(ratio);
-        }
-        this.lastPinchDist = dist;
-      }
-    }
-
-    _onTouchEnd(e) {
-      e.preventDefault();
-      this.isDragging = false;
-      this.isPinching = false;
-      this.lastPinchDist = 0;
-      this.sendDragRelease();
-    }
+    _onTouchEnd() {}
 
     _onPointerDown(e) {
       if (e.pointerType === 'touch') return;
@@ -381,14 +359,20 @@ class TouchControllerV3 {
     _waitForIceGathering(pc) {
       return new Promise((resolve) => {
         if (pc.iceGatheringState === 'complete') { resolve(); return; }
+        let resolved = false;
+        const done = () => {
+          if (resolved) return;
+          resolved = true;
+          pc.removeEventListener('icegatheringstatechange', checkState);
+          resolve();
+        };
         const checkState = () => {
           if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', checkState);
-            resolve();
+            done();
           }
         };
         pc.addEventListener('icegatheringstatechange', checkState);
-        setTimeout(resolve, 8000);
+        setTimeout(done, 1000); // Limit waiting to 1000ms.
       });
     }
 
@@ -396,7 +380,7 @@ class TouchControllerV3 {
       channel.onopen = () => {
         this.isVerified = false;
         this.lastHeartbeatTime = Date.now();
-        this._log('Data channel open. Awaiting handshake ping...');
+        this._log('Data channel open. Awaiting handshake...');
         statusLabel.textContent = 'Awaiting handshake...';
         statusLabel.style.color = '#0288d1';
       };
@@ -433,6 +417,9 @@ class TouchControllerV3 {
             statusLabel.textContent = 'Connected';
             statusLabel.style.color = '#00e676';
             this._startHeartbeat(channel, statusLabel);
+            
+            // Auto collapse upon verified linkage
+            this.setPanelExpanded(false);
           } else if (payload.type === 'ping') {
             channel.send(JSON.stringify({ type: 'pong' }));
           }
@@ -442,22 +429,29 @@ class TouchControllerV3 {
       };
     }
 
-    _onResize() {}
+    _onResize() {
+      // Refresh panel expansion structure on orientation change
+      if (this.p2pExpanded) {
+        this.setPanelExpanded(true);
+      }
+    }
 
     destroy() {
       if (this.clientBeaconInterval) clearInterval(this.clientBeaconInterval);
       if (this.clientPollInterval) clearInterval(this.clientPollInterval);
 
-      // Clean event listeners from the SVG element
-      const pad = this.svgEl;
-      if (pad) {
-        if (this.onTouchStartHandler) pad.removeEventListener('touchstart', this.onTouchStartHandler);
-        if (this.onTouchMoveHandler) pad.removeEventListener('touchmove', this.onTouchMoveHandler);
-        if (this.onTouchEndHandler) pad.removeEventListener('touchend', this.onTouchEndHandler);
-        if (this.onPointerDownHandler) pad.removeEventListener('pointerdown', this.onPointerDownHandler);
+      if (this.trackpadView) {
+        if (this.onTouchStartHandler) this.trackpadView.removeEventListener('touchstart', this.onTouchStartHandler);
+        if (this.onTouchMoveHandler) this.trackpadView.removeEventListener('touchmove', this.onTouchMoveHandler);
+        if (this.onTouchEndHandler) this.trackpadView.removeEventListener('touchend', this.onTouchEndHandler);
       }
-      if (this.onPointerMoveHandler) window.removeEventListener('pointermove', this.onPointerMoveHandler);
-      if (this.onPointerUpHandler) window.removeEventListener('pointerup', this.onPointerUpHandler);
+
+      if (this.trackpadControls) {
+        if (this.onCtrlTouchStartHandler) this.trackpadControls.removeEventListener('touchstart', this.onCtrlTouchStartHandler);
+        if (this.onCtrlTouchMoveHandler) this.trackpadControls.removeEventListener('touchmove', this.onCtrlTouchMoveHandler);
+        if (this.onCtrlTouchEndHandler) this.trackpadControls.removeEventListener('touchend', this.onCtrlTouchEndHandler);
+      }
+
       if (this.onResizeHandler) window.removeEventListener('resize', this.onResizeHandler);
 
       if (this.rootElement && this.rootElement.parentElement) {
@@ -465,7 +459,8 @@ class TouchControllerV3 {
       }
 
       this.rootElement = null;
-      this.svgEl = null;
+      this.trackpadView = null;
+      this.trackpadControls = null;
       this.statusText = null;
     }
   
@@ -566,6 +561,7 @@ class TouchControllerV3 {
       this.dataChannel = null;
       this.isVerified = false;
       this._updateButtonState(false);
+      this.setPanelExpanded(false); // Restore orange state circle on drop
     }
 
   _startHeartbeat(channel, statusLabel) {
@@ -615,15 +611,16 @@ class TouchControllerV3 {
         }
         #touch-app-container {
           display: flex;
-          flex-direction: column;
+          flex-direction: column; /* Portrait: stack Controls on top, View on bottom */
           width: 100%;
           height: 100%;
           box-sizing: border-box;
-          padding: 12px;
-          gap: 12px;
+          padding: 8px;
+          gap: 8px;
           background-color: #121212;
+          position: relative;
         }
-        .trackpad-section {
+        .trackpad-view, .trackpad-controls {
           flex: 1;
           position: relative;
           background: #1e1e1e;
@@ -632,7 +629,7 @@ class TouchControllerV3 {
           overflow: hidden;
           touch-action: none;
         }
-        .trackpad-section svg {
+        .trackpad-view svg, .trackpad-controls svg {
           width: 100%;
           height: 100%;
           display: block;
@@ -648,57 +645,32 @@ class TouchControllerV3 {
           pointer-events: none;
           text-align: center;
           white-space: nowrap;
-        }
-        .controls-section {
-          display: flex;
-          flex-direction: column;
-          gap: 10px;
-          flex-shrink: 0;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          background: rgba(0,0,0,0.4);
+          padding: 4px 8px;
+          border-radius: 4px;
         }
         .p2p-panel-card {
-          background: rgba(25, 25, 25, 0.85);
-          border: 1px solid #333;
+          position: absolute;
+          top: 12px;
+          left: 12px;
+          z-index: 500;
+          background: rgba(25, 25, 25, 0.95);
+          border: 1.5px solid #333;
           border-radius: 8px;
           padding: 10px;
           color: #ccc;
-          font-size: 12px;
-        }
-        .mode-bar {
-          display: flex;
-          height: 42px;
-          background: rgba(25, 25, 25, 0.9);
-          border-radius: 21px;
-          border: 1px solid #333;
-          padding: 3px;
+          font-size: 11px;
           box-sizing: border-box;
-        }
-        .mode-bar button {
-          flex: 1;
-          border: none;
-          background: transparent;
-          border-radius: 18px;
-          font-size: 12px;
-          font-weight: bold;
-          text-transform: capitalize;
-          cursor: pointer;
-          transition: all 0.2s;
+          transition: all 0.2s ease-in-out;
+          box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
         
         /* LANDSCAPE SPECIFIC SIDE-BY-SIDE LAYOUT */
         @media (orientation: landscape) {
           #touch-app-container {
-            flex-direction: row;
-            padding: 10px;
-            gap: 10px;
-          }
-          .trackpad-section {
-            flex: 1.3;
-            max-width: 55vw;
-          }
-          .controls-section {
-            flex: 1;
-            max-width: 42vw;
-            justify-content: center;
+            flex-direction: row-reverse; /* View on Left, Controls on Right */
           }
         }
       `;
@@ -708,74 +680,125 @@ class TouchControllerV3 {
   _initUI(parentElement, statusLabel) {
       this.rootElement = makeElement('div', { id: 'touch-app-container' });
 
-      // Trackpad section (Left / Top)
-      this.trackpadSection = makeElement('div', { className: 'trackpad-section' });
+      // View Trackpad (camera manipulation)
+      this.trackpadView = makeElement('div', { className: 'trackpad-view' });
+      const svgView = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      const gridGroupView = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      gridGroupView.setAttribute('opacity', '0.07');
       
-      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-      const gridGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-      gridGroup.setAttribute('opacity', '0.07');
+      const horizontalLineV = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      horizontalLineV.setAttribute('x1', '0'); horizontalLineV.setAttribute('y1', '50%');
+      horizontalLineV.setAttribute('x2', '100%'); horizontalLineV.setAttribute('y2', '50%');
+      horizontalLineV.setAttribute('stroke', '#ffffff'); horizontalLineV.setAttribute('stroke-width', '1.5');
+      horizontalLineV.setAttribute('stroke-dasharray', '4,4');
+
+      const verticalLineV = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      verticalLineV.setAttribute('x1', '50%'); verticalLineV.setAttribute('y1', '0');
+      verticalLineV.setAttribute('x2', '50%'); verticalLineV.setAttribute('y2', '100%');
+      verticalLineV.setAttribute('stroke', '#ffffff'); verticalLineV.setAttribute('stroke-width', '1.5');
+      verticalLineV.setAttribute('stroke-dasharray', '4,4');
+
+      gridGroupView.appendChild(horizontalLineV);
+      gridGroupView.appendChild(verticalLineV);
+      svgView.appendChild(gridGroupView);
+      this.trackpadView.appendChild(svgView);
+
+      this.viewStatusText = makeElement('div', { className: 'status-text' }, 'VIEW: ROTATE');
+      this.trackpadView.appendChild(this.viewStatusText);
+
+      // Controls Trackpad (manipulating sliders/parameters)
+      this.trackpadControls = makeElement('div', { className: 'trackpad-controls' });
+      const svgCtrl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      const gridGroupCtrl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      gridGroupCtrl.setAttribute('opacity', '0.07');
       
-      const horizontalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      horizontalLine.setAttribute('x1', '0');
-      horizontalLine.setAttribute('y1', '50%');
-      horizontalLine.setAttribute('x2', '100%');
-      horizontalLine.setAttribute('y2', '50%');
-      horizontalLine.setAttribute('stroke', '#ffffff');
-      horizontalLine.setAttribute('stroke-width', '1.5');
-      horizontalLine.setAttribute('stroke-dasharray', '4,4');
+      const horizontalLineC = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      horizontalLineC.setAttribute('x1', '0'); horizontalLineC.setAttribute('y1', '50%');
+      horizontalLineC.setAttribute('x2', '100%'); horizontalLineC.setAttribute('y2', '50%');
+      horizontalLineC.setAttribute('stroke', '#ffffff'); horizontalLineC.setAttribute('stroke-width', '1.5');
+      horizontalLineC.setAttribute('stroke-dasharray', '4,4');
 
-      const verticalLine = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-      verticalLine.setAttribute('x1', '50%');
-      verticalLine.setAttribute('y1', '0');
-      verticalLine.setAttribute('x2', '50%');
-      verticalLine.setAttribute('y2', '100%');
-      verticalLine.setAttribute('stroke', '#ffffff');
-      verticalLine.setAttribute('stroke-width', '1.5');
-      verticalLine.setAttribute('stroke-dasharray', '4,4');
+      const verticalLineC = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+      verticalLineC.setAttribute('x1', '50%'); verticalLineC.setAttribute('y1', '0');
+      verticalLineC.setAttribute('x2', '50%'); verticalLineC.setAttribute('y2', '100%');
+      verticalLineC.setAttribute('stroke', '#ffffff'); verticalLineC.setAttribute('stroke-width', '1.5');
+      verticalLineC.setAttribute('stroke-dasharray', '4,4');
 
-      gridGroup.appendChild(horizontalLine);
-      gridGroup.appendChild(verticalLine);
-      svg.appendChild(gridGroup);
-      this.trackpadSection.appendChild(svg);
-      this.svgEl = svg;
+      gridGroupCtrl.appendChild(horizontalLineC);
+      gridGroupCtrl.appendChild(verticalLineC);
+      svgCtrl.appendChild(gridGroupCtrl);
+      this.trackpadControls.appendChild(svgCtrl);
 
-      this.statusText = makeElement('div', { className: 'status-text' }, 'Trackpad Ready. Drag to rotate, pinch to zoom.');
-      this.trackpadSection.appendChild(this.statusText);
+      this.ctrlStatusText = makeElement('div', { className: 'status-text' }, 'CONTROLS: SLIDERS');
+      this.trackpadControls.appendChild(this.ctrlStatusText);
 
-      // Controls Section (Right / Bottom)
-      const controlsSection = makeElement('div', { className: 'controls-section' });
+      // Assemble layout
+      this.rootElement.appendChild(this.trackpadControls);
+      this.rootElement.appendChild(this.trackpadView);
 
-      const p2pPanel = makeElement('div', { className: 'p2p-panel-card' });
+      // Floating expandable connection panel
+      this.p2pPanel = makeElement('div', { className: 'p2p-panel-card' });
+      
+      this.p2pTriggerBtn = makeElement('button', {
+        style: {
+          position: 'absolute',
+          top: '0',
+          left: '0',
+          width: '100%',
+          height: '100%',
+          border: 'none',
+          background: 'transparent',
+          color: '#00e676',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: '510'
+        },
+        onclick: (e) => {
+          e.stopPropagation();
+          this.setPanelExpanded(!this.p2pExpanded);
+        }
+      }, 'P2P');
+
+      this.p2pPanelContents = makeElement('div', {
+        style: { display: 'none', marginTop: '30px', flexDirection: 'column', gap: '8px' }
+      });
 
       const header = makeElement('div', {
-        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' }
+        style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }
       });
-      const title = makeElement('span', { style: { fontWeight: 'bold', color: '#00e676' } }, 'P2P Controller Sync (v3.2)');
+      const title = makeElement('span', { style: { fontWeight: 'bold', color: '#00e676', fontSize: '11px' } }, 'P2P Link (v3.2)');
       header.appendChild(title);
       header.appendChild(statusLabel);
 
-      const syncRow = makeElement('div', { style: { display: 'flex', gap: '6px', marginTop: '8px' } });
+      const syncRow = makeElement('div', { style: { display: 'flex', gap: '6px' } });
       const roomInput = makeElement('input', {
         placeholder: 'Code',
         value: '7777',
         style: {
-          width: '60px',
-          padding: '5px',
+          width: '50px',
+          padding: '4px',
           background: '#1a1a1a',
           border: '1px solid #444',
           color: '#fff',
           borderRadius: '4px',
-          textAlign: 'center'
+          textAlign: 'center',
+          fontSize: '11px'
         }
       });
       const connectBtn = makeElement('button', {
         style: {
           flex: '1',
-          padding: '5px',
+          padding: '4px',
           border: 'none',
           borderRadius: '4px',
           fontWeight: 'bold',
           cursor: 'pointer',
+          fontSize: '11px',
           transition: 'all 0.15s'
         }
       });
@@ -788,63 +811,79 @@ class TouchControllerV3 {
       const reloadBtn = makeElement('button', {
         style: {
           width: '100%',
-          padding: '5px',
+          padding: '4px',
           background: '#333',
           color: '#ccc',
           border: '1px solid #444',
           borderRadius: '4px',
-          marginTop: '8px',
-          fontSize: '11px',
+          fontSize: '10px',
           fontWeight: 'bold',
           cursor: 'pointer'
         }
-      }, 'Reload App (Clear Cache)');
+      }, 'Reload App');
 
-      const loadTime = new Date().toLocaleTimeString();
-      const loadLabel = makeElement('div', {
-        style: { fontSize: '10px', color: '#666', textAlign: 'center', marginTop: '6px', fontFamily: 'monospace' }
-      }, `Active Instance: ${loadTime}`);
+      this.p2pPanelContents.appendChild(header);
+      this.p2pPanelContents.appendChild(syncRow);
+      this.p2pPanelContents.appendChild(reloadBtn);
 
-      p2pPanel.appendChild(header);
-      p2pPanel.appendChild(syncRow);
-      p2pPanel.appendChild(reloadBtn);
-      p2pPanel.appendChild(loadLabel);
-
-      const modeBar = makeElement('div', { className: 'mode-bar' });
-      const modes = ['rotate', 'pan'];
-      this.modeButtons = {};
-
-      modes.forEach((m) => {
-        const btn = makeElement('button', {
-          style: {
-            color: m === this.currentMode ? '#000' : '#888',
-            background: m === this.currentMode ? '#00e676' : 'transparent'
-          }
-        }, m);
-
-        btn.onclick = () => {
-          this.currentMode = m;
-          modes.forEach((otherMode) => {
-            const active = otherMode === m;
-            this.modeButtons[otherMode].style.background = active ? '#00e676' : 'transparent';
-            this.modeButtons[otherMode].style.color = active ? '#000' : '#888';
-          });
-          if (this.statusText) {
-            this.statusText.textContent = `Mode switched to: ${m.toUpperCase()}`;
-          }
-        };
-
-        this.modeButtons[m] = btn;
-        modeBar.appendChild(btn);
+      this.debugLog = makeElement('div', {
+        style: {
+          background: 'rgba(10, 10, 10, 0.9)',
+          padding: '6px',
+          overflowY: 'scroll',
+          fontFamily: 'monospace',
+          fontSize: '9px',
+          color: '#00e676',
+          boxSizing: 'border-box',
+          display: 'none'
+        }
       });
 
-      controlsSection.appendChild(p2pPanel);
-      controlsSection.appendChild(modeBar);
+      this.p2pPanel.appendChild(this.p2pTriggerBtn);
+      this.p2pPanel.appendChild(this.p2pPanelContents);
+      this.p2pPanel.appendChild(this.debugLog);
 
-      this.rootElement.appendChild(this.trackpadSection);
-      this.rootElement.appendChild(controlsSection);
+      this.rootElement.appendChild(this.p2pPanel);
 
+      // Circle Maximize (Fullscreen) button in top-right corner
+      const fullscreenBtn = makeElement('div', {
+        style: {
+          position: 'absolute',
+          top: '12px',
+          right: '12px',
+          width: '36px',
+          height: '36px',
+          background: 'rgba(25,25,25,0.85)',
+          border: '1.5px solid #333',
+          borderRadius: '50%',
+          color: '#00e676',
+          fontSize: '18px',
+          textAlign: 'center',
+          lineHeight: '34px',
+          zIndex: '300',
+          cursor: 'pointer',
+          userSelect: 'none',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.4)',
+          boxSizing: 'border-box'
+        }
+      }, '⛶');
+
+      fullscreenBtn.onclick = () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen()
+            .then(() => { fullscreenBtn.textContent = '✕'; })
+            .catch((err) => { console.warn("Fullscreen failed:", err); });
+        } else {
+          document.exitFullscreen();
+          fullscreenBtn.textContent = '⛶';
+        }
+      };
+
+      this.rootElement.appendChild(fullscreenBtn);
       parentElement.appendChild(this.rootElement);
+
+      this.p2pExpanded = false;
+      this.setPanelExpanded(false);
 
       connectBtn.onclick = () => {
         if (this.peerConnection || this.clientPollInterval) {
@@ -863,5 +902,416 @@ class TouchControllerV3 {
         url.searchParams.set('t', Date.now().toString());
         window.location.replace(url.toString());
       };
+    }
+
+  _applyModeChange() {
+      const modes = ['rotate', 'pan', 'sliders'];
+      modes.forEach((m) => {
+        const active = m === this.currentMode;
+        if (this.modeButtons[m]) {
+          this.modeButtons[m].style.background = active ? '#00e676' : 'transparent';
+          this.modeButtons[m].style.color = active ? '#000' : '#888';
+        }
+      });
+
+      if (this.statusText) {
+        this.statusText.textContent = `Mode toggled: ${this.currentMode.toUpperCase()}`;
+      }
+
+      if (this.dataChannel && this.dataChannel.readyState === 'open') {
+        this.dataChannel.send(JSON.stringify({
+          type: 'modeChange',
+          mode: this.currentMode
+        }));
+      }
+    }
+
+  _onViewTouchStart(e) {
+      e.preventDefault();
+      
+      // Stop ongoing flick momentum immediately when the user touches down
+      this.viewVelocityX = 0;
+      this.viewVelocityY = 0;
+      this._stopViewInertia();
+
+      if (e.touches.length === 1) {
+        const now = Date.now();
+        const DOUBLE_TAP_THRESHOLD = 220;
+        const clientX = e.touches[0].clientX;
+        const clientY = e.touches[0].clientY;
+        const tapDist = Math.hypot(clientX - this.viewLastTapX, clientY - this.viewLastTapY);
+
+        if (this.viewLastTapTime && (now - this.viewLastTapTime < DOUBLE_TAP_THRESHOLD) && tapDist < 30) {
+          this.viewMode = this.viewMode === 'rotate' ? 'pan' : 'rotate';
+          this._updateTrackpadLabels();
+          
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'modeChange',
+              mode: this.viewMode
+            }));
+          }
+          
+          this.viewLastTapTime = 0;
+          this.viewDragging = false;
+          return;
+        }
+        this.viewLastTapTime = now;
+        this.viewLastTapX = clientX;
+        this.viewLastTapY = clientY;
+
+        this.viewDragging = true;
+        this.viewLastX = clientX;
+        this.viewLastY = clientY;
+        
+        this.viewPinching = false;
+        this.viewThreeFingerDragging = false;
+
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'dragStart',
+            mode: this.viewMode
+          }));
+        }
+      } else if (e.touches.length === 2) {
+        this.viewDragging = false;
+        this.viewPinching = true;
+        this.viewThreeFingerDragging = false;
+        this.viewLastPinchDist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+      } else if (e.touches.length === 3) {
+        this.viewDragging = false;
+        this.viewPinching = false;
+        this.viewThreeFingerDragging = true;
+        this.viewLastThreeFingerY = (e.touches[0].clientY + e.touches[1].clientY + e.touches[2].clientY) / 3;
+      }
+    }
+
+  _onViewTouchMove(e) {
+      e.preventDefault();
+      if (e.touches.length === 1 && this.viewDragging) {
+        const touch = e.touches[0];
+        
+        // Scaled up by 50% (1.5x factor) for faster tracking response
+        const dx = (touch.clientX - this.viewLastX) * 1.5;
+        const dy = (touch.clientY - this.viewLastY) * 1.5;
+        this.viewLastX = touch.clientX;
+        this.viewLastY = touch.clientY;
+
+        // Track instantaneous gesture velocity with decay
+        const decay = 0.7;
+        this.viewVelocityX = this.viewVelocityX * (1 - decay) + dx * decay;
+        this.viewVelocityY = this.viewVelocityY * (1 - decay) + dy * decay;
+
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'drag',
+            dx: dx,
+            dy: dy,
+            mode: this.viewMode
+          }));
+        }
+      } else if (e.touches.length === 2 && this.viewPinching) {
+        const dist = Math.hypot(
+          e.touches[0].clientX - e.touches[1].clientX,
+          e.touches[0].clientY - e.touches[1].clientY
+        );
+        if (this.viewLastPinchDist > 0) {
+          const ratio = dist / this.viewLastPinchDist;
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'zoom',
+              ratio: ratio
+            }));
+          }
+        }
+        this.viewLastPinchDist = dist;
+      } else if (e.touches.length === 3 && this.viewThreeFingerDragging) {
+        const currentY = (e.touches[0].clientY + e.touches[1].clientY + e.touches[2].clientY) / 3;
+        const dy = currentY - this.viewLastThreeFingerY;
+        this.viewLastThreeFingerY = currentY;
+
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'perspective',
+            dy: dy
+          }));
+        }
+      }
+    }
+
+  _onViewTouchEnd(e) {
+      e.preventDefault();
+      this.viewDragging = false;
+      this.viewPinching = false;
+      this.viewThreeFingerDragging = false;
+      this.viewLastPinchDist = 0;
+
+      // Trigger decay loop if speed exceeds threshold
+      if (Math.hypot(this.viewVelocityX, this.viewVelocityY) > 0.5) {
+        this._startViewInertia();
+      } else {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'dragEnd',
+            mode: this.viewMode
+          }));
+        }
+      }
+    }
+
+  _onCtrlTouchStart(e) {
+      e.preventDefault();
+      if (e.touches.length === 1) {
+        const now = Date.now();
+        const DOUBLE_TAP_THRESHOLD = 220;
+        const clientX = e.touches[0].clientX;
+        const clientY = e.touches[0].clientY;
+        const tapDist = Math.hypot(clientX - this.ctrlLastTapX, clientY - this.ctrlLastTapY);
+
+        const wasRecentlyAdjusting = (now - this.ctrlLastAdjustmentTime < 600);
+
+        if (this.ctrlLastTapTime && (now - this.ctrlLastTapTime < DOUBLE_TAP_THRESHOLD) && tapDist < 30 && !wasRecentlyAdjusting) {
+          this.controlMode = this.controlMode === 'sliders' ? 'paint' : 'sliders';
+          this._updateTrackpadLabels();
+          
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'modeChange',
+              mode: this.controlMode
+            }));
+          }
+
+          this.ctrlLastTapTime = 0;
+          this.ctrlDragging = false;
+          return;
+        }
+        this.ctrlLastTapTime = now;
+        this.ctrlLastTapX = clientX;
+        this.ctrlLastTapY = clientY;
+
+        this.ctrlDragging = true;
+        this.ctrlLastX = clientX;
+        this.ctrlLastY = clientY;
+
+        this.ctrlTouchStartX = clientX;
+        this.ctrlTouchStartY = clientY;
+        this.ctrlGestureLock = null;
+        this.ctrlSliderSelectAccumulator = 0;
+
+        if (this.controlMode === 'paint') {
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'dragStart',
+              mode: 'paint'
+            }));
+          }
+        }
+      }
+    }
+
+  _onCtrlTouchMove(e) {
+      e.preventDefault();
+      if (e.touches.length === 1 && this.ctrlDragging) {
+        const touch = e.touches[0];
+        
+        if (this.controlMode === 'sliders') {
+          const totalDx = touch.clientX - this.ctrlTouchStartX;
+          const totalDy = touch.clientY - this.ctrlTouchStartY;
+
+          if (this.ctrlGestureLock === null) {
+            const threshold = 10;
+            if (Math.hypot(totalDx, totalDy) > threshold) {
+              if (Math.abs(totalDy) > Math.abs(totalDx)) {
+                this.ctrlGestureLock = 'vertical';
+                this.ctrlLastY = touch.clientY;
+              } else {
+                this.ctrlGestureLock = 'horizontal';
+                this.ctrlGestureStartX = touch.clientX;
+                if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                  this.dataChannel.send(JSON.stringify({
+                    type: 'sliderAdjustStart'
+                  }));
+                }
+              }
+            }
+          } else {
+            if (this.ctrlGestureLock === 'vertical') {
+              const dy = touch.clientY - this.ctrlLastY;
+              this.ctrlLastY = touch.clientY;
+
+              this.ctrlSliderSelectAccumulator += dy;
+              const stepThreshold = 35;
+              if (Math.abs(this.ctrlSliderSelectAccumulator) >= stepThreshold) {
+                const change = this.ctrlSliderSelectAccumulator > 0 ? 1 : -1;
+                if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                  this.dataChannel.send(JSON.stringify({
+                    type: 'sliderSelect',
+                    change: change
+                  }));
+                }
+                this.ctrlSliderSelectAccumulator = 0;
+              }
+            } else if (this.ctrlGestureLock === 'horizontal') {
+              const trackpadWidth = this.trackpadControls.clientWidth || 250;
+              const sensitivityFactor = 1.333;
+              const offsetRatio = ((touch.clientX - this.ctrlGestureStartX) / trackpadWidth) * sensitivityFactor;
+
+              this.ctrlLastAdjustmentTime = Date.now();
+
+              if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                this.dataChannel.send(JSON.stringify({
+                  type: 'sliderAdjust',
+                  ratio: offsetRatio
+                }));
+              }
+            }
+          }
+        } else if (this.controlMode === 'paint') {
+          const dx = touch.clientX - this.ctrlLastX;
+          const dy = touch.clientY - this.ctrlLastY;
+          this.ctrlLastX = touch.clientX;
+          this.ctrlLastY = touch.clientY;
+
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'drag',
+              dx: dx,
+              dy: dy,
+              mode: 'paint'
+            }));
+          }
+        }
+      }
+    }
+
+  _onCtrlTouchEnd(e) {
+      e.preventDefault();
+      this.ctrlDragging = false;
+      this.ctrlGestureLock = null;
+      if (this.controlMode === 'paint') {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'dragEnd',
+            mode: 'paint'
+          }));
+        }
+      }
+    }
+
+  _updateTrackpadLabels() {
+      if (this.viewStatusText) {
+        this.viewStatusText.textContent = `VIEW: ${this.viewMode.toUpperCase()}`;
+      }
+      if (this.ctrlStatusText) {
+        this.ctrlStatusText.textContent = `CONTROLS: ${this.controlMode.toUpperCase()}`;
+      }
+    }
+
+  setPanelExpanded(expanded) {
+      this.p2pExpanded = expanded;
+      const isLandscape = window.innerWidth > window.innerHeight;
+      
+      if (expanded) {
+        this.p2pPanel.style.borderRadius = '8px';
+        this.p2pPanel.style.padding = '10px';
+        this.p2pPanel.style.background = 'rgba(25, 25, 25, 0.98)';
+        this.p2pPanel.style.border = '1.5px solid #333';
+        this.p2pPanelContents.style.display = 'flex';
+        this.p2pTriggerBtn.textContent = '✕';
+        this.p2pTriggerBtn.style.width = '24px';
+        this.p2pTriggerBtn.style.height = '24px';
+        this.p2pTriggerBtn.style.top = '6px';
+        this.p2pTriggerBtn.style.right = '6px';
+        this.p2pTriggerBtn.style.left = 'auto';
+
+        if (isLandscape) {
+          // Grow horizontally to the right
+          this.p2pPanel.style.width = '450px';
+          this.p2pPanel.style.height = '180px';
+          this.p2pPanel.style.display = 'flex';
+          this.p2pPanel.style.flexDirection = 'row';
+          this.p2pPanelContents.style.width = '200px';
+          this.debugLog.style.width = '220px';
+          this.debugLog.style.height = '100%';
+          this.debugLog.style.borderLeft = '1px solid #444';
+          this.debugLog.style.borderTop = 'none';
+          this.debugLog.style.display = 'block';
+        } else {
+          // Grow vertically downwards
+          this.p2pPanel.style.width = '240px';
+          this.p2pPanel.style.height = '300px';
+          this.p2pPanel.style.display = 'flex';
+          this.p2pPanel.style.flexDirection = 'column';
+          this.p2pPanelContents.style.width = '100%';
+          this.debugLog.style.width = '100%';
+          this.debugLog.style.height = '130px';
+          this.debugLog.style.borderLeft = 'none';
+          this.debugLog.style.borderTop = '1px solid #444';
+          this.debugLog.style.display = 'block';
+        }
+      } else {
+        this.p2pPanel.style.width = '42px';
+        this.p2pPanel.style.height = '42px';
+        this.p2pPanel.style.borderRadius = '50%';
+        this.p2pPanel.style.padding = '0';
+        this.p2pPanel.style.background = 'rgba(20, 20, 20, 0.85)';
+        this.p2pPanel.style.border = this.isVerified ? '2.5px solid #00e676' : '2.5px solid #ffa726';
+        this.p2pPanelContents.style.display = 'none';
+        this.debugLog.style.display = 'none';
+        this.p2pTriggerBtn.textContent = 'P2P';
+        this.p2pTriggerBtn.style.width = '100%';
+        this.p2pTriggerBtn.style.height = '100%';
+        this.p2pTriggerBtn.style.top = '0';
+        this.p2pTriggerBtn.style.left = '0';
+        this.p2pTriggerBtn.style.right = 'auto';
+      }
+    }
+
+  _startViewInertia() {
+      this._stopViewInertia();
+
+      const friction = 0.95; // Smooth deceleration (loses 5% velocity per frame)
+      let vx = this.viewVelocityX;
+      let vy = this.viewVelocityY;
+
+      const step = () => {
+        vx *= friction;
+        vy *= friction;
+
+        // Halt simulation once velocity decays below threshold
+        if (Math.hypot(vx, vy) < 0.1) {
+          this.viewInertiaFrameId = null;
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'dragEnd',
+              mode: this.viewMode
+            }));
+          }
+          return;
+        }
+
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'drag',
+            dx: vx,
+            dy: vy,
+            mode: this.viewMode
+          }));
+        }
+
+        this.viewInertiaFrameId = requestAnimationFrame(step);
+      };
+
+      this.viewInertiaFrameId = requestAnimationFrame(step);
+    }
+
+  _stopViewInertia() {
+      if (this.viewInertiaFrameId) {
+        cancelAnimationFrame(this.viewInertiaFrameId);
+        this.viewInertiaFrameId = null;
+      }
     }
 }

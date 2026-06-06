@@ -843,15 +843,20 @@ class PeerToPeerRotation {
   _waitForIceGathering(pc) {
       return new Promise((resolve) => {
         if (pc.iceGatheringState === 'complete') { resolve(); return; }
+        let resolved = false;
+        const done = () => {
+          if (resolved) return;
+          resolved = true;
+          pc.removeEventListener('icegatheringstatechange', checkState);
+          resolve();
+        };
         const checkState = () => {
           if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', checkState);
-            resolve();
+            done();
           }
         };
         pc.addEventListener('icegatheringstatechange', checkState);
 
-        // Log every candidate as it arrives
         pc.addEventListener('icecandidate', (e) => {
           if (e.candidate) {
             console.log('ICE CANDIDATE:', e.candidate.candidate);
@@ -860,28 +865,32 @@ class PeerToPeerRotation {
           }
         });
 
-        setTimeout(resolve, 8000);
+        setTimeout(done, 1000); // Limit waiting to 1000ms.
       });
     }
 
   _setupDataChannelEvents(channel, statusLabel) {
       channel.onopen = () => {
-        this._updateStatus(statusLabel, '[v3.2] Data channel open. Verifying handshake...', '#0288d1');
         this.isVerified = false;
         this.lastHeartbeatTime = Date.now();
-        if (this.isHostMode) {
-          this._startHandshakeVerification(channel);
-        }
+        this._log('Data channel open. Awaiting handshake ping...');
+        statusLabel.textContent = 'Awaiting handshake...';
+        statusLabel.style.color = '#0288d1';
       };
 
       channel.onclose = () => {
-        this._updateStatus(statusLabel, '[v3.2] Link closed.', '#ff8800');
-        this._handleConnectionFailure(statusLabel);
+        this._log('Data channel closed');
+        statusLabel.textContent = 'Disconnected. Retrying...';
+        statusLabel.style.color = '#ffa726';
+        this._cleanupConnection();
+        setTimeout(() => {
+          this._startWirelessClient(this.roomCode || '7777', statusLabel);
+        }, 1500);
       };
 
       channel.onerror = (err) => {
-        console.warn('Data channel error:', err);
-        this._handleConnectionFailure(statusLabel);
+        this._log(`Data channel error: ${err.message}`);
+        this._cleanupConnection();
       };
 
       channel.onmessage = (e) => {
@@ -914,6 +923,16 @@ class PeerToPeerRotation {
             }
           } else if (payload.type === 'zoom') {
             this._handleRemoteZoom(payload.ratio);
+          } else if (payload.type === 'perspective') {
+            this._handleRemotePerspective(payload.dy);
+          } else if (payload.type === 'modeChange') {
+            this._handleRemoteModeChange(payload.mode);
+          } else if (payload.type === 'sliderAdjustStart') {
+            this._handleRemoteSliderAdjustStart();
+          } else if (payload.type === 'sliderAdjust') {
+            this._handleRemoteSliderAdjust(payload.ratio);
+          } else if (payload.type === 'sliderSelect') {
+            this._handleRemoteSliderSelect(payload.change);
           }
         } catch (err) {
           console.error('Error handling remote message:', err);
@@ -1144,5 +1163,71 @@ class PeerToPeerRotation {
         this.connectBtn.style.background = '#00e676';
         this.connectBtn.style.color = '#000';
       }
+    }
+
+  _handleRemotePerspective(dy) {
+      const camera = this.app.camera;
+      if (camera && camera.isPerspectiveCamera) {
+        const sensitivity = 0.15;
+        camera.fov = Math.max(1, Math.min(140, camera.fov + dy * sensitivity));
+        camera.updateProjectionMatrix();
+      }
+    }
+
+  _handleRemoteModeChange(mode) {
+      let toast = document.getElementById('p2p-mode-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'p2p-mode-toast';
+        toast.style.cssText = 'position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #00e676; border: 2px solid #00e676; border-radius: 8px; padding: 12px 24px; font-family: sans-serif; font-weight: bold; font-size: 18px; z-index: 999999; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; box-shadow: 0 4px 15px rgba(0,230,118,0.4); text-transform: uppercase; letter-spacing: 1px;';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = `Mode: ${mode}`;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) scale(1)';
+      clearTimeout(toast.timeoutId);
+      toast.timeoutId = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) scale(0.9)';
+      }, 1500);
+    }
+
+  _handleRemoteSliderSelect(change) {
+      console.log('Slider select selection change:', change);
+    }
+
+  _handleRemoteSliderAdjust(ratio) {
+      this._showDiagnosticHud('N/A (Standalone Demo)', 0, ratio, ratio * 100, 0, 100);
+    }
+
+  _handleRemoteSliderAdjustStart() {
+      console.log('Slider adjustment started');
+    }
+
+  _showDiagnosticHud(key, startValue, ratio, newVal, min, max) {
+      let hud = document.getElementById('p2p-diagnostic-hud');
+      if (!hud) {
+        hud = document.createElement('div');
+        hud.id = 'p2p-diagnostic-hud';
+        hud.style.cssText = 'position: absolute; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.95); color: #38bdf8; border: 1.5px solid #0284c7; border-radius: 6px; padding: 12px 18px; font-family: monospace; font-size: 13px; z-index: 999999; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); line-height: 1.5; min-width: 250px;';
+        document.body.appendChild(hud);
+      }
+      const percentMoved = (ratio * 100).toFixed(1);
+      hud.innerHTML = `
+        <div style="color:#00ff66;font-weight:bold;margin-bottom:4px;border-bottom:1px solid #334155;padding-bottom:2px;">P2P SLIDER DIAGNOSTICS</div>
+        <div>Active Key:  <span style="color:#fff">${key}</span></div>
+        <div>Start Val:  <span style="color:#fff">${startValue.toFixed(4)}</span></div>
+        <div>Drag Moved: <span style="color:#00ff66">${percentMoved}%</span></div>
+        <div>Target Val: <span style="color:#fff">${newVal.toFixed(4)}</span></div>
+        <div>Range:      <span style="color:#888">[${min} to ${max}]</span></div>
+      `;
+      hud.style.display = 'block';
+      hud.style.opacity = '1';
+      
+      clearTimeout(hud.timeoutId);
+      hud.timeoutId = setTimeout(() => {
+        hud.style.opacity = '0';
+        setTimeout(() => { if (hud.style.opacity === '0') hud.style.display = 'none'; }, 300);
+      }, 2000);
     }
 }

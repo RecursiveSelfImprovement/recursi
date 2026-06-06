@@ -344,6 +344,9 @@ class ViewControls {
   }
 
   _applyCompassSetting(name, value) {
+      // Bypass settings updates if they are triggered by a programmatic slider reset
+      if (this._isProgrammaticReset) return;
+
       const controller = this.baseController;
       const view = this.threeDView;
       if (!controller || !view) return;
@@ -353,16 +356,16 @@ class ViewControls {
       if (name === 'size') {
         const adjustedSize = value * (1.5 / 300);
         if (target?.setSizeAnimated) {
-          target.setSizeAnimated(adjustedSize, 0.5);
+          target.setSizeAnimated(adjustedSize, 0);
         }
       } else if (name === 'color') {
         const colorVal = this._hueToRgb(value);
         if (target?.setColorAnimated) {
-          target.setColorAnimated(colorVal, 0.5);
+          target.setColorAnimated(colorVal, 0);
         }
       } else if (name === 'square or circle') {
         if (target?.setSquircleAnimated) {
-          target.setSquircleAnimated(value, 0.5);
+          target.setSquircleAnimated(value, 0);
         }
       } else if (name === 'background') {
         const percent = value / 255;
@@ -385,7 +388,7 @@ class ViewControls {
         );
         if (target?.setRotationAnimated) {
           controller.rotationMatrix = updatedMatrix;
-          target.setRotationAnimated(updatedMatrix, 0.5);
+          target.setRotationAnimated(updatedMatrix, 0);
           controller.refreshMousePosition();
         }
       }
@@ -488,6 +491,8 @@ class ViewControls {
     }
 
   resetRotationSliders() {
+      // Set the programmatic flag to block redundant callbacks during plane snaps
+      this._isProgrammaticReset = true;
       this.rotations = { x: 0, y: 0, z: 0 };
       ['x', 'y', 'z'].forEach((axis) => {
         const slider = this.sliders[`${axis}rot`];
@@ -495,6 +500,206 @@ class ViewControls {
           slider.setValue(0);
         }
       });
+      this._isProgrammaticReset = false;
+    }
+
+  highlightCompassBox(highlight) {
+      if (this.compassBox && this.compassBox.element) {
+        if (highlight) {
+          this.compassBox.element.style.boxShadow = '0 0 25px #00e676';
+          this.compassBox.element.style.borderColor = '#00e676';
+          this.compassBox.element.style.borderWidth = '2px';
+          this.compassBox.element.style.transition = 'all 0.3s ease';
+          this._updateSlidersHighlighting();
+        } else {
+          this.compassBox.element.style.boxShadow = '';
+          this.compassBox.element.style.borderColor = '';
+          this.compassBox.element.style.borderWidth = '';
+          this._clearSlidersHighlighting();
+        }
+      }
+    }
+
+  selectSliderRelative(change) {
+      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+        this.selectedSliderIndex = 0;
+      }
+      this.selectedSliderIndex = (this.selectedSliderIndex + change + list.length) % list.length;
+      this._updateSlidersHighlighting();
+    }
+
+  adjustSelectedSlider(ratio) {
+      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+        this.selectedSliderIndex = 0;
+      }
+      const key = list[this.selectedSliderIndex];
+      const slider = this.sliders[key];
+      if (slider && this.sliderStartValue !== undefined) {
+        const rangeInfo = this._getSliderRange(key, slider);
+        const min = rangeInfo.min;
+        const max = rangeInfo.max;
+        const range = max - min;
+        
+        let newVal = this.sliderStartValue + ratio * range;
+        newVal = Math.max(min, Math.min(max, newVal));
+        slider.setValue(newVal);
+
+        // Display real-time diagnostics HUD
+        this._showDiagnosticHud(key, this.sliderStartValue, ratio, newVal, min, max);
+      }
+    }
+
+  _updateSlidersHighlighting() {
+      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+        this.selectedSliderIndex = 0;
+      }
+      list.forEach((key, idx) => {
+        const slider = this.sliders[key];
+        if (slider && slider.container) {
+          slider.container.style.transition = 'all 0.15s ease';
+          if (idx === this.selectedSliderIndex) {
+            slider.container.style.borderLeft = '4px solid #00e676';
+            slider.container.style.background = 'rgba(0, 230, 118, 0.15)';
+            slider.container.style.paddingLeft = '6px';
+          } else {
+            slider.container.style.borderLeft = '';
+            slider.container.style.background = '';
+            slider.container.style.paddingLeft = '';
+          }
+        }
+      });
+    }
+
+  _clearSlidersHighlighting() {
+      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      list.forEach((key) => {
+        const slider = this.sliders[key];
+        if (slider && slider.container) {
+          slider.container.style.borderLeft = '';
+          slider.container.style.background = '';
+          slider.container.style.paddingLeft = '';
+        }
+      });
+    }
+
+  startSliderAdjustment() {
+      const list = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      if (!this.selectedSliderIndex && this.selectedSliderIndex !== 0) {
+        this.selectedSliderIndex = 0;
+      }
+      const key = list[this.selectedSliderIndex];
+      const slider = this.sliders[key];
+      if (slider) {
+        let val = slider.value;
+        if (val === undefined) {
+          if (slider.options && slider.options.value !== undefined) {
+            val = slider.options.value;
+          } else if (slider.config && slider.config.value !== undefined) {
+            val = slider.config.value;
+          } else if (typeof slider.getValue === 'function') {
+            val = slider.getValue();
+          } else if (slider.container) {
+            const input = slider.container.querySelector('input[type="range"]');
+            if (input) {
+              const rawVal = parseFloat(input.value); // typically 0..1000 range resolution
+              const domMin = parseFloat(input.getAttribute('min')) || 0;
+              const domMax = parseFloat(input.getAttribute('max')) || 1000;
+              const domRange = domMax - domMin;
+              
+              const rangeInfo = this._getSliderRange(key, slider);
+              if (domRange > 0) {
+                const pct = (rawVal - domMin) / domRange;
+                val = rangeInfo.min + pct * (rangeInfo.max - rangeInfo.min);
+              }
+            }
+          }
+        }
+        this.sliderStartValue = val !== undefined && !isNaN(val) ? val : 0;
+      }
+    }
+
+  _getSliderRange(key, slider) {
+      let min = undefined;
+      let max = undefined;
+
+      if (slider) {
+        if (slider.min !== undefined) min = slider.min;
+        if (slider.max !== undefined) max = slider.max;
+
+        if (slider.options) {
+          if (slider.options.min !== undefined) min = slider.options.min;
+          if (slider.options.max !== undefined) max = slider.options.max;
+        }
+
+        if (slider.config) {
+          if (slider.config.min !== undefined) min = slider.config.min;
+          if (slider.config.max !== undefined) max = slider.config.max;
+        }
+      }
+
+      // Exact mathematical defaults representing the target CAD sliders
+      const staticRanges = {
+        size: { min: 10, max: 500 },
+        hue: { min: 0, max: 360 },
+        opa: { min: 0, max: 1 },
+        depth: { min: 0, max: 1 },
+        sqrcl: { min: 0, max: 1 },
+        xrot: { min: -127, max: 127 },
+        yrot: { min: -127, max: 127 },
+        zrot: { min: -127, max: 127 },
+        bg: { min: 0, max: 255 }
+      };
+
+      const fb = staticRanges[key] || { min: 0, max: 100 };
+      return {
+        min: min !== undefined ? min : fb.min,
+        max: max !== undefined ? max : fb.max
+      };
+    }
+
+  _showDiagnosticHud(key, startValue, ratio, newVal, min, max) {
+      const inlineContainer = document.getElementById('p2p-diag-container');
+      const percentMoved = (ratio * 100).toFixed(1);
+      
+      // Render in-dialog if active, otherwise fallback to floating
+      if (inlineContainer && inlineContainer.style.display !== 'none') {
+        inlineContainer.innerHTML = `
+          <div style="color:#00ff66;font-weight:bold;border-bottom:1px solid #222;padding-bottom:2px;margin-bottom:4px;">P2P DIAGNOSTICS</div>
+          Key:       <span style="color:#fff">${key}</span><br>
+          Start Val: <span style="color:#fff">${startValue.toFixed(4)}</span><br>
+          Drag:      <span style="color:#00ff66">${percentMoved}%</span><br>
+          Target:    <span style="color:#fff">${newVal.toFixed(4)}</span><br>
+          Range:     <span style="color:#888">[${min} - ${max}]</span>
+        `;
+        return;
+      }
+
+      let hud = document.getElementById('p2p-diagnostic-hud');
+      if (!hud) {
+        hud = document.createElement('div');
+        hud.id = 'p2p-diagnostic-hud';
+        hud.style.cssText = 'position: absolute; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.95); color: #38bdf8; border: 1.5px solid #0284c7; border-radius: 6px; padding: 12px 18px; font-family: monospace; font-size: 13px; z-index: 999999; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); line-height: 1.5; min-width: 250px; transition: opacity 0.15s ease;';
+        document.body.appendChild(hud);
+      }
+      hud.innerHTML = `
+        <div style="color:#00ff66;font-weight:bold;margin-bottom:4px;border-bottom:1px solid #334155;padding-bottom:2px;">P2P SLIDER DIAGNOSTICS</div>
+        <div>Active Key:  <span style="color:#fff">${key}</span></div>
+        <div>Start Val:  <span style="color:#fff">${startValue.toFixed(4)}</span></div>
+        <div>Drag Moved: <span style="color:#00ff66">${percentMoved}%</span></div>
+        <div>Target Val: <span style="color:#fff">${newVal.toFixed(4)}</span></div>
+        <div>Range:      <span style="color:#888">[${min} to ${max}]</span></div>
+      `;
+      hud.style.display = 'block';
+      hud.style.opacity = '1';
+      
+      clearTimeout(hud.timeoutId);
+      hud.timeoutId = setTimeout(() => {
+        hud.style.opacity = '0';
+        setTimeout(() => { if (hud.style.opacity === '0') hud.style.display = 'none'; }, 300);
+      }, 2000);
     }
 }
 

@@ -77,6 +77,62 @@ class P2PConnector {
       this.statusLabel = statusLabel;
       content.appendChild(statusLabel);
 
+      // Integrated Diagnostics Panel
+      const diagRow = document.createElement('div');
+      diagRow.style.display = 'flex';
+      diagRow.style.alignItems = 'center';
+      diagRow.style.gap = '8px';
+      diagRow.style.marginTop = '6px';
+      diagRow.style.paddingTop = '6px';
+      diagRow.style.borderTop = '1px solid #444';
+
+      const diagCheckbox = document.createElement('input');
+      diagCheckbox.type = 'checkbox';
+      diagCheckbox.id = 'p2p-diag-toggle';
+      diagCheckbox.style.cursor = 'pointer';
+      diagCheckbox.checked = this.showDiagnosticsInline || false;
+      
+      const diagLabel = document.createElement('label');
+      diagLabel.htmlFor = 'p2p-diag-toggle';
+      diagLabel.textContent = 'Show diagnostics inline';
+      diagLabel.style.cursor = 'pointer';
+      diagLabel.style.fontSize = '11px';
+      diagLabel.style.color = '#bbb';
+
+      diagRow.appendChild(diagCheckbox);
+      diagRow.appendChild(diagLabel);
+      content.appendChild(diagRow);
+
+      const diagContainer = document.createElement('div');
+      diagContainer.id = 'p2p-diag-container';
+      diagContainer.style.display = this.showDiagnosticsInline ? 'block' : 'none';
+      diagContainer.style.background = '#090a0f';
+      diagContainer.style.border = '1px solid #113311';
+      diagContainer.style.borderRadius = '4px';
+      diagContainer.style.padding = '8px';
+      diagContainer.style.fontFamily = 'monospace';
+      diagContainer.style.fontSize = '10px';
+      diagContainer.style.color = '#00ff66';
+      diagContainer.style.lineHeight = '1.4';
+      diagContainer.style.marginTop = '8px';
+      diagContainer.style.width = '100%';
+      diagContainer.style.boxSizing = 'border-box';
+      diagContainer.style.maxHeight = '280px'; // Raised from 120px to support clear inspection
+      diagContainer.style.overflowY = 'auto';
+      content.appendChild(diagContainer);
+
+      diagCheckbox.onchange = () => {
+        diagContainer.style.display = diagCheckbox.checked ? 'block' : 'none';
+        this.showDiagnosticsInline = diagCheckbox.checked;
+        const floatingHud = document.getElementById('p2p-diagnostic-hud');
+        if (floatingHud) floatingHud.style.display = 'none';
+        
+        // Auto-refresh layout frame boundaries
+        if (this.dialog && typeof this.dialog.center === 'function') {
+          this.dialog.element.style.height = 'auto';
+        }
+      };
+
       this.updateButtonState(false);
 
       connectBtn.onclick = () => {
@@ -273,14 +329,21 @@ class P2PConnector {
     waitForIceGathering(pc) {
       return new Promise((resolve) => {
         if (pc.iceGatheringState === 'complete') { resolve(); return; }
+        let resolved = false;
+        const done = () => {
+          if (resolved) return;
+          resolved = true;
+          pc.removeEventListener('icegatheringstatechange', checkState);
+          resolve();
+        };
         const checkState = () => {
           if (pc.iceGatheringState === 'complete') {
-            pc.removeEventListener('icegatheringstatechange', checkState);
-            resolve();
+            done();
           }
         };
         pc.addEventListener('icegatheringstatechange', checkState);
-        setTimeout(resolve, 8000);
+        // LAN & STUN host candidates gather instantly. Limit waiting to 1000ms.
+        setTimeout(done, 1000);
       });
     }
 
@@ -325,6 +388,16 @@ class P2PConnector {
             this.handleRemoteDrag(payload.dx, payload.dy, payload.mode);
           } else if (payload.type === 'zoom') {
             this.handleRemoteZoom(payload.ratio);
+          } else if (payload.type === 'perspective') {
+            this.handleRemotePerspective(payload.dy);
+          } else if (payload.type === 'modeChange') {
+            this.handleRemoteModeChange(payload.mode);
+          } else if (payload.type === 'sliderSelect') {
+            this.handleRemoteSliderSelect(payload.change);
+          } else if (payload.type === 'sliderAdjustStart') {
+            this.handleRemoteSliderAdjustStart();
+          } else if (payload.type === 'sliderAdjust') {
+            this.handleRemoteSliderAdjust(payload.ratio);
           }
         } catch (err) {
           console.error('Error handling remote message:', err);
@@ -500,6 +573,62 @@ class P2PConnector {
         this.connectBtn.textContent = 'Start Host Sync';
         this.connectBtn.style.background = '#00e676';
         this.connectBtn.style.color = '#000';
+      }
+    }
+
+  handleRemotePerspective(dy) {
+      const view = this.baseController.view;
+      if (view && view.camera) {
+        const sensitivity = 0.15;
+        TransformView.transform({ dfov: dy * sensitivity }, view)
+          .then((finalValues) => {
+            if (window.tableDialog) {
+              window.tableDialog.updateValues({
+                perspective: finalValues.fov
+              });
+            }
+          })
+          .catch((err) => console.error(err));
+      }
+    }
+
+  handleRemoteModeChange(mode) {
+      let toast = document.getElementById('p2p-mode-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'p2p-mode-toast';
+        toast.style.cssText = 'position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #00e676; border: 2px solid #00e676; border-radius: 8px; padding: 12px 24px; font-family: sans-serif; font-weight: bold; font-size: 18px; z-index: 999999; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; box-shadow: 0 4px 15px rgba(0,230,118,0.4); text-transform: uppercase; letter-spacing: 1px;';
+        document.body.appendChild(toast);
+      }
+      toast.textContent = `Mode: ${mode}`;
+      toast.style.opacity = '1';
+      toast.style.transform = 'translateX(-50%) scale(1)';
+      clearTimeout(toast.timeoutId);
+      toast.timeoutId = setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) scale(0.9)';
+      }, 1500);
+
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.highlightCompassBox(mode === 'sliders');
+      }
+    }
+
+  handleRemoteSliderSelect(change) {
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.selectSliderRelative(change);
+      }
+    }
+
+  handleRemoteSliderAdjust(ratio) {
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.adjustSelectedSlider(ratio);
+      }
+    }
+
+  handleRemoteSliderAdjustStart() {
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.startSliderAdjustment();
       }
     }
 }
