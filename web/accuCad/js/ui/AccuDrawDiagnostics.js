@@ -23,6 +23,9 @@ class AccuDrawDiagnostics {
           background-color: #050608;
           user-select: text;
           cursor: text;
+          height: 100%;
+          overflow-y: auto;
+          box-sizing: border-box;
         }
         .ad-diag-section {
           margin-bottom: 8px;
@@ -64,7 +67,6 @@ class AccuDrawDiagnostics {
         .ad-diag-event-line .action { color: #ffffff; font-weight: bold; }
         .ad-diag-event-line .detail { color: #00ff66; }
         
-        /* SCROLL RULES: Keeps logs and history fully scroll-contained inside 110px */
         .ad-diag-section.events {
           border-left: 3px solid #00ff66;
           max-height: 110px;
@@ -184,7 +186,7 @@ class AccuDrawDiagnostics {
       this.eventsSection = makeElement('div', { className: 'ad-diag-section events' });
       this.historySection = makeElement('div', { className: 'ad-diag-section history' });
 
-      const wrap = makeElement('div', { style: { background: '#050608', padding: '6px' } });
+      const wrap = makeElement('div', { style: { background: '#050608', padding: '6px', height: '100%', boxSizing: 'border-box', overflowY: 'auto' } });
       wrap.appendChild(toolbar);
       wrap.appendChild(filterBox);
       wrap.appendChild(this.stateSection);
@@ -193,7 +195,6 @@ class AccuDrawDiagnostics {
       wrap.appendChild(this.historySection);
       this.contentEl.appendChild(wrap);
 
-      // BOUNDED HEIGHT: Setting fixed height of 480px keeps the window perfectly constrained
       this.dialog = UITools.makeDialog({
         stateId: 'accuCad-diagnostics',
         title: 'AccuDraw Console Diagnostics',

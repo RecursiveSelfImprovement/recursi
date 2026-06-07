@@ -65,11 +65,14 @@ class BaseController {
   }
 
   setCommand(newCommand) {
-    if (this.activeCommand && typeof this.activeCommand.reset === 'function') {
-      this.activeCommand.reset();
+      if (this.activeCommand && typeof this.activeCommand.reset === 'function') {
+        this.activeCommand.reset();
+      }
+      this.activeCommand = newCommand;
+
+      // Dispatch high-performance custom event to trigger side panel redraw only when tool actually changes
+      window.dispatchEvent(new CustomEvent('accucad-tool-changed', { detail: newCommand }));
     }
-    this.activeCommand = newCommand;
-  }
 
   setCommandByName(name) {
     if (this.commands[name]) {
@@ -147,9 +150,31 @@ class BaseController {
     return this._lastWorldPoint;
   }
 
-  setColor(colorHex) {
-    this.currentColor = colorHex;
-  }
+  setColor(colorInput) {
+      if (!colorInput) {
+        this.currentColor = '#00ff00';
+        return;
+      }
+      let colorStr = String(colorInput).trim();
+      if (colorStr.startsWith('#')) {
+        this.currentColor = colorStr;
+        return;
+      }
+      // Parse rgb(r, g, b) format
+      const rgbMatch = colorStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+      if (rgbMatch) {
+        const r = Math.max(0, Math.min(255, parseInt(rgbMatch[1])));
+        const g = Math.max(0, Math.min(255, parseInt(rgbMatch[2])));
+        const b = Math.max(0, Math.min(255, parseInt(rgbMatch[3])));
+        const toHex = (x) => {
+          const hex = x.toString(16);
+          return hex.length === 1 ? '0' + hex : hex;
+        };
+        this.currentColor = '#' + toHex(r) + toHex(g) + toHex(b);
+        return;
+      }
+      this.currentColor = colorStr;
+    }
 
   setLineWidth(width) {
     this.lineWidth = width;

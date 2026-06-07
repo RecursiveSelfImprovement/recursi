@@ -1,4 +1,3 @@
-
 class ControllerSetup {
   static initializeController(baseController, scene) {
     baseController.registerCommand(
@@ -18,10 +17,6 @@ class ControllerSetup {
     baseController.registerCommand(
       'capsule',
       new DrawCapsuleCommand(baseController)
-    );
-    baseController.registerCommand(
-      'blackkey',
-      new DrawBlackKeyCommand(baseController)
     );
     baseController.registerCommand(
       'select',
@@ -44,6 +39,14 @@ class ControllerSetup {
     scene.add(baseController.accuDraw.getObject3D());
     baseController.setDrawingPlane('top');
   }
-
 }
 
+/* recursi-meta
+{
+  "schema": 1,
+  "lines": 42,
+  "provides": [
+    "ControllerSetup"
+  ]
+}
+recursi-meta */

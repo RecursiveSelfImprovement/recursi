@@ -1705,53 +1705,59 @@ class UITools {
   }
 
   _softClamp() {
-    if (this._maximized || this._isSnapped || !this.element) return;
-    const r = this.element.getBoundingClientRect(),
-      vis = 48;
-    const s = this._getEffectiveSafeArea();
-    
-    const parent = this.container;
-    const isBody = (parent === document.body && !this.env);
-    const pRect = isBody ? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth, height: window.innerHeight } : parent.getBoundingClientRect();
-    
-    if (!isBody && (pRect.width === 0 || pRect.height === 0)) {
-      return;
-    }
-
-    let x = parseFloat(this.element.style.left) || 0,
-      y = parseFloat(this.element.style.top) || 0,
-      changed = false;
+      if (this._maximized || this._isSnapped || !this.element) return;
+      const r = this.element.getBoundingClientRect(),
+        vis = 48;
+      const s = this._getEffectiveSafeArea();
       
-    if (r.height > pRect.height) {
-       this.element.style.maxHeight = `${pRect.height - s.top - s.bottom - 10}px`;
-       changed = true;
-    }
+      const parent = this.container;
+      const isBody = (parent === document.body && !this.env);
+      const pRect = isBody ? { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight, width: window.innerWidth, height: window.innerHeight } : parent.getBoundingClientRect();
+      
+      if (!isBody && (pRect.width === 0 || pRect.height === 0)) {
+        return;
+      }
 
-    if (r.right < pRect.left + s.left + vis) {
-      x = s.left + vis - r.width;
-      changed = true;
-    }
-    if (r.left > pRect.right - s.right - vis) {
-      x = pRect.width - s.right - vis;
-      changed = true;
-    }
-    if (r.bottom < pRect.top + s.top + vis) {
-      y = s.top + vis - r.height;
-      changed = true;
-    }
-    if (r.top > pRect.bottom - s.bottom - vis) {
-      y = pRect.height - s.bottom - vis;
-    }
-    if (changed) {
-      this.element.style.left = `${x}px`;
-      this.element.style.top = `${y}px`;
-      if (this.element.style.transform === 'scale(0.95)') {
-          // Leave transform untouched
-      } else {
+      let x = parseFloat(this.element.style.left) || 0,
+        y = parseFloat(this.element.style.top) || 0,
+        changed = false;
+
+      // Keep dialog grabbable header strictly inside top limits of viewport
+      const minTop = pRect.top + s.top + 5;
+      if (r.top < minTop) {
+        y = minTop;
+        changed = true;
+      }
+
+      if (r.height > pRect.height) {
+         this.element.style.maxHeight = `${pRect.height - s.top - s.bottom - 10}px`;
+         changed = true;
+      }
+
+      if (r.right < pRect.left + s.left + vis) {
+        x = s.left + vis - r.width;
+        changed = true;
+      }
+      if (r.left > pRect.right - s.right - vis) {
+        x = pRect.width - s.right - vis;
+        changed = true;
+      }
+      if (r.bottom < pRect.top + s.top + vis) {
+        y = s.top + vis - r.height;
+        changed = true;
+      }
+      if (r.top > pRect.bottom - s.bottom - vis) {
+        y = pRect.height - s.bottom - vis;
+        changed = true;
+      }
+      if (changed) {
+        this.element.style.left = `${x}px`;
+        this.element.style.top = `${y}px`;
+        if (this.element.style.transform !== 'scale(0.95)') {
           this.element.style.transform = 'none';
+        }
       }
     }
-  }
 
   _pt(e) {
     if (e.touches?.length)

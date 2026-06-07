@@ -8,6 +8,7 @@ class TouchControllerV3 {
       
       this.viewMode = 'rotate'; // 'rotate' | 'pan'
       this.controlMode = 'sliders'; // 'sliders' | 'paint'
+      this.currentMode = 'rotate'; // Explicit mode parameter preventing runtime crashes
       
       this.viewDragging = false;
       this.viewPinching = false;
@@ -20,7 +21,6 @@ class TouchControllerV3 {
       this.viewLastTapX = 0;
       this.viewLastTapY = 0;
 
-      // Velocity tracker and inertia fields
       this.viewVelocityX = 0;
       this.viewVelocityY = 0;
       this.viewInertiaFrameId = null;
@@ -33,7 +33,7 @@ class TouchControllerV3 {
       this.ctrlLastTapY = 0;
       this.ctrlTouchStartX = 0;
       this.ctrlTouchStartY = 0;
-      this.ctrlGestureLock = null; // 'horizontal' | 'vertical' | null
+      this.ctrlGestureLock = null; 
       this.ctrlSliderSelectAccumulator = 0;
       this.ctrlLastAdjustmentTime = 0;
 
@@ -71,6 +71,13 @@ class TouchControllerV3 {
 
       this._initUI(parentElement, statusSpan);
       this._setupEvents();
+
+      setTimeout(() => {
+        this._updateTrackpadLabels();
+      }, 100);
+
+      // Start the P2P connection card expanded on page load so the user can instantly pair
+      this.setPanelExpanded(true);
 
       this._log('TouchController initialized [v3.2]');
       return this;
@@ -279,6 +286,9 @@ class TouchControllerV3 {
               clearInterval(this.clientPollInterval);
               this._log('Offer accepted! Setting remote description...');
 
+              // Cache host connection token to bind host-client handshakes explicitly
+              this.connectionSessionId = envelope.sid || '';
+
               await pc.setRemoteDescription(envelope.sdp);
               this._log('Remote desc set. Creating answer...');
 
@@ -292,7 +302,8 @@ class TouchControllerV3 {
               this._log('ICE gathered. Sending answer...');
 
               const bakedAnswer = encodeURIComponent(JSON.stringify({
-                sdp: pc.localDescription
+                sdp: pc.localDescription,
+                sid: this.connectionSessionId
               }));
 
               fetch(`${SIGNAL_BASE}/${clientTopic}`, { method: 'POST', body: bakedAnswer })
@@ -418,7 +429,7 @@ class TouchControllerV3 {
             statusLabel.style.color = '#00e676';
             this._startHeartbeat(channel, statusLabel);
             
-            // Auto collapse upon verified linkage
+            // Auto collapse ONLY upon verified linkage
             this.setPanelExpanded(false);
           } else if (payload.type === 'ping') {
             channel.send(JSON.stringify({ type: 'pong' }));
@@ -430,7 +441,6 @@ class TouchControllerV3 {
     }
 
     _onResize() {
-      // Refresh panel expansion structure on orientation change
       if (this.p2pExpanded) {
         this.setPanelExpanded(true);
       }
@@ -561,7 +571,9 @@ class TouchControllerV3 {
       this.dataChannel = null;
       this.isVerified = false;
       this._updateButtonState(false);
-      this.setPanelExpanded(false); // Restore orange state circle on drop
+      
+      // Keep the panel expanded so the user doesn't lose visibility during drop/disconnect
+      this.setPanelExpanded(true);
     }
 
   _startHeartbeat(channel, statusLabel) {
@@ -729,7 +741,7 @@ class TouchControllerV3 {
       svgCtrl.appendChild(gridGroupCtrl);
       this.trackpadControls.appendChild(svgCtrl);
 
-      this.ctrlStatusText = makeElement('div', { className: 'status-text' }, 'CONTROLS: SLIDERS');
+      this.ctrlStatusText = makeElement('div', { className: 'status-text' }, 'CONTROLS: COMPASS');
       this.trackpadControls.appendChild(this.ctrlStatusText);
 
       // Assemble layout
@@ -763,6 +775,32 @@ class TouchControllerV3 {
           this.setPanelExpanded(!this.p2pExpanded);
         }
       }, 'P2P');
+
+      // Dedicated close button solves random click-closing issue on touchscreens
+      this.p2pCloseBtn = makeElement('button', {
+        style: {
+          position: 'absolute',
+          top: '6px',
+          right: '6px',
+          width: '24px',
+          height: '24px',
+          border: 'none',
+          background: 'transparent',
+          color: '#e53935',
+          fontFamily: 'monospace',
+          fontSize: '16px',
+          fontWeight: 'bold',
+          cursor: 'pointer',
+          display: 'none',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: '520'
+        },
+        onclick: (e) => {
+          e.stopPropagation();
+          this.setPanelExpanded(false);
+        }
+      }, '✕');
 
       this.p2pPanelContents = makeElement('div', {
         style: { display: 'none', marginTop: '30px', flexDirection: 'column', gap: '8px' }
@@ -840,12 +878,12 @@ class TouchControllerV3 {
       });
 
       this.p2pPanel.appendChild(this.p2pTriggerBtn);
+      this.p2pPanel.appendChild(this.p2pCloseBtn);
       this.p2pPanel.appendChild(this.p2pPanelContents);
       this.p2pPanel.appendChild(this.debugLog);
 
       this.rootElement.appendChild(this.p2pPanel);
 
-      // Circle Maximize (Fullscreen) button in top-right corner
       const fullscreenBtn = makeElement('div', {
         style: {
           position: 'absolute',
@@ -929,7 +967,6 @@ class TouchControllerV3 {
   _onViewTouchStart(e) {
       e.preventDefault();
       
-      // Stop ongoing flick momentum immediately when the user touches down
       this.viewVelocityX = 0;
       this.viewVelocityY = 0;
       this._stopViewInertia();
@@ -943,6 +980,7 @@ class TouchControllerV3 {
 
         if (this.viewLastTapTime && (now - this.viewLastTapTime < DOUBLE_TAP_THRESHOLD) && tapDist < 30) {
           this.viewMode = this.viewMode === 'rotate' ? 'pan' : 'rotate';
+          this.currentMode = this.viewMode;
           this._updateTrackpadLabels();
           
           if (this.dataChannel && this.dataChannel.readyState === 'open') {
@@ -1074,7 +1112,10 @@ class TouchControllerV3 {
         const wasRecentlyAdjusting = (now - this.ctrlLastAdjustmentTime < 600);
 
         if (this.ctrlLastTapTime && (now - this.ctrlLastTapTime < DOUBLE_TAP_THRESHOLD) && tapDist < 30 && !wasRecentlyAdjusting) {
-          this.controlMode = this.controlMode === 'sliders' ? 'paint' : 'sliders';
+          // Double tap: Toggle between compass 'sliders' and 'tool' settings
+          this.controlMode = this.controlMode === 'sliders' ? 'tool' : 'sliders';
+          this.currentMode = this.controlMode;
+          
           this._updateTrackpadLabels();
           
           if (this.dataChannel && this.dataChannel.readyState === 'open') {
@@ -1099,9 +1140,15 @@ class TouchControllerV3 {
         this.ctrlTouchStartX = clientX;
         this.ctrlTouchStartY = clientY;
         this.ctrlGestureLock = null;
-        this.ctrlSliderSelectAccumulator = 0;
 
-        if (this.controlMode === 'paint') {
+        if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'sliderDragStart',
+              mode: this.controlMode
+            }));
+          }
+        } else if (this.controlMode === 'paint') {
           if (this.dataChannel && this.dataChannel.readyState === 'open') {
             this.dataChannel.send(JSON.stringify({
               type: 'dragStart',
@@ -1117,7 +1164,7 @@ class TouchControllerV3 {
       if (e.touches.length === 1 && this.ctrlDragging) {
         const touch = e.touches[0];
         
-        if (this.controlMode === 'sliders') {
+        if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
           const totalDx = touch.clientX - this.ctrlTouchStartX;
           const totalDy = touch.clientY - this.ctrlTouchStartY;
 
@@ -1139,20 +1186,16 @@ class TouchControllerV3 {
             }
           } else {
             if (this.ctrlGestureLock === 'vertical') {
-              const dy = touch.clientY - this.ctrlLastY;
-              this.ctrlLastY = touch.clientY;
-
-              this.ctrlSliderSelectAccumulator += dy;
-              const stepThreshold = 35;
-              if (Math.abs(this.ctrlSliderSelectAccumulator) >= stepThreshold) {
-                const change = this.ctrlSliderSelectAccumulator > 0 ? 1 : -1;
-                if (this.dataChannel && this.dataChannel.readyState === 'open') {
-                  this.dataChannel.send(JSON.stringify({
-                    type: 'sliderSelect',
-                    change: change
-                  }));
-                }
-                this.ctrlSliderSelectAccumulator = 0;
+              // Send the continuous relative movement from the starting finger touchdown point smoothly.
+              // (No more discrete resetting steps or grid thresholds on the mobile client side!)
+              const continuousDy = touch.clientY - this.ctrlTouchStartY;
+              
+              if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                this.dataChannel.send(JSON.stringify({
+                  type: 'sliderDragMove',
+                  dy: continuousDy,
+                  phoneHeight: this.trackpadControls.clientHeight || 300
+                }));
               }
             } else if (this.ctrlGestureLock === 'horizontal') {
               const trackpadWidth = this.trackpadControls.clientWidth || 250;
@@ -1191,7 +1234,14 @@ class TouchControllerV3 {
       e.preventDefault();
       this.ctrlDragging = false;
       this.ctrlGestureLock = null;
-      if (this.controlMode === 'paint') {
+
+      if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'sliderDragEnd'
+          }));
+        }
+      } else if (this.controlMode === 'paint') {
         if (this.dataChannel && this.dataChannel.readyState === 'open') {
           this.dataChannel.send(JSON.stringify({
             type: 'dragEnd',
@@ -1206,7 +1256,8 @@ class TouchControllerV3 {
         this.viewStatusText.textContent = `VIEW: ${this.viewMode.toUpperCase()}`;
       }
       if (this.ctrlStatusText) {
-        this.ctrlStatusText.textContent = `CONTROLS: ${this.controlMode.toUpperCase()}`;
+        const modeLabel = this.controlMode === 'sliders' ? 'COMPASS' : this.controlMode === 'tool' ? 'TOOL SETTINGS' : this.controlMode.toUpperCase();
+        this.ctrlStatusText.textContent = `CONTROLS: ${modeLabel}`;
       }
     }
 
@@ -1220,15 +1271,12 @@ class TouchControllerV3 {
         this.p2pPanel.style.background = 'rgba(25, 25, 25, 0.98)';
         this.p2pPanel.style.border = '1.5px solid #333';
         this.p2pPanelContents.style.display = 'flex';
-        this.p2pTriggerBtn.textContent = '✕';
-        this.p2pTriggerBtn.style.width = '24px';
-        this.p2pTriggerBtn.style.height = '24px';
-        this.p2pTriggerBtn.style.top = '6px';
-        this.p2pTriggerBtn.style.right = '6px';
-        this.p2pTriggerBtn.style.left = 'auto';
+        
+        // Hide trigger btn entirely, display the close "X" btn
+        this.p2pTriggerBtn.style.display = 'none';
+        this.p2pCloseBtn.style.display = 'flex';
 
         if (isLandscape) {
-          // Grow horizontally to the right
           this.p2pPanel.style.width = '450px';
           this.p2pPanel.style.height = '180px';
           this.p2pPanel.style.display = 'flex';
@@ -1240,7 +1288,6 @@ class TouchControllerV3 {
           this.debugLog.style.borderTop = 'none';
           this.debugLog.style.display = 'block';
         } else {
-          // Grow vertically downwards
           this.p2pPanel.style.width = '240px';
           this.p2pPanel.style.height = '300px';
           this.p2pPanel.style.display = 'flex';
@@ -1261,12 +1308,17 @@ class TouchControllerV3 {
         this.p2pPanel.style.border = this.isVerified ? '2.5px solid #00e676' : '2.5px solid #ffa726';
         this.p2pPanelContents.style.display = 'none';
         this.debugLog.style.display = 'none';
+        
+        // Show trigger btn, hide close "✕" btn
+        this.p2pTriggerBtn.style.display = 'flex';
         this.p2pTriggerBtn.textContent = 'P2P';
         this.p2pTriggerBtn.style.width = '100%';
         this.p2pTriggerBtn.style.height = '100%';
         this.p2pTriggerBtn.style.top = '0';
         this.p2pTriggerBtn.style.left = '0';
         this.p2pTriggerBtn.style.right = 'auto';
+        
+        this.p2pCloseBtn.style.display = 'none';
       }
     }
 

@@ -58,6 +58,10 @@
   ],
   "library": [
     "SidePanel.js",
+    "ColorPicker.js",
+    "AppColorUtils.js",
+    "TriangleCP.js",
+    "HueRingCP.js",
     "UITools.js",
     "KeyCommandHandler.js",
     "PopupBox.js",

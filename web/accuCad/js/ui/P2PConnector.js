@@ -32,6 +32,11 @@ class P2PConnector {
       this.statusLabel = statusLabel;
       this.isHostMode = true;
 
+      // Unique session generation prevents processing stale offers/answers from previous sessions
+      if (!isAutoRestart) {
+        this.connectionSessionId = Math.random().toString(36).substring(2, 9);
+      }
+
       const mapState = (state) => {
         const s = state.toLowerCase();
         if (s === 'connected' || s === 'completed') return 'Active';
@@ -73,7 +78,6 @@ class P2PConnector {
         this.peerConnection = pc;
 
         pc.oniceconnectionstatechange = () => {
-          console.log('ICE:', pc.iceConnectionState);
           this.updateStatus(`[v3.2] Routes: ${mapState(pc.iceConnectionState)}`, '#90a4ae');
           if (pc.iceConnectionState === 'failed') {
             this.updateStatus('Routes failed. Reconnecting...', '#ff4444');
@@ -83,7 +87,6 @@ class P2PConnector {
 
         pc.onconnectionstatechange = () => {
           const state = pc.connectionState.toLowerCase();
-          console.log('Conn:', state);
           if (state === 'failed' || state === 'closed' || state === 'disconnected') {
             this.handleConnectionFailure();
           } else if (state === 'connected') {
@@ -104,7 +107,8 @@ class P2PConnector {
         await this.waitForIceGathering(pc);
 
         const bakedOffer = encodeURIComponent(JSON.stringify({
-          sdp: pc.localDescription
+          sdp: pc.localDescription,
+          sid: this.connectionSessionId
         }));
 
         this.updateStatus('Broadcasting host offer...', '#90a4ae');
@@ -134,6 +138,9 @@ class P2PConnector {
             if (!pc.remoteDescription) {
               const envelope = JSON.parse(decodeURIComponent(text));
               if (!envelope.sdp) return;
+              if (envelope.sid !== this.connectionSessionId) {
+                return;
+              }
               await pc.setRemoteDescription(envelope.sdp);
               this.updateStatus('Answer received. Negotiating transport...', '#0288d1');
               clearInterval(this.hostPollInterval);
@@ -216,6 +223,7 @@ class P2PConnector {
         this.updateStatus('[v3.2] Data channel open. Verifying handshake...', '#0288d1');
         this.isVerified = false;
         this.lastHeartbeatTime = Date.now();
+        this.logDiag('Data channel opened');
         if (this.isHostMode) {
           this.startHandshakeVerification(channel);
         }
@@ -223,11 +231,13 @@ class P2PConnector {
 
       channel.onclose = () => {
         this.updateStatus('[v3.2] Link closed.', '#ff8800');
+        this.logDiag('Data channel closed');
         this.handleConnectionFailure();
       };
 
       channel.onerror = (err) => {
         console.warn('Data channel error:', err);
+        this.logDiag(`Channel error: ${err.message || err}`);
         this.handleConnectionFailure();
       };
 
@@ -236,11 +246,18 @@ class P2PConnector {
           const payload = JSON.parse(e.data);
           this.lastHeartbeatTime = Date.now();
 
+          // Verbose [P2P Link Rx] console log spam completely removed to clean up the browser console logs as requested
+
+          if (this.showDiagnosticsInline) {
+            this.logDiag(`Received: ${payload.type}`);
+          }
+
           if (payload.type === 'h-pong') {
             if (!this.isVerified) {
               this.isVerified = true;
               this.stopHandshakeVerification();
               this.updateStatus('Connected', '#00e676');
+              this.logDiag('Handshake verified successfully!');
               channel.send(JSON.stringify({ type: 'h-verified' }));
               this.startHeartbeat(channel);
             }
@@ -258,6 +275,12 @@ class P2PConnector {
             this.handleRemoteModeChange(payload.mode);
           } else if (payload.type === 'sliderSelect') {
             this.handleRemoteSliderSelect(payload.change);
+          } else if (payload.type === 'sliderDragStart') {
+            this.handleRemoteSliderDragStart(payload.mode);
+          } else if (payload.type === 'sliderDragMove') {
+            this.handleRemoteSliderDragMove(payload.dy, payload.phoneHeight);
+          } else if (payload.type === 'sliderDragEnd') {
+            this.handleRemoteSliderDragEnd();
           } else if (payload.type === 'sliderAdjustStart') {
             this.handleRemoteSliderAdjustStart();
           } else if (payload.type === 'sliderAdjust') {
@@ -464,7 +487,7 @@ class P2PConnector {
         toast.style.cssText = 'position: absolute; top: 20px; left: 50%; transform: translateX(-50%); background: rgba(0,0,0,0.85); color: #00e676; border: 2px solid #00e676; border-radius: 8px; padding: 12px 24px; font-family: sans-serif; font-weight: bold; font-size: 18px; z-index: 999999; pointer-events: none; transition: opacity 0.3s ease, transform 0.3s ease; box-shadow: 0 4px 15px rgba(0,230,118,0.4); text-transform: uppercase; letter-spacing: 1px;';
         document.body.appendChild(toast);
       }
-      toast.textContent = `Mode: ${mode}`;
+      toast.textContent = `Mode: ${mode === 'sliders' ? 'Compass' : mode === 'tool' ? 'Tool Settings' : mode}`;
       toast.style.opacity = '1';
       toast.style.transform = 'translateX(-50%) scale(1)';
       clearTimeout(toast.timeoutId);
@@ -473,8 +496,9 @@ class P2PConnector {
         toast.style.transform = 'translateX(-50%) scale(0.9)';
       }, 1500);
 
+      // Instruct the view controller to immediately switch highlighting and output the console logs
       if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
-        ViewControlsManager.instance.highlightCompassBox(mode === 'sliders');
+        ViewControlsManager.instance.highlightActiveControlBox(mode === 'sliders' ? 'sliders' : 'tool');
       }
     }
 
@@ -546,8 +570,62 @@ class P2PConnector {
       statusLabel.style.textAlign = 'center';
       statusLabel.style.fontStyle = 'italic';
       statusLabel.style.color = '#aaa';
+      // Restrict status label properties to fully lock height and eliminate layout twitching
+      statusLabel.style.height = '18px';
+      statusLabel.style.lineHeight = '18px';
+      statusLabel.style.overflow = 'hidden';
+      statusLabel.style.textOverflow = 'ellipsis';
+      statusLabel.style.whiteSpace = 'nowrap';
       this.statusLabel = statusLabel;
       content.appendChild(statusLabel);
+
+      // Dedicated MIDI Controller option block inside the Controller panel
+      const midiRow = document.createElement('div');
+      midiRow.style.display = 'flex';
+      midiRow.style.alignItems = 'center';
+      midiRow.style.gap = '8px';
+      midiRow.style.marginTop = '6px';
+      midiRow.style.paddingTop = '6px';
+      midiRow.style.borderTop = '1px solid #444';
+
+      const midiCheckbox = document.createElement('input');
+      midiCheckbox.type = 'checkbox';
+      midiCheckbox.id = 'midi-controller-toggle';
+      midiCheckbox.style.cursor = 'pointer';
+      const midiEnabled = localStorage.getItem('midi-controller-enabled') === 'true';
+      midiCheckbox.checked = midiEnabled;
+
+      const midiLabel = document.createElement('label');
+      midiLabel.htmlFor = 'midi-controller-toggle';
+      midiLabel.textContent = 'Enable MIDI Controller';
+      midiLabel.style.cursor = 'pointer';
+      midiLabel.style.fontSize = '11px';
+      midiLabel.style.color = '#bbb';
+
+      midiRow.appendChild(midiCheckbox);
+      midiRow.appendChild(midiLabel);
+      content.appendChild(midiRow);
+
+      midiCheckbox.onchange = () => {
+        const enabled = midiCheckbox.checked;
+        localStorage.setItem('midi-controller-enabled', enabled ? 'true' : 'false');
+        if (enabled) {
+          if (typeof MidiInputHandler !== 'undefined' && typeof MidiInputHandler.init === 'function') {
+            MidiInputHandler.init((status) => console.log('MIDI Status:', status));
+          }
+          if (typeof SliderControl !== 'undefined') {
+            SliderControl.allSliders.forEach(slider => {
+              if (slider.midiBox) slider.midiBox.style.display = 'block';
+            });
+          }
+        } else {
+          if (typeof SliderControl !== 'undefined') {
+            SliderControl.allSliders.forEach(slider => {
+              if (slider.midiBox) slider.midiBox.style.display = 'none';
+            });
+          }
+        }
+      };
 
       const diagRow = document.createElement('div');
       diagRow.style.display = 'flex';
@@ -565,7 +643,8 @@ class P2PConnector {
       
       const diagLabel = document.createElement('label');
       diagLabel.htmlFor = 'p2p-diag-toggle-sidebar';
-      diagLabel.textContent = 'Show diagnostics inline';
+      // Omit redundant "inline" text as requested
+      diagLabel.textContent = 'Show diagnostics';
       diagLabel.style.cursor = 'pointer';
       diagLabel.style.fontSize = '11px';
       diagLabel.style.color = '#bbb';
@@ -588,7 +667,9 @@ class P2PConnector {
       diagContainer.style.marginTop = '8px';
       diagContainer.style.width = '100%';
       diagContainer.style.boxSizing = 'border-box';
-      diagContainer.style.maxHeight = '280px';
+      diagContainer.style.height = '120px';
+      diagContainer.style.minHeight = '120px';
+      diagContainer.style.maxHeight = '120px';
       diagContainer.style.overflowY = 'auto';
       content.appendChild(diagContainer);
 
@@ -601,7 +682,9 @@ class P2PConnector {
 
       connectBtn.onclick = () => {
         if (this.isHostMode || this._hostConnecting) {
-          this.handleConnectionFailure();
+          this.cleanupConnection(false);
+          this.updateStatus('Stopped Host Sync.', '#ff4444');
+          this.logDiag('Stopped host sync session');
         } else {
           const room = roomInput.value.trim();
           if (!room) {
@@ -613,5 +696,39 @@ class P2PConnector {
       };
 
       container.appendChild(content);
+    }
+
+  logDiag(text) {
+      const container = document.getElementById('p2p-diag-container-sidebar');
+      if (container) {
+        const time = new Date().toLocaleTimeString();
+        const line = document.createElement('div');
+        line.style.borderBottom = '1px solid #112211';
+        line.style.padding = '2px 0';
+        line.style.whiteSpace = 'nowrap';
+        line.style.overflow = 'hidden';
+        line.style.textOverflow = 'ellipsis';
+        line.textContent = `[${time}] ${text}`;
+        container.appendChild(line);
+        container.scrollTop = container.scrollHeight;
+      }
+    }
+
+  handleRemoteSliderDragStart(mode) {
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.handleSliderDragStart(mode);
+      }
+    }
+
+  handleRemoteSliderDragMove(dy, phoneHeight) {
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.handleSliderDragMove(dy, phoneHeight);
+      }
+    }
+
+  handleRemoteSliderDragEnd() {
+      if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
+        ViewControlsManager.instance.handleSliderDragEnd();
+      }
     }
 }

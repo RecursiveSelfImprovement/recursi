@@ -351,25 +351,49 @@ class TriangleCP {
     this.updateCursorFromWeights();
   }
 
-  setColor(rgbString) {
-    const rgb = AppColorUtils.rgbStringToRgbArray(rgbString);
-    if (!rgb) return;
+  setColor(colorStr) {
+      const parseColorToRgb = (cStr) => {
+        if (!cStr) return [0, 136, 255];
+        cStr = String(cStr).trim();
+        if (cStr.startsWith('#')) {
+          let hex = cStr.slice(1);
+          if (hex.length === 3) {
+            hex = hex.split('').map(c => c + c).join('');
+          }
+          if (hex.length === 6) {
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return [r, g, b];
+          }
+        }
+        const rgbMatch = cStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+        if (rgbMatch) {
+          return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
+        }
+        if (typeof AppColorUtils !== 'undefined' && AppColorUtils.rgbStringToRgbArray) {
+          const arr = AppColorUtils.rgbStringToRgbArray(cStr);
+          if (arr) return arr;
+        }
+        return [0, 136, 255];
+      };
 
-    const hsv = AppColorUtils.rgbToHsv(rgb[0], rgb[1], rgb[2]);
-    this.hue = hsv.h;
+      const rgb = parseColorToRgb(colorStr);
+      const hsv = AppColorUtils.rgbToHsv(rgb[0], rgb[1], rgb[2]);
+      this.hue = hsv.h;
 
-    const wB = 1 - hsv.v;
-    const wA = hsv.s * hsv.v;
-    const wC = 1 - wA - wB;
+      const wB = 1 - hsv.v;
+      const wA = hsv.s * hsv.v;
+      const wC = 1 - wA - wB;
 
-    this.weights = { wA, wB, wC };
+      this.weights = { wA, wB, wC };
 
-    if (this.triGeometry) {
-      this.updateCursorFromWeights();
+      if (this.triGeometry) {
+        this.updateCursorFromWeights();
+      }
+
+      this.draw();
     }
-
-    this.draw();
-  }
 
   addEventListeners() {
     const handleMove = (e) => {

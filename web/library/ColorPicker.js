@@ -616,278 +616,286 @@ class ColorPicker {
   }
 
   openSmartPicker(targetElement, initialColor, onColorUpdate) {
-    if (this._activePicker) {
-      this._activePicker.remove();
-      this._activePicker = null;
-    }
+      if (this._activePicker) {
+        this._activePicker.remove();
+        this._activePicker = null;
+      }
 
-    this.currentHueRing = null;
-    this.currentTriangle = null;
-    this.currentTriEl = null;
-    this.currentTargetSwatch = null;
-    this._updateActiveColor = null;
+      // Track the active ColorPicker instance globally
+      ColorPicker.activeInstance = this;
 
-    const TOTAL_SIZE = 150;
-    const TRIANGLE_SIZE = 100;
-    const GAP = 10;
+      this.currentHueRing = null;
+      this.currentTriangle = null;
+      this.currentTriEl = null;
+      this.currentTargetSwatch = null;
+      this._updateActiveColor = null;
 
-    const container = typeof makeElement !== 'undefined'
-        ? makeElement('div', {
-            className: 'smart-picker-surface',
-            style: {
-              position: 'absolute', width: `${TOTAL_SIZE}px`, height: `${TOTAL_SIZE}px`,
-              background: 'transparent', zIndex: '2147483647', userSelect: 'none', cursor: 'default',
-              opacity: '0', transform: 'scale(0.5)', overflow: 'visible',
-              transition: 'opacity 0.2s ease-out, transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28)'
-            }
-          })
-        : document.createElement('div');
-    document.body.appendChild(container);
-    this._activePicker = container;
+      const TOTAL_SIZE = 150;
+      const TRIANGLE_SIZE = 100;
+      const GAP = 10;
 
-    const bgSizeRatio = 1.4;
-    const bgSvg = typeof makeElement !== 'undefined'
-        ? makeElement('svg:svg', {
-            style: {
-              position: 'absolute', top: `${(1 - bgSizeRatio) * 50}%`, left: `${(1 - bgSizeRatio) * 50}%`,
-              width: `${bgSizeRatio * 100}%`, height: `${bgSizeRatio * 100}%`, pointerEvents: 'none'
-            }
-          })
-        : document.createElement('svg');
-
-    if (typeof makeElement !== 'undefined') {
-      const defs = makeElement('svg:defs');
-      const filterId = `blur-bg-${Date.now()}`;
-      const filter = makeElement('svg:filter', { id: filterId, x: '-50%', y: '-50%', width: '200%', height: '200%' });
-      filter.appendChild(makeElement('svg:feGaussianBlur', { in: 'SourceGraphic', stdDeviation: '10' }));
-      defs.appendChild(filter);
-      bgSvg.appendChild(defs);
-      bgSvg.appendChild(makeElement('svg:circle', {
-          cx: '50%', cy: '50%', r: '34%', fill: 'rgba(20, 20, 20, 0.85)', filter: `url(#${filterId})`
-      }));
-    }
-    container.appendChild(bgSvg);
-
-    const rgbDisplay = typeof makeElement !== 'undefined'
-        ? makeElement('div', {
+      const container = typeof makeElement !== 'undefined'
+          ? makeElement('div', {
+              className: 'smart-picker-surface',
               style: {
-                position: 'absolute', padding: '3px 8px', borderRadius: '6px', fontWeight: '600',
-                fontSize: '11px', fontFamily: 'monospace', textAlign: 'center', whiteSpace: 'nowrap',
-                backgroundColor: 'rgba(255, 255, 255, 0.7)', color: '#000', backdropFilter: 'blur(3px)',
-                boxShadow: '0 2px 6px rgba(0,0,0,0.25)', transition: 'background-color 0.35s ease, color 0.1s', pointerEvents: 'none'
+                position: 'absolute', width: `${TOTAL_SIZE}px`, height: `${TOTAL_SIZE}px`,
+                background: 'transparent', zIndex: '2147483647', userSelect: 'none', cursor: 'default',
+                opacity: '0', transform: 'scale(0.5)', overflow: 'visible',
+                transition: 'opacity 0.2s ease-out, transform 0.25s cubic-bezier(0.18, 0.89, 0.32, 1.28)',
+                filter: 'drop-shadow(0 8px 24px rgba(0,0,0,0.5))'
               }
-          }, '0,0,0')
-        : document.createElement('div');
-    container.appendChild(rgbDisplay);
+            })
+          : document.createElement('div');
+      document.body.appendChild(container);
+      this._activePicker = container;
 
-    const rect = targetElement.getBoundingClientRect();
-    const winW = window.innerWidth;
-    const winH = window.innerHeight;
-    const scrollX = window.scrollX;
-    const scrollY = window.scrollY;
-    const pickerHalf = TOTAL_SIZE / 2;
-    
-    let left = rect.right + GAP;
-    let top = rect.top + rect.height / 2 - pickerHalf;
-    let originX = '0%';
-    let originY = '50%';
-    
-    if (left + TOTAL_SIZE > winW - 10) {
-      left = rect.left - TOTAL_SIZE - GAP;
-      originX = '100%';
-      if (left < 10) {
-        left = Math.max(10, rect.left + rect.width / 2 - pickerHalf);
-        top = rect.bottom + GAP;
-        originX = '50%';
-        originY = '0%';
-        if (top + TOTAL_SIZE > winH - 10) {
-          top = Math.max(10, rect.top - TOTAL_SIZE - GAP);
-          originY = '100%';
+      const rgbDisplay = typeof makeElement !== 'undefined'
+          ? makeElement('div', {
+                style: {
+                  position: 'absolute', padding: '3px 8px', borderRadius: '6px', fontWeight: '600',
+                  fontSize: '11px', fontFamily: 'monospace', textAlign: 'center', whiteSpace: 'nowrap',
+                  backgroundColor: 'rgba(255, 255, 255, 0.7)', color: '#000', backdropFilter: 'blur(3px)',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.25)', transition: 'background-color 0.35s ease, color 0.1s', pointerEvents: 'none'
+                }
+            }, '0,0,0')
+          : document.createElement('div');
+      container.appendChild(rgbDisplay);
+
+      const rect = targetElement.getBoundingClientRect();
+      const winW = window.innerWidth;
+      const winH = window.innerHeight;
+      const scrollX = window.scrollX;
+      const scrollY = window.scrollY;
+      const pickerHalf = TOTAL_SIZE / 2;
+      
+      let left = rect.right + GAP;
+      let top = rect.top + rect.height / 2 - pickerHalf;
+      let originX = '0%';
+      let originY = '50%';
+      
+      if (left + TOTAL_SIZE > winW - 10) {
+        left = rect.left - TOTAL_SIZE - GAP;
+        originX = '100%';
+        if (left < 10) {
+          left = Math.max(10, rect.left + rect.width / 2 - pickerHalf);
+          top = rect.bottom + GAP;
+          originX = '50%';
+          originY = '0%';
+          if (top + TOTAL_SIZE > winH - 10) {
+            top = Math.max(10, rect.top - TOTAL_SIZE - GAP);
+            originY = '100%';
+          }
         }
       }
-    }
-    if (top < 10) top = 10;
-    if (top + TOTAL_SIZE > winH - 10) top = winH - TOTAL_SIZE - 10;
-    
-    container.style.left = `${left + scrollX}px`;
-    container.style.top = `${top + scrollY}px`;
-    container.style.transformOrigin = `${originX} ${originY}`;
+      if (top < 10) top = 10;
+      if (top + TOTAL_SIZE > winH - 10) top = winH - TOTAL_SIZE - 10;
+      
+      container.style.left = `${left + scrollX}px`;
+      container.style.top = `${top + scrollY}px`;
+      container.style.transformOrigin = `${originX} ${originY}`;
 
-    const updateRgbPosition = () => {
-      const r = container.getBoundingClientRect();
-      if (r.bottom + 40 > window.innerHeight) {
-        rgbDisplay.style.bottom = 'auto';
-        rgbDisplay.style.top = '-30px';
-      } else {
-        rgbDisplay.style.top = 'auto';
-        rgbDisplay.style.bottom = '-30px';
-      }
-      if (r.left < 20) {
-        rgbDisplay.style.left = '0px';
-        rgbDisplay.style.right = 'auto';
-        rgbDisplay.style.transform = 'none';
-      } else if (r.right > window.innerWidth - 20) {
-        rgbDisplay.style.left = 'auto';
-        rgbDisplay.style.right = '0px';
-        rgbDisplay.style.transform = 'none';
-      } else {
-        rgbDisplay.style.left = '50%';
-        rgbDisplay.style.right = 'auto';
-        rgbDisplay.style.transform = 'translateX(-50%)';
-      }
-    };
-
-    requestAnimationFrame(() => {
-      container.style.opacity = '1';
-      container.style.transform = 'scale(1)';
-      updateRgbPosition();
-    });
-
-    const hueRing = new HueRingCP(TOTAL_SIZE);
-    const triangle = new TriangleCP(TRIANGLE_SIZE);
-    
-    let rgbArray = AppColorUtils.rgbStringToRgbArray(initialColor) || [128, 128, 128];
-    let hsv = AppColorUtils.rgbToHsv(rgbArray[0], rgbArray[1], rgbArray[2]);
-
-    const initialRyb = this._rgbToRyb(hsv.h);
-    hueRing.setHue(initialRyb);
-    triangle.setColor(initialColor);
-    triangle.rotation = initialRyb;
-
-    this.currentHueRing = hueRing;
-    this.currentTriangle = triangle;
-    this.currentTargetSwatch = targetElement;
-
-    const ringEl = hueRing.getElement();
-    const triEl = triangle.getElement();
-    this.currentTriEl = triEl;
-
-    Object.assign(ringEl.style, { position: 'absolute', top: '0', left: '0', pointerEvents: 'none' });
-    const triOffset = (TOTAL_SIZE - TRIANGLE_SIZE) / 2;
-    const geoCenterOffset = (TRIANGLE_SIZE - triangle.height) / 2;
-    Object.assign(triEl.style, {
-      position: 'absolute', left: `${triOffset}px`, top: `${triOffset + geoCenterOffset}px`,
-      pointerEvents: 'none', transformOrigin: '50% 50%', zIndex: '10'
-    });
-    triEl.style.transform = `rotate(${initialRyb}deg)`;
-    
-    container.appendChild(ringEl);
-    container.appendChild(triEl);
-
-    const updateRGBLabel = (r, g, b, colorString) => {
-      const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-      const isBright = brightness > 140;
-      rgbDisplay.textContent = `${r},${g},${b}`;
-      rgbDisplay.style.color = colorString;
-      rgbDisplay.style.backgroundColor = isBright ? 'rgba(10, 10, 10, 0.7)' : 'rgba(245, 245, 245, 0.7)';
-    };
-    updateRGBLabel(rgbArray[0], rgbArray[1], rgbArray[2], initialColor);
-
-    const updateFinal = (newRgbHue) => {
-      const { wA, wB, wC } = triangle.getWeights();
-      const pureHue = AppColorUtils.hsvToRgbArray(newRgbHue / 360, 1, 1);
-      const r = Math.round(wA * pureHue[0] + wC * 255);
-      const g = Math.round(wA * pureHue[1] + wC * 255);
-      const b = Math.round(wA * pureHue[2] + wC * 255);
-      const finalColor = `rgb(${r}, ${g}, ${b})`;
-      hueRing.setThumbColor(finalColor);
-      hueRing.externalColorOverride = true;
-      updateRGBLabel(r, g, b, finalColor);
-      if (onColorUpdate) onColorUpdate(finalColor);
-    };
-
-    this._updateActiveColor = updateFinal;
-
-    hueRing.onHueChange = (rybHue) => {
-      const rgbHue = this._rybToRgb(rybHue);
-      triangle.rotation = rybHue;
-      triEl.style.transform = `rotate(${rybHue}deg)`;
-      triangle.setHue(rgbHue);
-      updateFinal(rgbHue);
-      updateRgbPosition();
-    };
-
-    triangle.onColorUpdate = (c) => {
-      const rgb = AppColorUtils.rgbStringToRgbArray(c) || [128, 128, 128];
-      updateRGBLabel(rgb[0], rgb[1], rgb[2], c);
-      hueRing.setThumbColor(c);
-      hueRing.externalColorOverride = true;
-      if (onColorUpdate) onColorUpdate(c);
-      updateRgbPosition();
-    };
-
-    const isInsideTriangle = (x, y) => {
-      if (!triangle.triGeometry) return false;
-      const dx = x - TOTAL_SIZE / 2;
-      const dy = y - TOTAL_SIZE / 2;
-      return Math.sqrt(dx * dx + dy * dy) < TOTAL_SIZE * 0.3;
-    };
-
-    const processEvent = (e) => {
-      const r = container.getBoundingClientRect();
-      const cx = TOTAL_SIZE / 2;
-      const cy = TOTAL_SIZE / 2;
-      const x = e.clientX - r.left;
-      const y = e.clientY - r.top;
-      let target = this._dragTarget;
-      if (!target) target = isInsideTriangle(x, y) ? 'triangle' : 'ring';
-      if (target === 'triangle') {
-        const dx = x - cx;
-        const dy = y - cy;
-        const rad = (-triangle.rotation * Math.PI) / 180;
-        const tx = dx * Math.cos(rad) - dy * Math.sin(rad) + TRIANGLE_SIZE / 2;
-        const ty = dx * Math.sin(rad) + dy * Math.cos(rad) + triangle.height / 2;
-        triangle.processInput(tx, ty);
-        this._dragTarget = 'triangle';
-      } else {
-        hueRing.processInput(x - cx, y - cy);
-        this._dragTarget = 'ring';
-      }
-    };
-
-    container.addEventListener('mousedown', (e) => {
-      e.preventDefault();
-      this._dragTarget = null;
-      processEvent(e);
-      const move = (ev) => processEvent(ev);
-      const up = () => {
-        window.removeEventListener('mousemove', move);
-        window.removeEventListener('mouseup', up);
-        this._dragTarget = null;
+      const updateRgbPosition = () => {
+        const r = container.getBoundingClientRect();
+        if (r.bottom + 40 > window.innerHeight) {
+          rgbDisplay.style.bottom = 'auto';
+          rgbDisplay.style.top = '-30px';
+        } else {
+          rgbDisplay.style.top = 'auto';
+          rgbDisplay.style.bottom = '-30px';
+        }
+        if (r.left < 20) {
+          rgbDisplay.style.left = '0px';
+          rgbDisplay.style.right = 'auto';
+          rgbDisplay.style.transform = 'none';
+        } else if (r.right > window.innerWidth - 20) {
+          rgbDisplay.style.left = 'auto';
+          rgbDisplay.style.right = '0px';
+          rgbDisplay.style.transform = 'none';
+        } else {
+          rgbDisplay.style.left = '50%';
+          rgbDisplay.style.right = 'auto';
+          rgbDisplay.style.transform = 'translateX(-50%)';
+        }
       };
-      window.addEventListener('mousemove', move);
-      window.addEventListener('mouseup', up);
-    });
 
-    let leaveTimer;
-    container.addEventListener('mouseleave', () => {
-      if (this._dragTarget) return;
-      leaveTimer = setTimeout(cleanup, 400);
-    });
-    container.addEventListener('mouseenter', () => clearTimeout(leaveTimer));
+      requestAnimationFrame(() => {
+        container.style.opacity = '1';
+        container.style.transform = 'scale(1)';
+        updateRgbPosition();
+      });
 
-    const closeListener = (e) => {
-      if (!container.contains(e.target) && e.target !== targetElement && !targetElement.contains(e.target)) cleanup();
-    };
+      const hueRing = new HueRingCP(TOTAL_SIZE);
+      const triangle = new TriangleCP(TRIANGLE_SIZE);
+      
+      const parseColorToRgb = (colorStr) => {
+        if (!colorStr) return [0, 136, 255];
+        colorStr = colorStr.trim();
+        if (colorStr.startsWith('#')) {
+          let hex = colorStr.slice(1);
+          if (hex.length === 3) {
+            hex = hex.split('').map(c => c + c).join('');
+          }
+          if (hex.length === 6) {
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return [r, g, b];
+          }
+        }
+        const rgbMatch = colorStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+        if (rgbMatch) {
+          return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
+        }
+        if (typeof AppColorUtils !== 'undefined' && AppColorUtils.rgbStringToRgbArray) {
+          const arr = AppColorUtils.rgbStringToRgbArray(colorStr);
+          if (arr) return arr;
+        }
+        return [0, 136, 255];
+      };
 
-    const cleanup = () => {
-      if (leaveTimer) clearTimeout(leaveTimer);
-      window.removeEventListener('mousedown', closeListener);
-      if (this._activePicker === container) {
-        container.style.opacity = '0';
-        container.style.transform = 'scale(0.8)';
-        setTimeout(() => container.remove(), 200);
-        this._activePicker = null;
-        this.currentHueRing = null;
-        this.currentTriangle = null;
-        this.currentTargetSwatch = null;
-        this.currentTriEl = null;
-        this._updateActiveColor = null;
-      }
-    };
+      const rgbArray = parseColorToRgb(initialColor);
+      let hsv = AppColorUtils.rgbToHsv(rgbArray[0], rgbArray[1], rgbArray[2]);
 
-    setTimeout(() => window.addEventListener('mousedown', closeListener), 50);
-  }
+      const initialRyb = this._rgbToRyb(hsv.h);
+      hueRing.setHue(initialRyb);
+      triangle.setColor(initialColor);
+      triangle.rotation = initialRyb;
+
+      this.currentHueRing = hueRing;
+      this.currentTriangle = triangle;
+      this.currentTargetSwatch = targetElement;
+
+      const ringEl = hueRing.getElement();
+      const triEl = triangle.getElement();
+      this.currentTriEl = triEl;
+
+      Object.assign(ringEl.style, { position: 'absolute', top: '0', left: '0', pointerEvents: 'none' });
+      const triOffset = (TOTAL_SIZE - TRIANGLE_SIZE) / 2;
+      const geoCenterOffset = (TRIANGLE_SIZE - triangle.height) / 2;
+      Object.assign(triEl.style, {
+        position: 'absolute', left: `${triOffset}px`, top: `${triOffset + geoCenterOffset}px`,
+        pointerEvents: 'none', transformOrigin: '50% 50%', zIndex: '10'
+      });
+      triEl.style.transform = `rotate(${initialRyb}deg)`;
+      
+      container.appendChild(ringEl);
+      container.appendChild(triEl);
+
+      const updateRGBLabel = (r, g, b, colorString) => {
+        const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+        const isBright = brightness > 140;
+        rgbDisplay.textContent = `${r},${g},${b}`;
+        rgbDisplay.style.color = colorString;
+        rgbDisplay.style.backgroundColor = isBright ? 'rgba(10, 10, 10, 0.7)' : 'rgba(245, 245, 245, 0.7)';
+      };
+      updateRGBLabel(rgbArray[0], rgbArray[1], rgbArray[2], initialColor);
+
+      const updateFinal = (newRgbHue) => {
+        const { wA, wB, wC } = triangle.getWeights();
+        const pureHue = AppColorUtils.hsvToRgbArray(newRgbHue / 360, 1, 1);
+        const r = Math.round(wA * pureHue[0] + wC * 255);
+        const g = Math.round(wA * pureHue[1] + wC * 255);
+        const b = Math.round(wA * pureHue[2] + wC * 255);
+        const finalColor = `rgb(${r}, ${g}, ${b})`;
+        hueRing.setThumbColor(finalColor);
+        hueRing.externalColorOverride = true;
+        updateRGBLabel(r, g, b, finalColor);
+        if (onColorUpdate) onColorUpdate(finalColor);
+      };
+
+      this._updateActiveColor = updateFinal;
+
+      hueRing.onHueChange = (rybHue) => {
+        const rgbHue = this._rybToRgb(rybHue);
+        triangle.rotation = rybHue;
+        triEl.style.transform = `rotate(${rybHue}deg)`;
+        triangle.setHue(rgbHue);
+        updateFinal(rgbHue);
+        updateRgbPosition();
+      };
+
+      triangle.onColorUpdate = (c) => {
+        const rgb = parseColorToRgb(c);
+        updateRGBLabel(rgb[0], rgb[1], rgb[2], c);
+        hueRing.setThumbColor(c);
+        hueRing.externalColorOverride = true;
+        if (onColorUpdate) onColorUpdate(c);
+        updateRgbPosition();
+      };
+
+      const isInsideTriangle = (x, y) => {
+        if (!triangle.triGeometry) return false;
+        const dx = x - TOTAL_SIZE / 2;
+        const dy = y - TOTAL_SIZE / 2;
+        return Math.sqrt(dx * dx + dy * dy) < TOTAL_SIZE * 0.3;
+      };
+
+      const processEvent = (e) => {
+        const r = container.getBoundingClientRect();
+        const cx = TOTAL_SIZE / 2;
+        const cy = TOTAL_SIZE / 2;
+        const x = e.clientX - r.left;
+        const y = e.clientY - r.top;
+        let target = this._dragTarget;
+        if (!target) target = isInsideTriangle(x, y) ? 'triangle' : 'ring';
+        if (target === 'triangle') {
+          const dx = x - cx;
+          const dy = y - cy;
+          const rad = (-triangle.rotation * Math.PI) / 180;
+          const tx = dx * Math.cos(rad) - dy * Math.sin(rad) + TRIANGLE_SIZE / 2;
+          const ty = dx * Math.sin(rad) + dy * Math.cos(rad) + triangle.height / 2;
+          triangle.processInput(tx, ty);
+          this._dragTarget = 'triangle';
+        } else {
+          hueRing.processInput(x - cx, y - cy);
+          this._dragTarget = 'ring';
+        }
+      };
+
+      container.addEventListener('mousedown', (e) => {
+        e.preventDefault();
+        this._dragTarget = null;
+        processEvent(e);
+        const move = (ev) => processEvent(ev);
+        const up = () => {
+          window.removeEventListener('mousemove', move);
+          window.removeEventListener('mouseup', up);
+          this._dragTarget = null;
+        };
+        window.addEventListener('mousemove', move);
+        window.addEventListener('mouseup', up);
+      });
+
+      let leaveTimer;
+      container.addEventListener('mouseleave', () => {
+        if (this._dragTarget) return;
+        leaveTimer = setTimeout(cleanup, 400);
+      });
+      container.addEventListener('mouseenter', () => clearTimeout(leaveTimer));
+
+      const closeListener = (e) => {
+        if (!container.contains(e.target) && e.target !== targetElement && !targetElement.contains(e.target)) cleanup();
+      };
+
+      const cleanup = () => {
+        if (leaveTimer) clearTimeout(leaveTimer);
+        window.removeEventListener('mousedown', closeListener);
+        if (this._activePicker === container) {
+          container.style.opacity = '0';
+          container.style.transform = 'scale(0.8)';
+          setTimeout(() => container.remove(), 200);
+          this._activePicker = null;
+          this.currentHueRing = null;
+          this.currentTriangle = null;
+          this.currentTargetSwatch = null;
+          this.currentTriEl = null;
+          this._updateActiveColor = null;
+          ColorPicker.activeInstance = null;
+        }
+      };
+
+      setTimeout(() => window.addEventListener('mousedown', closeListener), 50);
+    }
 
   handleMidiInput(swatch, mode, amount, isRelative) {
     const isSame = this.currentTargetSwatch === swatch;
@@ -1044,4 +1052,41 @@ class ColorPicker {
     }
     return [Math.round(r * 255), Math.round(g * 255), Math.round(b * 255)];
   }
+
+  updateColorExternal(colorHex) {
+      if (!this.currentHueRing || !this.currentTriangle) return;
+      
+      const parseColorToRgb = (cStr) => {
+        if (!cStr) return [0, 136, 255];
+        cStr = String(cStr).trim();
+        if (cStr.startsWith('#')) {
+          let hex = cStr.slice(1);
+          if (hex.length === 3) {
+            hex = hex.split('').map(c => c + c).join('');
+          }
+          if (hex.length === 6) {
+            const r = parseInt(hex.substring(0, 2), 16);
+            const g = parseInt(hex.substring(2, 4), 16);
+            const b = parseInt(hex.substring(4, 6), 16);
+            return [r, g, b];
+          }
+        }
+        const rgbMatch = cStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+        if (rgbMatch) {
+          return [parseInt(rgbMatch[1]), parseInt(rgbMatch[2]), parseInt(rgbMatch[3])];
+        }
+        return [0, 136, 255];
+      };
+
+      const rgb = parseColorToRgb(colorHex);
+      const hsv = AppColorUtils.rgbToHsv(rgb[0], rgb[1], rgb[2]);
+      const ryb = this._rgbToRyb(hsv.h);
+
+      this.currentHueRing.setHue(ryb);
+      this.currentTriangle.setColor(colorHex);
+      this.currentTriangle.rotation = ryb;
+      if (this.currentTriEl) {
+        this.currentTriEl.style.transform = `rotate(${ryb}deg)`;
+      }
+    }
 }

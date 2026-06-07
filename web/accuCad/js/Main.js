@@ -1,19 +1,15 @@
 class Main {
   constructor() {
-      this.app = null;
-      this.baseController = null;
-      this.threeDView = null;
-    }
-
-  
-
-  
+    this.app = null;
+    this.baseController = null;
+    this.threeDView = null;
+  }
 
   _exposeGlobals(threeDView, baseController) {
-      if (DebugConfig.exposeThreeDView) globalThis.threeDView = threeDView;
-      if (DebugConfig.exposeBaseController)
-        globalThis.baseController = baseController;
-    }
+    if (DebugConfig.exposeThreeDView) globalThis.threeDView = threeDView;
+    if (DebugConfig.exposeBaseController)
+      globalThis.baseController = baseController;
+  }
 
   async run(env) {
       console.log('[accuCad] run() invoked.');
@@ -26,7 +22,6 @@ class Main {
       const parentElement = env.container;
       this.rootElement = parentElement;
 
-      // Reset any accidental focus-induced scrolling to keep the layout snapped to (0,0)
       const resetScroll = () => {
         if (this.rootElement) {
           this.rootElement.scrollLeft = 0;
@@ -41,10 +36,8 @@ class Main {
       window.addEventListener('scroll', resetScroll);
       document.body.addEventListener('scroll', resetScroll);
 
-      // Store handler reference for proper destruction later
       this._scrollResetHandler = resetScroll;
 
-      // Introduce flex layout wrapper for layout expansion/contraction
       const layoutWrapper = document.createElement('div');
       layoutWrapper.id = 'accucad-layout-wrapper';
       layoutWrapper.style.cssText = 'display: flex; flex-direction: row; width: 100%; height: 100%; overflow: hidden; position: relative;';
@@ -69,7 +62,7 @@ class Main {
             }
           }
         });
-        ro.observe(canvasContainer); // Observing the canvasContainer itself so it resizes beautifully when side panel slides
+        ro.observe(canvasContainer);
         parentElement._vibesAppResizeObserver = ro;
       }
 
@@ -156,10 +149,21 @@ class Main {
         this.threeDView.scene
       );
 
-      // Setup SidePanel UI structure
+      // Setup SidePanel UI structure using the new, generic constructor
       if (typeof SidePanel !== 'undefined') {
-        this.sidePanel = new SidePanel(this.baseController, layoutWrapper, canvasContainer);
+        this.sidePanel = new SidePanel('left', 260, layoutWrapper, 'margin');
+        
+        // Populate the specific CAD sections from here
+        this.sidePanel.toolSettingsSection = this.sidePanel.addSection('setup', 'Tool Settings', true);
+        this.sidePanel.compassSection = this.sidePanel.addSection('compass', 'Compass Controls', true);
+        // Renamed P2P Connection section to "Controller" as requested
+        this.sidePanel.p2pSection = this.sidePanel.addSection('p2p', 'Controller', false);
+
+        // ESSENTIAL ASSIGNMENT: Store the sidePanel reference directly on baseController so ViewControls can reach it!
+        this.baseController.sidePanel = this.sidePanel;
+
         layoutWrapper.insertBefore(this.sidePanel.element, canvasContainer);
+        this._setupToolSettingsWatcher();
       }
 
       // Initialize P2PConnector on the controller
@@ -189,11 +193,13 @@ class Main {
         RotaryEncoders.initialize(this.baseController);
       }
 
+      // Prevent automatic requests for MIDI access unless the option has been persistently enabled by the user
       if (
+        localStorage.getItem('midi-controller-enabled') === 'true' &&
         typeof MidiInputHandler !== 'undefined' &&
         typeof MidiInputHandler.init === 'function'
       ) {
-        MidiInputHandler.init((status) => console.log('MIDI Status:', status));
+        MidiInputHandler.init((status) => {});
       }
 
       if (typeof CameraOrbitAnimator !== 'undefined') {
@@ -206,7 +212,6 @@ class Main {
           globalThis.baseController = this.baseController;
       }
 
-      // Safe environment-based handshake
       if (env && typeof env.requestKeystrokeControl === 'function') {
         env.requestKeystrokeControl((active) => {
           if (this.baseController) {
@@ -231,94 +236,237 @@ class Main {
       return this;
     }
 
-  
-
   destroy() {
-      console.log('[accuCad] destroy() called.');
+    console.log('[accuCad] destroy() called.');
 
-      // Close the P2P connection and dialog
-      if (this.baseController && this.baseController.p2pConnector) {
-        try {
-          this.baseController.p2pConnector.destroy();
-        } catch(e) {}
-      }
+    // Close the P2P connection and dialog
+    if (this.baseController && this.baseController.p2pConnector) {
+      try {
+        this.baseController.p2pConnector.destroy();
+      } catch (e) {}
+    }
 
-      // Surgically close the active keyboard shortcut help dialog if present
-      if (this.baseController && this.baseController._helpDialog) {
+    // Surgically close the active keyboard shortcut help dialog if present
+    if (this.baseController && this.baseController._helpDialog) {
+      try {
+        this.baseController._helpDialog.close();
+      } catch (e) {}
+      this.baseController._helpDialog = null;
+    }
+
+    // Surgically close camera oscillation dialog
+    if (typeof CameraOrbitAnimator !== 'undefined') {
+      try {
+        CameraOrbitAnimator.stop();
+      } catch (e) {}
+    }
+
+    if (this.app && typeof this.app.destroy === 'function') {
+      this.app.destroy();
+    }
+
+    if (this.canvasContainer) {
+      this.canvasContainer.remove();
+    }
+
+    if (this.layoutWrapper) {
+      this.layoutWrapper.remove();
+    }
+
+    if (
+      typeof KeyCommandHandler !== 'undefined' &&
+      typeof KeyCommandHandler.destroy === 'function'
+    ) {
+      KeyCommandHandler.destroy();
+    }
+
+    // Surgically clean up View Controls
+    if (typeof ViewControlsManager !== 'undefined') {
+      try {
+        ViewControlsManager.destroy();
+      } catch (e) {}
+    }
+
+    if (this.baseController) {
+      if (
+        this.baseController.accuDrawDiagnostics &&
+        this.baseController.accuDrawDiagnostics.dialog
+      ) {
         try {
-          this.baseController._helpDialog.close();
+          this.baseController.accuDrawDiagnostics.dialog.close();
         } catch (e) {}
-        this.baseController._helpDialog = null;
       }
-
-      // Surgically close camera oscillation dialog
-      if (typeof CameraOrbitAnimator !== 'undefined') {
+      if (
+        this.baseController.accuDrawTestHarness &&
+        typeof this.baseController.accuDrawTestHarness.destroy === 'function'
+      ) {
         try {
-          CameraOrbitAnimator.stop(); 
+          this.baseController.accuDrawTestHarness.destroy();
         } catch (e) {}
       }
+      if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+        if (typeof this.baseController.accuDraw.ui.destroy === 'function') {
+          try {
+            this.baseController.accuDraw.ui.destroy();
+          } catch (e) {}
+        } else {
+          try {
+            this.baseController.accuDraw.ui.hide();
+          } catch (e) {}
+        }
+      }
+    }
 
-      if (this.app && typeof this.app.destroy === 'function') {
-        this.app.destroy();
-      }
-      
-      if (this.canvasContainer) {
-        this.canvasContainer.remove();
+    this.rootElement = null;
+    this.canvasContainer = null;
+    this.layoutWrapper = null;
+    this.app = null;
+    this.baseController = null;
+    this.threeDView = null;
+  }
+
+  _setupToolSettingsWatcher() {
+    this.toolSliders = {};
+    const render = () => {
+      if (!this.sidePanel || !this.sidePanel.toolSettingsSection) return;
+      this.sidePanel.toolSettingsSection.innerHTML = '';
+      this.toolSliders = {};
+
+      const controller = this.baseController;
+      if (!controller) return;
+
+      const activeCmd = controller.activeCommand;
+      const cmdName = activeCmd
+        ? activeCmd.constructor
+          ? activeCmd.constructor.name
+          : 'Unknown'
+        : 'None';
+
+      const friendlyNames = {
+        DrawRectangleCommand: 'Rectangle Tool',
+        DrawArcCommand: 'Arc Tool',
+        DrawPathCommand: 'Rounding Tool',
+        DrawCurveCommand: 'Bezier Curve Tool',
+        DrawCircleCommand: 'Circle Tool',
+        DrawCapsuleCommand: 'Capsule Tool',
+        ElementPickCommand: 'Selection Tool',
+      };
+      const displayName =
+        friendlyNames[cmdName] || cmdName.replace('Command', ' Tool');
+
+      // Dynamically update the main section summary header directly
+      if (
+        this.sidePanel.sectionObjects &&
+        this.sidePanel.sectionObjects['setup']
+      ) {
+        this.sidePanel.sectionObjects['setup'].header.textContent = displayName;
       }
 
-      if (this.layoutWrapper) {
-        this.layoutWrapper.remove();
+      // Drawing Color using custom ColorPicker
+      const colorContainer = document.createElement('div');
+      colorContainer.style.cssText =
+        'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
+
+      const colorLabel = document.createElement('div');
+      colorLabel.style.cssText =
+        'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+      colorLabel.textContent = 'Drawing Color';
+
+      const swatch = document.createElement('div');
+      swatch.className = 'drawing-color-swatch-picker';
+      swatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
+        controller.currentColor || '#00ff00'
+      }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+
+      // Save direct reference on the controller to completely avoid DOM query lookups
+      controller.colorSwatchPicker = swatch;
+
+      swatch.onclick = (e) => {
+        e.stopPropagation();
+        const picker = new ColorPicker();
+        picker.openSmartPicker(
+          swatch,
+          controller.currentColor || '#00ff00',
+          (newColor) => {
+            swatch.style.backgroundColor = newColor;
+            controller.setColor(newColor);
+            controller.refreshMousePosition();
+          }
+        );
+      };
+
+      colorContainer.appendChild(colorLabel);
+      colorContainer.appendChild(swatch);
+      this.sidePanel.toolSettingsSection.appendChild(colorContainer);
+
+      const widthSlider = new SliderControl({
+        label: 'line thickness',
+        min: 1,
+        max: 20,
+        initialValue: controller.lineWidth || 2,
+        showValue: true,
+        callback: (val) => {
+          controller.setLineWidth(Math.round(val));
+          controller.refreshMousePosition();
+        },
+      });
+      this.sidePanel.toolSettingsSection.appendChild(widthSlider.container);
+      this.toolSliders['lineWidth'] = widthSlider;
+
+      const supportsControlValue = [
+        'DrawPathCommand',
+        'DrawCapsuleCommand',
+      ].includes(cmdName);
+
+      if (supportsControlValue) {
+        let label = 'tool custom parameter';
+        let minVal = 0.05,
+          maxVal = 2.0;
+        if (cmdName === 'DrawPathCommand') {
+          label = 'rounding radius';
+          minVal = 0;
+          maxVal = 1.0;
+        } else if (cmdName === 'DrawCapsuleCommand') {
+          label = 'capsule radius';
+          minVal = 0.1;
+          maxVal = 1.5;
+        }
+
+        const controlValueSlider = new SliderControl({
+          label: label,
+          min: minVal,
+          max: maxVal,
+          initialValue: controller.commandControlValue || 0.25,
+          showValue: true,
+          callback: (val) => {
+            controller.commandControlValue = val;
+            controller.refreshMousePosition();
+          },
+        });
+        this.sidePanel.toolSettingsSection.appendChild(
+          controlValueSlider.container
+        );
+        this.toolSliders['commandControlValue'] = controlValueSlider;
       }
+
+      // Publish the sliders onto the baseController so ViewControls can reach them instantly
+      controller.toolSliders = this.toolSliders;
 
       if (
-        typeof KeyCommandHandler !== 'undefined' &&
-        typeof KeyCommandHandler.destroy === 'function'
+        window.ViewControlsManager &&
+        window.ViewControlsManager.instance &&
+        typeof window.ViewControlsManager.instance
+          ._updateSlidersHighlighting === 'function'
       ) {
-        KeyCommandHandler.destroy();
+        window.ViewControlsManager.instance._updateSlidersHighlighting();
       }
+    };
 
-      // Surgically clean up View Controls
-      if (typeof ViewControlsManager !== 'undefined') {
-        try {
-          ViewControlsManager.destroy();
-        } catch (e) {}
-      }
+    // Listen to the tool change event dynamically. (Completely eliminates the 500ms setInterval polling loop)
+    window.addEventListener('accucad-tool-changed', () => {
+      render();
+    });
 
-      if (this.baseController) {
-        if (
-          this.baseController.accuDrawDiagnostics &&
-          this.baseController.accuDrawDiagnostics.dialog
-        ) {
-          try {
-            this.baseController.accuDrawDiagnostics.dialog.close();
-          } catch (e) {}
-        }
-        if (
-          this.baseController.accuDrawTestHarness &&
-          typeof this.baseController.accuDrawTestHarness.destroy === 'function'
-        ) {
-          try {
-            this.baseController.accuDrawTestHarness.destroy();
-          } catch (e) {}
-        }
-        if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-          if (typeof this.baseController.accuDraw.ui.destroy === 'function') {
-            try {
-              this.baseController.accuDraw.ui.destroy();
-            } catch (e) {}
-          } else {
-            try {
-              this.baseController.accuDraw.ui.hide();
-            } catch (e) {}
-          }
-        }
-      }
-
-      this.rootElement = null;
-      this.canvasContainer = null;
-      this.layoutWrapper = null;
-      this.app = null;
-      this.baseController = null;
-      this.threeDView = null;
-    }
+    render();
+  }
 }

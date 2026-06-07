@@ -626,107 +626,92 @@ class EventHandlers {
     }
 
   static _processSingleLeftClick(controller, event) {
-    const screenSize = [
-      controller.domElement.clientWidth,
-      controller.domElement.clientHeight,
-    ];
+      const screenSize = [
+        controller.domElement.clientWidth,
+        controller.domElement.clientHeight,
+      ];
 
-    // 1. Establish the "Raw" point (before AccuDraw constraints)
-    let rawPointToUse = null;
+      // 1. Establish the "Raw" point (before AccuDraw constraints)
+      let rawPointToUse = null;
 
-    if (controller._tentativeOriginalPoint) {
-      // If we have a tentative point, THAT is our raw input.
-      // (Ignoring the Z-lock projection for a moment, as we want the
-      // AccuDrawLogic to be the single source of truth for constraints)
-      rawPointToUse = controller._tentativeOriginalPoint;
-    } else {
-      // Fallback: Calculate from Mouse Ray
-      const markerSize = controller.originMarker
-        ? controller.originMarker.options.size
-        : 1;
-      const livePointData = GeneratePoint.generate({
-        clientPoint: [event.clientX, event.clientY],
-        domElement: controller.domElement,
-        size: screenSize,
-        camera: controller.view.camera,
-        origin: controller.origin,
-        planeNormal: controller.rotationMatrix[2],
-        indexEnabled: controller.indexEnabled,
-        indexTolerance: controller.indexTolerance,
-        rotationMatrix: controller.rotationMatrix,
-        markerSize: markerSize,
-      });
-
-      rawPointToUse = livePointData.originProjectedPoint;
-
-      // Apply soft snap logic if index is active
-      if (
-        livePointData.indexedToAxis &&
-        livePointData.indexedPoint &&
-        !controller.accuDrawLogic?.isLocked.x && // Don't use soft snap if hard locked
-        !controller.accuDrawLogic?.isLocked.y
-      ) {
-        rawPointToUse = livePointData.indexedPoint;
-      }
-    }
-
-    // 2. Apply AccuDraw Constraints
-    // This ensures the point we click is EXACTLY the point shown by the Mini-Jack.
-    let finalPoint = rawPointToUse;
-
-    if (controller.accuDrawLogic) {
-      // We pass the raw point as both arguments or just the second?
-      // getConstrainedPoint(mouse, tentative).
-      // If we came from tentative, we pass it as 2nd arg to ensure priority inside the logic.
-      // If we came from mouse, we pass it as 1st arg.
       if (controller._tentativeOriginalPoint) {
-        finalPoint = controller.accuDrawLogic.getConstrainedPoint(
-          null,
-          rawPointToUse
-        );
+        // If we have a tentative point, THAT is our raw input.
+        // (Ignoring the Z-lock projection for a moment, as we want the
+        // AccuDrawLogic to be the single source of truth for constraints)
+        rawPointToUse = controller._tentativeOriginalPoint;
       } else {
+        // Fallback: Calculate from Mouse Ray
+        const markerSize = controller.originMarker
+          ? controller.originMarker.options.size
+          : 1;
+        const livePointData = GeneratePoint.generate({
+          clientPoint: [event.clientX, event.clientY],
+          domElement: controller.domElement,
+          size: screenSize,
+          camera: controller.view.camera,
+          origin: controller.origin,
+          planeNormal: controller.rotationMatrix[2],
+          indexEnabled: controller.indexEnabled,
+          indexTolerance: controller.indexTolerance,
+          rotationMatrix: controller.rotationMatrix,
+          markerSize: markerSize,
+        });
+
+        rawPointToUse = livePointData.originProjectedPoint;
+
+        // Apply soft snap/indexing logic if index is active.
+        // Bypassing this when isLocked is active causes the point to drift on click.
+        if (livePointData.indexedToAxis && livePointData.indexedPoint) {
+          rawPointToUse = livePointData.indexedPoint;
+        }
+      }
+
+      // 2. Apply AccuDraw Constraints
+      // This ensures the point we click matches what is shown by the index guide and Mini-Jack.
+      let finalPoint = rawPointToUse;
+
+      if (controller.accuDrawLogic) {
         finalPoint = controller.accuDrawLogic.getConstrainedPoint(
           rawPointToUse,
-          null
+          controller._tentativeOriginalPoint
         );
       }
-    }
 
-    // 3. Dispatch to Command
-    if (controller.activeCommand?.onPoint) {
-      controller.activeCommand.onPoint({
-        mode: 'click',
-        event: event,
-        screenPoint: [event.clientX, event.clientY],
-        rawPoint: rawPointToUse,
-        point: finalPoint,
-        screenSize: screenSize,
-        keys: { ctrl: event.altKey, shift: event.shiftKey },
-        view: controller.view.transformData,
-        indexedToAxis: null,
-      });
-
-      controller._storePoint({
-        pointData: {
-          targetProjectedPoint: finalPoint,
-          originProjectedPoint: finalPoint,
-          indexedPoint: finalPoint,
+      // 3. Dispatch to Command
+      if (controller.activeCommand?.onPoint) {
+        controller.activeCommand.onPoint({
+          mode: 'click',
+          event: event,
+          screenPoint: [event.clientX, event.clientY],
+          rawPoint: rawPointToUse,
+          point: finalPoint,
+          screenSize: screenSize,
+          keys: { ctrl: event.altKey, shift: event.shiftKey },
+          view: controller.view.transformData,
           indexedToAxis: null,
-        },
-        view: controller.view.transformData,
-        screenSize: screenSize,
-        keys: { ctrl: event.altKey, shift: event.shiftKey },
-      });
-    }
+        });
 
-    // --- RESET LOGIC ---
-    // ALWAYS clear tentative point on click.
-    TentativePointHandler._clearTentativePoint(controller);
+        controller._storePoint({
+          pointData: {
+            targetProjectedPoint: finalPoint,
+            originProjectedPoint: finalPoint,
+            indexedPoint: finalPoint,
+            indexedToAxis: null,
+          },
+          view: controller.view.transformData,
+          screenSize: screenSize,
+          keys: { ctrl: event.altKey, shift: event.shiftKey },
+        });
+      }
 
-    if (controller.accuDrawLogic) {
-      controller.accuDrawLogic.reset();
+      // --- RESET LOGIC ---
+      // ALWAYS clear tentative point on click.
+      TentativePointHandler._clearTentativePoint(controller);
+
+      if (controller.accuDrawLogic) {
+        controller.accuDrawLogic.reset();
+      }
     }
-  }
 
   static handleMouseUp(controller, event) {
       if (event.button === 0) {

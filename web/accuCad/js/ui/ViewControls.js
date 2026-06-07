@@ -14,6 +14,11 @@ class ViewControls {
 
       this.spinnerMoveMult = 5;
       this.spinnerDivider = 20;
+
+      // Track active P2P control mode & last selected slider indexes independently for remembrance
+      this.p2pControlMode = 'compass'; // 'compass' or 'tool'
+      this.lastCompassSelectedIndex = 0;
+      this.lastToolSelectedIndex = 0;
     }
 
   toggle() {
@@ -27,23 +32,32 @@ class ViewControls {
   }
 
   show() {
-    if (!this.compassBox) this._createCompassControls();
-    if (!this.spinnerBox) this._createSpinnerControls();
-
-    this.compassBox.element.style.display = 'block';
-    this.spinnerBox.element.style.display = 'block';
-  }
+      if (!this.compassBox) this._createCompassControls();
+      this.compassBox.element.style.display = 'block';
+      if (this.spinnerBox) {
+        this.spinnerBox.element.style.display = 'flex';
+        this.spinnerBox.element.style.opacity = '1';
+        this.spinnerBox.element.style.transform = 'translateX(-50%) translateY(0)';
+      }
+    }
 
   hide() {
-    if (this.compassBox) this.compassBox.element.style.display = 'none';
-    if (this.spinnerBox) this.spinnerBox.element.style.display = 'none';
-  }
+      if (this.compassBox) this.compassBox.element.style.display = 'none';
+      if (this.spinnerBox) {
+        this.spinnerBox.element.style.display = 'none';
+        this.spinnerBox.element.style.opacity = '0';
+        this.spinnerBox.element.style.transform = 'translateX(-50%) translateY(20px)';
+      }
+    }
 
   _createCompassControls() {
       const hostContainer = this.baseController?.domElement?.parentElement || document.body;
 
       this.rotations = { x: 0, y: 0, z: 0 };
       const savedSettings = this._loadSettings();
+
+      // Programmatic setting load start
+      this._isProgrammaticReset = true;
 
       if (this.customCompassContainer) {
         this.compassBox = {
@@ -52,8 +66,7 @@ class ViewControls {
         };
       } else {
         const parentHeight = hostContainer.clientHeight || window.innerHeight;
-        const spinnerTop = Math.max(20, parentHeight - 85);
-        const compassTop = Math.max(20, spinnerTop - 425);
+        const compassTop = Math.max(20, parentHeight - 485);
 
         this.compassBox = UITools.makeDialog({
           stateId: 'accuCad-compassBox',
@@ -72,8 +85,9 @@ class ViewControls {
         this.compassBox.contentElement.style.padding = '4px 6px 6px 6px';
       }
 
+      // Compass Size slider renamed to "size"
       this.sliders.size = new SliderControl({
-        label: 'compass size',
+        label: 'size',
         min: 10,
         max: 500,
         initialValue: savedSettings.size !== undefined ? savedSettings.size : 60,
@@ -86,18 +100,39 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.size.container);
 
-      this.sliders.hue = new SliderControl({
-        label: 'color',
-        min: 0,
-        max: 360,
-        initialValue: savedSettings.hue !== undefined ? savedSettings.hue : 0,
-        showValue: true,
-        callback: (val) => {
-          this._applyCompassSetting('color', (val + 30) % 360);
-          this._saveSetting('hue', val);
-        },
-      });
-      this.compassBox.contentElement.appendChild(this.sliders.hue.container);
+      // Dedicated Swatch Picker for Compass Color - Separated cleanly from drawing color
+      const compassColorContainer = document.createElement('div');
+      compassColorContainer.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
+      
+      const compassColorLabel = document.createElement('div');
+      compassColorLabel.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+      compassColorLabel.textContent = 'color';
+      
+      const compassSwatch = document.createElement('div');
+      compassSwatch.className = 'compass-color-swatch-picker';
+      const initialCompassColor = savedSettings.hexColor || '#88ccff';
+      this._compassColorHex = initialCompassColor;
+      compassSwatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${initialCompassColor}; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+      this.compassSwatch = compassSwatch;
+
+      compassSwatch.onclick = (e) => {
+        e.stopPropagation();
+        const picker = new ColorPicker();
+        picker.openSmartPicker(compassSwatch, this._compassColorHex || '#88ccff', (newColor) => {
+          compassSwatch.style.backgroundColor = newColor;
+          this._compassColorHex = newColor;
+          
+          const rgbNum = this._hexToRgbNum(newColor);
+          if (this.baseController.accuDraw?.update) {
+            this.baseController.accuDraw.update({ color: rgbNum });
+          }
+          this._saveSetting('hexColor', newColor);
+        });
+      };
+      
+      compassColorContainer.appendChild(compassColorLabel);
+      compassColorContainer.appendChild(compassSwatch);
+      this.compassBox.contentElement.appendChild(compassColorContainer);
 
       this.sliders.opa = new SliderControl({
         label: 'transparency',
@@ -212,37 +247,82 @@ class ViewControls {
       };
 
       this.compassBox.contentElement.appendChild(diagBtn);
+
+      const spinnerBtn = makeElement('button', {
+        className: 'accudraw-diag-btn',
+        style: {
+          display: 'block',
+          width: '100%',
+          padding: '8px',
+          marginTop: '8px',
+          background: '#0a0a0d',
+          border: '1px dashed #4af',
+          color: '#4af',
+          fontFamily: 'monospace',
+          fontSize: '11px',
+          fontWeight: 'bold',
+          textTransform: 'uppercase',
+          borderRadius: '4px',
+          cursor: 'pointer',
+          boxShadow: '0 2px 6px rgba(68,170,255,0.15)',
+          transition: 'all 0.15s ease'
+        },
+        onclick: () => {
+          if (!this.spinnerBox) {
+            this._createSpinnerControls();
+          } else {
+            const show = this.spinnerBox.element.style.display === 'none';
+            this.spinnerBox.element.style.display = show ? 'flex' : 'none';
+            this.spinnerBox.element.style.opacity = show ? '1' : '0';
+            this.spinnerBox.element.style.transform = show ? 'translateX(-50%) translateY(0)' : 'translateX(-50%) translateY(20px)';
+          }
+        }
+      }, 'Toggle View Spinners ▞');
+
+      spinnerBtn.onmouseover = () => {
+        spinnerBtn.style.background = '#0e1a24';
+        spinnerBtn.style.boxShadow = '0 2px 10px rgba(68,170,255,0.3)';
+      };
+      spinnerBtn.onmouseout = () => {
+        spinnerBtn.style.background = '#0a0a0d';
+        spinnerBtn.style.boxShadow = '0 2px 6px rgba(68,170,255,0.15)';
+      };
+
+      this.compassBox.contentElement.appendChild(spinnerBtn);
+
+      // Release initial setup setting lock
+      this._isProgrammaticReset = false;
     }
 
   _createSpinnerControls() {
       const hostContainer = this.baseController?.domElement?.parentElement || document.body;
-      const parentHeight = hostContainer.clientHeight || window.innerHeight;
-      const width = 690;
-      
-      const left = 20;
-      const top = Math.max(20, parentHeight - 85);
 
-      this.spinnerBox = UITools.makeDialog({
-        stateId: 'accuCad-spinnerBox',
-        title: 'View Spinners',
-        width: width + 'px',
-        height: '55px',
-        position: [left, top],
-        titleBarAtBottom: false,
-        transparent: true,
-        allowMaximize: false,
-        noPadding: true,
-        appendTo: hostContainer,
-      });
-
-      this.spinnerBox.contentElement.style.display = 'flex';
-      this.spinnerBox.contentElement.style.flexDirection = 'row';
-      this.spinnerBox.contentElement.style.overflow = 'hidden';
-      this.spinnerBox.contentElement.style.padding = '0';
+      // Bottom-floating translucent spinners container dock replacing the heavy Dialog box
+      const spinnerBar = document.createElement('div');
+      spinnerBar.id = 'accucad-floating-spinners';
+      spinnerBar.style.cssText = `
+        position: absolute;
+        bottom: 12px;
+        left: 50%;
+        transform: translateX(-50%) translateY(0);
+        display: flex;
+        flex-direction: row;
+        background: rgba(20, 20, 24, 0.85);
+        border: 1.5px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        padding: 4px 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(12px);
+        z-index: 10005;
+        gap: 10px;
+        align-items: center;
+        opacity: 1;
+        transition: all 0.25s cubic-bezier(0.2, 0.8, 0.2, 1);
+      `;
 
       const create = (key, label, cb, color) => {
         this.spinners[key] = new SpinnerWidget(label, cb, color);
-        this.spinners[key].appendTo(this.spinnerBox.contentElement);
+        this.spinners[key].appendTo(spinnerBar);
       };
 
       create('moveX', 'move X', (inc) => this._transformView(inc * this.spinnerMoveMult, 'dx'), [200, 0, 0]);
@@ -253,6 +333,15 @@ class ViewControls {
       create('diagonal', 'diagonal', (inc) => this._transformView(inc * this.spinnerMoveMult, 'ddiag'));
       create('perspective', 'perspective', (inc) => this._transformView(inc, 'dfov'));
       create('accudraw Z', 'accudraw Z', (inc) => this._transformView(inc, 'accudrawZ'));
+
+      hostContainer.appendChild(spinnerBar);
+      this.spinnerBox = {
+        element: spinnerBar,
+        close: () => {
+          spinnerBar.remove();
+          this.spinnerBox = null;
+        }
+      };
     }
 
   _hueToRgb(h) {
@@ -326,7 +415,6 @@ class ViewControls {
   }
 
   _applyCompassSetting(name, value) {
-      // Bypass settings updates if they are triggered by a programmatic slider reset
       if (this._isProgrammaticReset) return;
 
       const controller = this.baseController;
@@ -339,11 +427,6 @@ class ViewControls {
         const adjustedSize = value * (1.5 / 300);
         if (target?.setSizeAnimated) {
           target.setSizeAnimated(adjustedSize, 0);
-        }
-      } else if (name === 'color') {
-        const colorVal = this._hueToRgb(value);
-        if (target?.setColorAnimated) {
-          target.setColorAnimated(colorVal, 0);
         }
       } else if (name === 'square or circle') {
         if (target?.setSquircleAnimated) {
@@ -443,8 +526,14 @@ class ViewControls {
       if (settings.size !== undefined) {
         this._applyCompassSetting('size', settings.size);
       }
-      if (settings.hue !== undefined) {
-        this._applyCompassSetting('color', (settings.hue + 30) % 360);
+      if (settings.hexColor !== undefined) {
+        this._compassColorHex = settings.hexColor;
+        if (this.compassSwatch) {
+          this.compassSwatch.style.backgroundColor = settings.hexColor;
+        }
+        if (this.baseController.accuDraw?.update) {
+          this.baseController.accuDraw.update({ color: this._hexToRgbNum(settings.hexColor) });
+        }
       }
       if (settings.opa !== undefined) {
         this._applyCompassSetting('transparency', settings.opa);
@@ -486,31 +575,40 @@ class ViewControls {
     }
 
   highlightCompassBox(highlight) {
-      if (this.compassBox && this.compassBox.element) {
-        if (highlight) {
-          this.compassBox.element.style.boxShadow = '0 0 25px #00e676';
-          this.compassBox.element.style.borderColor = '#00e676';
-          this.compassBox.element.style.borderWidth = '2px';
-          this.compassBox.element.style.transition = 'all 0.3s ease';
-          this._updateSlidersHighlighting();
-        } else {
-          this.compassBox.element.style.boxShadow = '';
-          this.compassBox.element.style.borderColor = '';
-          this.compassBox.element.style.borderWidth = '';
-          this._clearSlidersHighlighting();
-        }
-      }
+      // Map directly to highlightActiveControlBox to unify all code execution paths
+      this.highlightActiveControlBox(highlight ? 'sliders' : 'tool');
     }
 
   selectSliderRelative(change) {
-      const list = this.getNavigatableSliders();
-      if (list.length === 0) return;
+      const allSliders = this.getNavigatableSliders();
+      if (allSliders.length === 0) return;
 
-      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
-        this.selectedSliderIndex = 0;
+      const activeMode = this.p2pControlMode || 'compass';
+      const activeList = allSliders.filter(item => item.type === activeMode);
+      if (activeList.length === 0) return;
+
+      // Localize selection inside this specific active box
+      const globalIndex = this.selectedSliderIndex || 0;
+      let localIndex = activeList.findIndex(item => {
+        return allSliders.indexOf(item) === globalIndex;
+      });
+      if (localIndex === -1) localIndex = 0;
+
+      // Restrict up/down cycling solely to this active list (enforcing wrapping)
+      const nextLocalIndex = (localIndex + change + activeList.length) % activeList.length;
+
+      // Remember selection index for this box
+      if (activeMode === 'compass') {
+        this.lastCompassSelectedIndex = nextLocalIndex;
+      } else {
+        this.lastToolSelectedIndex = nextLocalIndex;
       }
-      this.selectedSliderIndex = (this.selectedSliderIndex + change + list.length) % list.length;
-      this._updateSlidersHighlighting();
+
+      const targetItem = activeList[nextLocalIndex];
+      const targetGlobalIndex = allSliders.indexOf(targetItem);
+      this.setSelectedSliderIndex(targetGlobalIndex);
+
+      this.recenterDragLineOnActive();
     }
 
   adjustSelectedSlider(ratio) {
@@ -524,6 +622,49 @@ class ViewControls {
       if (item && this.sliderStartValue !== undefined) {
         const slider = item.slider;
         const key = item.key;
+        
+        if (key === 'drawingColor') {
+          let newHue = (this.sliderStartValue + ratio * 360) % 360;
+          if (newHue < 0) newHue += 360;
+
+          const hsv = this._hexToHsv(this.baseController.currentColor || '#00ff00');
+          const newHex = this._hsvToHex(newHue, hsv.s, hsv.v);
+
+          this.baseController.setColor(newHex);
+          if (this.baseController.colorSwatchPicker) {
+            this.baseController.colorSwatchPicker.style.backgroundColor = newHex;
+          }
+          
+          if (typeof ColorPicker !== 'undefined' && ColorPicker.activeInstance) {
+            ColorPicker.activeInstance.updateColorExternal(newHex);
+          }
+
+          this.baseController.refreshMousePosition();
+          return;
+        }
+
+        if (key === 'compassColor') {
+          let newHue = (this.sliderStartValue + ratio * 360) % 360;
+          if (newHue < 0) newHue += 360;
+
+          const hsv = this._hexToHsv(this._compassColorHex || '#88ccff');
+          const newHex = this._hsvToHex(newHue, hsv.s, hsv.v);
+
+          this._compassColorHex = newHex;
+          if (this.compassSwatch) {
+            this.compassSwatch.style.backgroundColor = newHex;
+          }
+          if (this.baseController.accuDraw?.update) {
+            this.baseController.accuDraw.update({ color: this._hexToRgbNum(newHex) });
+          }
+          this._saveSetting('hexColor', newHex);
+
+          if (typeof ColorPicker !== 'undefined' && ColorPicker.activeInstance) {
+            ColorPicker.activeInstance.updateColorExternal(newHex);
+          }
+          return;
+        }
+
         const rangeInfo = this._getSliderRange(key, slider);
         const min = rangeInfo.min;
         const max = rangeInfo.max;
@@ -539,18 +680,21 @@ class ViewControls {
 
   _updateSlidersHighlighting() {
       const list = this.getNavigatableSliders();
+      const activeMode = this.p2pControlMode || 'compass';
+
       list.forEach((item, idx) => {
         const slider = item.slider;
         if (slider && slider.container) {
-          slider.container.style.transition = 'all 0.15s ease';
-          if (idx === this.selectedSliderIndex) {
-            slider.container.style.borderLeft = '4px solid #00e676';
-            slider.container.style.background = 'rgba(0, 230, 118, 0.15)';
-            slider.container.style.paddingLeft = '6px';
-          } else {
-            slider.container.style.borderLeft = '';
-            slider.container.style.background = '';
-            slider.container.style.paddingLeft = '';
+          slider.container.style.setProperty('transition', 'all 0.15s ease', 'important');
+          slider.container.style.removeProperty('border-left');
+          slider.container.style.removeProperty('background');
+          slider.container.style.removeProperty('padding-left');
+
+          // Only apply green accent trims if the item belongs to the active box
+          if (idx === this.selectedSliderIndex && item.type === activeMode) {
+            slider.container.style.setProperty('border-left', '4px solid #00e676', 'important');
+            slider.container.style.setProperty('background', 'rgba(0, 230, 118, 0.15)', 'important');
+            slider.container.style.setProperty('padding-left', '6px', 'important');
           }
         }
       });
@@ -569,6 +713,15 @@ class ViewControls {
     }
 
   startSliderAdjustment() {
+      if (this.hoverIndicatorLine) {
+        this.hoverIndicatorLine.style.opacity = '0';
+        setTimeout(() => {
+          if (this.hoverIndicatorLine && this.hoverIndicatorLine.style.opacity === '0') {
+            this.hoverIndicatorLine.style.display = 'none';
+          }
+        }, 150);
+      }
+
       const list = this.getNavigatableSliders();
       if (list.length === 0) return;
 
@@ -578,6 +731,31 @@ class ViewControls {
       const item = list[this.selectedSliderIndex];
       if (item) {
         const slider = item.slider;
+        
+        if (item.key === 'drawingColor') {
+          const hsv = this._hexToHsv(this.baseController.currentColor || '#00ff00');
+          this.sliderStartValue = hsv.h;
+          if (this.baseController.colorSwatchPicker) {
+            const activePicker = document.querySelector('.smart-picker-surface');
+            if (!activePicker) {
+              this.baseController.colorSwatchPicker.click();
+            }
+          }
+          return;
+        }
+
+        if (item.key === 'compassColor') {
+          const hsv = this._hexToHsv(this._compassColorHex || '#88ccff');
+          this.sliderStartValue = hsv.h;
+          if (this.compassSwatch) {
+            const activePicker = document.querySelector('.smart-picker-surface');
+            if (!activePicker) {
+              this.compassSwatch.click();
+            }
+          }
+          return;
+        }
+
         let val = slider.value;
         if (val === undefined) {
           if (slider.options && slider.options.value !== undefined) {
@@ -645,52 +823,43 @@ class ViewControls {
       };
     }
 
-  _showDiagnosticHud(key, startValue, ratio, newVal, min, max) {
-      const inlineContainer = document.getElementById('p2p-diag-container');
-      const percentMoved = (ratio * 100).toFixed(1);
-      
-      // Render in-dialog if active, otherwise fallback to floating
-      if (inlineContainer && inlineContainer.style.display !== 'none') {
-        inlineContainer.innerHTML = `
-          <div style="color:#00ff66;font-weight:bold;border-bottom:1px solid #222;padding-bottom:2px;margin-bottom:4px;">P2P DIAGNOSTICS</div>
-          Key:       <span style="color:#fff">${key}</span><br>
-          Start Val: <span style="color:#fff">${startValue.toFixed(4)}</span><br>
-          Drag:      <span style="color:#00ff66">${percentMoved}%</span><br>
-          Target:    <span style="color:#fff">${newVal.toFixed(4)}</span><br>
-          Range:     <span style="color:#888">[${min} - ${max}]</span>
-        `;
-        return;
-      }
-
-      let hud = document.getElementById('p2p-diagnostic-hud');
-      if (!hud) {
-        hud = document.createElement('div');
-        hud.id = 'p2p-diagnostic-hud';
-        hud.style.cssText = 'position: absolute; top: 80px; left: 50%; transform: translateX(-50%); background: rgba(15,23,42,0.95); color: #38bdf8; border: 1.5px solid #0284c7; border-radius: 6px; padding: 12px 18px; font-family: monospace; font-size: 13px; z-index: 999999; pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.5); line-height: 1.5; min-width: 250px; transition: opacity 0.15s ease;';
-        document.body.appendChild(hud);
-      }
-      hud.innerHTML = `
-        <div style="color:#00ff66;font-weight:bold;margin-bottom:4px;border-bottom:1px solid #334155;padding-bottom:2px;">P2P SLIDER DIAGNOSTICS</div>
-        <div>Active Key:  <span style="color:#fff">${key}</span></div>
-        <div>Start Val:  <span style="color:#fff">${startValue.toFixed(4)}</span></div>
-        <div>Drag Moved: <span style="color:#00ff66">${percentMoved}%</span></div>
-        <div>Target Val: <span style="color:#fff">${newVal.toFixed(4)}</span></div>
-        <div>Range:      <span style="color:#888">[${min} to ${max}]</span></div>
-      `;
-      hud.style.display = 'block';
-      hud.style.opacity = '1';
-      
-      clearTimeout(hud.timeoutId);
-      hud.timeoutId = setTimeout(() => {
-        hud.style.opacity = '0';
-        setTimeout(() => { if (hud.style.opacity === '0') hud.style.display = 'none'; }, 300);
-      }, 2000);
-    }
+  
 
   getNavigatableSliders() {
       const list = [];
-      const compassKeys = ['size', 'hue', 'opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
-      compassKeys.forEach(key => {
+      
+      // 1. Size Slider (First visually in Compass)
+      if (this.sliders.size) {
+        list.push({ key: 'size', slider: this.sliders.size, type: 'compass' });
+      }
+      
+      // 2. Compass Color Swatch (Second visually in Compass!)
+      if (this.compassSwatch) {
+        list.push({
+          key: 'compassColor',
+          slider: {
+            container: this.compassSwatch.parentElement || this.compassSwatch,
+            value: this._hexToHsv(this._compassColorHex || '#88ccff').h,
+            setValue: (val) => {
+              const hsv = this._hexToHsv(this._compassColorHex || '#88ccff');
+              const newHex = this._hsvToHex(val % 360, hsv.s, hsv.v);
+              this._compassColorHex = newHex;
+              if (this.compassSwatch) {
+                this.compassSwatch.style.backgroundColor = newHex;
+              }
+              if (this.baseController.accuDraw?.update) {
+                this.baseController.accuDraw.update({ color: this._hexToRgbNum(newHex) });
+              }
+              this._saveSetting('hexColor', newHex);
+            }
+          },
+          type: 'compass'
+        });
+      }
+
+      // 3. Other Compass Sliders in exact physical layout order
+      const remainingKeys = ['opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      remainingKeys.forEach(key => {
         if (this.sliders[key]) {
           list.push({
             key: key,
@@ -700,8 +869,33 @@ class ViewControls {
         }
       });
 
-      if (this.baseController?.sidePanel?.toolSliders) {
-        const toolSliders = this.baseController.sidePanel.toolSliders;
+      // 4. Drawing Color Swatch (First visually in Tool Settings)
+      const swatchPicker = this.baseController?.colorSwatchPicker;
+      if (swatchPicker) {
+        const hsv = this._hexToHsv(this.baseController.currentColor || '#00ff00');
+        list.push({
+          key: 'drawingColor',
+          slider: {
+            container: swatchPicker.parentElement || swatchPicker,
+            value: hsv.h,
+            setValue: (val) => {
+              const hsvCurrent = this._hexToHsv(this.baseController.currentColor || '#00ff00');
+              const newHex = this._hsvToHex(val % 360, hsvCurrent.s, hsvCurrent.v);
+              this.baseController.setColor(newHex);
+              if (this.baseController.colorSwatchPicker) {
+                this.baseController.colorSwatchPicker.style.backgroundColor = newHex;
+              }
+              this.baseController.refreshMousePosition();
+            }
+          },
+          type: 'tool'
+        });
+      }
+
+      // 5. Remaining Tool Sliders
+      const sidePanel = this.baseController?.sidePanel;
+      const toolSliders = this.baseController?.toolSliders || sidePanel?.toolSliders;
+      if (toolSliders) {
         Object.entries(toolSliders).forEach(([key, slider]) => {
           if (slider) {
             list.push({
@@ -712,7 +906,355 @@ class ViewControls {
           }
         });
       }
+
       return list;
+    }
+
+  selectSliderAbsolute(index) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+      this.selectedSliderIndex = Math.max(0, Math.min(list.length - 1, index));
+      this._updateSlidersHighlighting();
+    }
+
+  handleSliderDragStart(mode) {
+      this.p2pControlMode = mode === 'sliders' ? 'compass' : (mode || 'compass');
+      
+      const sidePanel = this.baseController?.sidePanel;
+      if (!sidePanel) return;
+
+      const parent = this.p2pControlMode === 'compass' 
+        ? sidePanel.sections['compass']
+        : sidePanel.sections['setup'];
+        
+      if (!parent) return;
+
+      // Subtle, faint horizontal gray dashed indicator
+      if (!this.hoverIndicatorLine) {
+        this.hoverIndicatorLine = document.createElement('div');
+        this.hoverIndicatorLine.id = 'p2p-hover-indicator-line';
+        this.hoverIndicatorLine.style.cssText = 'position: fixed; left: 12px; right: 12px; height: 1px; border-top: 1.2px dashed rgba(255, 255, 255, 0.25); pointer-events: none; z-index: 999999; opacity: 0; transition: opacity 0.15s ease;';
+      }
+
+      if (this.hoverIndicatorLine.parentElement !== document.body) {
+        document.body.appendChild(this.hoverIndicatorLine);
+      }
+
+      const allSliders = this.getNavigatableSliders();
+      this.activeSlidersForDrag = allSliders.filter(item => {
+        return item.type === this.p2pControlMode;
+      });
+
+      const N = this.activeSlidersForDrag.length;
+      if (N === 0) return;
+
+      const globalIndex = this.selectedSliderIndex || 0;
+      let localIndex = this.activeSlidersForDrag.findIndex(item => {
+        return allSliders.indexOf(item) === globalIndex;
+      });
+      if (localIndex === -1) {
+        localIndex = 0;
+        this.selectedSliderIndex = allSliders.indexOf(this.activeSlidersForDrag[0]);
+        this._updateSlidersHighlighting();
+      }
+      this.dragLocalIndex = localIndex;
+
+      // Extract viewport offsets cleanly
+      const firstSlider = this.activeSlidersForDrag[0].slider.container;
+      const lastSlider = this.activeSlidersForDrag[N - 1].slider.container;
+
+      const firstRect = firstSlider.getBoundingClientRect();
+      const lastRect = lastSlider.getBoundingClientRect();
+
+      // Set boundary values to align exactly with the first and last slider centers
+      const firstCenterY = (firstRect.top + firstRect.bottom) / 2;
+      const lastCenterY = (lastRect.top + lastRect.bottom) / 2;
+
+      this.dragTotalHeight = lastCenterY - firstCenterY;
+      this.dragMinY = firstCenterY;
+      this.dragMaxY = lastCenterY;
+
+      const parentRect = parent.getBoundingClientRect();
+      this.hoverIndicatorLine.style.left = `${parentRect.left + 8}px`;
+      this.hoverIndicatorLine.style.width = `${parentRect.width - 16}px`;
+
+      const selectedSlider = this.activeSlidersForDrag[localIndex].slider.container;
+      const selectedRect = selectedSlider.getBoundingClientRect();
+
+      const centerY = (selectedRect.top + selectedRect.bottom) / 2;
+      this.dragStartCenterY = centerY;
+      this.dragCurrentY = centerY;
+
+      this.hoverIndicatorLine.style.top = `${centerY}px`;
+      this.hoverIndicatorLine.style.display = 'block';
+      this.hoverIndicatorLine.style.opacity = '1';
+
+      // (All coordinate capture diagnostic timers and print dumps removed cleanly as requested)
+    }
+
+  handleSliderDragMove(dy, phoneHeight) {
+      if (!this.hoverIndicatorLine || !this.activeSlidersForDrag) return;
+
+      const N = this.activeSlidersForDrag.length;
+      if (N === 0) return;
+
+      // Mathematically map the phone drag range to cover the entire height on host screen comfortably
+      const scale = phoneHeight ? (this.dragTotalHeight / (phoneHeight * 0.45)) : 1.8;
+      const hostDy = dy * scale;
+      
+      const targetY = Math.max(this.dragMinY, Math.min(this.dragMaxY, this.dragStartCenterY + hostDy));
+      this.dragCurrentY = targetY;
+
+      this.hoverIndicatorLine.style.top = `${targetY}px`;
+
+      // Find the closest slider based on current smooth indicator line Y position
+      let closestIdx = 0;
+      let minDistance = Infinity;
+
+      this.activeSlidersForDrag.forEach((item, idx) => {
+        const rect = item.slider.container.getBoundingClientRect();
+        const centerY = (rect.top + rect.bottom) / 2;
+        const dist = Math.abs(targetY - centerY);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = idx;
+        }
+      });
+
+      if (this.dragLocalIndex !== closestIdx) {
+        this.dragLocalIndex = closestIdx;
+        const allSliders = this.getNavigatableSliders();
+        const targetItem = this.activeSlidersForDrag[closestIdx];
+        
+        // Match by stable key identifier instead of referentially unstable object identity
+        const targetGlobalIndex = allSliders.findIndex(item => item.key === targetItem.key);
+        
+        // Update active index memory for the modes
+        if (this.p2pControlMode === 'compass') {
+          this.lastCompassSelectedIndex = closestIdx;
+        } else {
+          this.lastToolSelectedIndex = closestIdx;
+        }
+
+        this.setSelectedSliderIndex(targetGlobalIndex);
+      }
+    }
+
+  handleSliderDragEnd() {
+      if (this.hoverIndicatorLine) {
+        this.hoverIndicatorLine.style.opacity = '0';
+        
+        if (this.activeSlidersForDrag && this.activeSlidersForDrag[this.dragLocalIndex]) {
+          const selectedSlider = this.activeSlidersForDrag[this.dragLocalIndex].slider.container;
+          const selectedRect = selectedSlider.getBoundingClientRect();
+          const finalY = (selectedRect.top + selectedRect.bottom) / 2;
+          this.hoverIndicatorLine.style.top = `${finalY}px`;
+        }
+        
+        setTimeout(() => {
+          if (this.hoverIndicatorLine && this.hoverIndicatorLine.style.opacity === '0') {
+            this.hoverIndicatorLine.style.display = 'none';
+          }
+        }, 150);
+      }
+
+      // Close the ColorPicker popup smoothly on slider adjustment release
+      const activePicker = document.querySelector('.smart-picker-surface');
+      if (activePicker) {
+        activePicker.style.opacity = '0';
+        activePicker.style.transform = 'scale(0.8)';
+        setTimeout(() => activePicker.remove(), 200);
+      }
+    }
+
+  recenterDragLineOnActive() {
+      if (!this.hoverIndicatorLine || !this.activeSlidersForDrag) return;
+
+      const globalList = this.getNavigatableSliders();
+      const globalIndex = this.selectedSliderIndex || 0;
+
+      let localIndex = this.activeSlidersForDrag.findIndex(item => {
+        return globalList.indexOf(item) === globalIndex;
+      });
+      if (localIndex === -1) localIndex = 0;
+      this.dragLocalIndex = localIndex;
+
+      const selectedSlider = this.activeSlidersForDrag[localIndex].slider.container;
+      const selectedRect = selectedSlider.getBoundingClientRect();
+
+      const centerY = (selectedRect.top + selectedRect.bottom) / 2;
+      this.dragStartCenterY = centerY;
+      this.dragCurrentY = centerY;
+
+      this.hoverIndicatorLine.style.top = `${centerY}px`;
+    }
+
+  highlightActiveControlBox(mode) {
+      const mappedControlMode = mode === 'sliders' ? 'compass' : (mode === 'tool' ? 'tool' : 'compass');
+      const isModeChange = this.p2pControlMode !== mappedControlMode;
+      
+      this.p2pControlMode = mappedControlMode;
+      
+      const sidePanel = this.baseController?.sidePanel;
+      if (!sidePanel) {
+        return;
+      }
+
+      // Bypass DOM queries by extracting section elements directly from SidePanel reference registry
+      const compassObj = sidePanel.sectionObjects?.['compass'];
+      const compassBox = compassObj?.container;
+      const compassHeader = compassObj?.header;
+
+      const toolObj = sidePanel.sectionObjects?.['setup'];
+      const toolBox = toolObj?.container;
+      const toolHeader = toolObj?.header;
+
+      const applyHighlightStyle = (box, header, highlight) => {
+        if (!box) return;
+
+        if (highlight) {
+          box.classList.add('active-p2p-section');
+          
+          // Force high-priority inline styles to guarantee it glows visibly
+          box.style.setProperty('box-shadow', '0 0 25px rgba(0, 230, 118, 0.45)', 'important');
+          box.style.setProperty('border-color', '#00e676', 'important');
+          box.style.setProperty('border-width', '1.5px', 'important');
+          box.style.setProperty('border-style', 'solid', 'important');
+          box.style.setProperty('border-radius', '6px', 'important');
+          box.style.setProperty('background', 'rgba(0, 230, 118, 0.05)', 'important');
+          
+          if (header) {
+            header.style.setProperty('background', 'linear-gradient(90deg, rgba(0, 230, 118, 0.35), rgba(0, 230, 118, 0.06))', 'important');
+            header.style.setProperty('color', '#00ff66', 'important');
+            header.style.setProperty('text-shadow', '0 0 6px rgba(0, 255, 102, 0.8)', 'important');
+          }
+        } else {
+          box.classList.remove('active-p2p-section');
+          
+          box.style.removeProperty('box-shadow');
+          box.style.removeProperty('border-color');
+          box.style.removeProperty('border-width');
+          box.style.removeProperty('border-style');
+          box.style.removeProperty('border-radius');
+          box.style.removeProperty('background');
+          
+          if (header) {
+            header.style.removeProperty('background');
+            header.style.removeProperty('color');
+            header.style.removeProperty('text-shadow');
+          }
+        }
+      };
+
+      // Toggle glows and gradients exactly on the active folding card and title summarizer
+      if (this.p2pControlMode === 'compass') {
+        applyHighlightStyle(compassBox, compassHeader, true);
+        applyHighlightStyle(toolBox, toolHeader, false);
+      } else {
+        applyHighlightStyle(compassBox, compassHeader, false);
+        applyHighlightStyle(toolBox, toolHeader, true);
+      }
+
+      // Auto-snap selection index to the remembered element in that active box ONLY on mode changes
+      if (isModeChange) {
+        const allSliders = this.getNavigatableSliders();
+        const activeSliders = allSliders.filter(item => item.type === this.p2pControlMode);
+        if (activeSliders.length > 0) {
+          const rememberedLocalIdx = this.p2pControlMode === 'compass' 
+            ? (this.lastCompassSelectedIndex || 0)
+            : (this.lastToolSelectedIndex || 0);
+            
+          const clampedLocalIdx = Math.max(0, Math.min(activeSliders.length - 1, rememberedLocalIdx));
+          const targetIndex = allSliders.indexOf(activeSliders[clampedLocalIdx]);
+          
+          this.setSelectedSliderIndex(targetIndex);
+        } else {
+          this._updateSlidersHighlighting();
+        }
+      } else {
+        // If mode has not changed, simply refresh active slider highlighting to prevent resetting
+        this._updateSlidersHighlighting();
+      }
+    }
+
+  setSelectedSliderIndex(index) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      const newIndex = Math.max(0, Math.min(list.length - 1, index));
+      this.selectedSliderIndex = newIndex;
+      this._updateSlidersHighlighting();
+    }
+
+  _hexToHsv(hex) {
+      if (!hex) return { h: 0, s: 1, v: 1 };
+      let r = 0, g = 0, b = 0;
+      hex = String(hex).trim();
+      if (hex.startsWith('#')) {
+        hex = hex.replace('#', '');
+        if (hex.length === 3) {
+          hex = hex.split('').map(c => c + c).join('');
+        }
+        r = parseInt(hex.substring(0, 2), 16) / 255;
+        g = parseInt(hex.substring(2, 4), 16) / 255;
+        b = parseInt(hex.substring(4, 6), 16) / 255;
+      } else {
+        const rgbMatch = hex.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+        if (rgbMatch) {
+          r = parseInt(rgbMatch[1]) / 255;
+          g = parseInt(rgbMatch[2]) / 255;
+          b = parseInt(rgbMatch[3]) / 255;
+        }
+      }
+      if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        r = 0; g = 1; b = 0; // Default green fallback
+      }
+      let max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, v = max;
+      let d = max - min;
+      s = max === 0 ? 0 : d / max;
+      if (max === min) {
+        h = 0;
+      } else {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s, v };
+    }
+
+  _hsvToHex(h, s, v) {
+      h /= 360;
+      let r, g, b;
+      let i = Math.floor(h * 6);
+      let f = h * 6 - i;
+      let p = v * (1 - s);
+      let q = v * (1 - f * s);
+      let t = v * (1 - (1 - f) * s);
+      switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+      }
+      const toHex = x => {
+        const hex = Math.round(x * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      return '#' + toHex(r) + toHex(g) + toHex(b);
+    }
+
+  _hexToRgbNum(hex) {
+      hex = String(hex).replace('#', '');
+      if (hex.length === 3) {
+        hex = hex.split('').map(c => c + c).join('');
+      }
+      return parseInt(hex, 16);
     }
 }
 

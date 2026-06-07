@@ -31,5 +31,11 @@ class ViewControlsManager {
         this.instance = null;
       }
     }
+
+  static highlightActiveControlBox(mode) {
+      if (this.instance) {
+        this.instance.highlightActiveControlBox(mode);
+      }
+    }
 }
 
