@@ -187,6 +187,10 @@ class P2PConnector {
               this.updateStatus('Connected', '#00e676');
               this.logDiag('Handshake verified!');
               channel.send(JSON.stringify({ type: 'h-verified' }));
+              
+              // Immediately configure the client layout
+              this.sendCapabilities();
+              
               this.startHeartbeat(channel);
             }
           } else if (payload.type === 'ping') {
@@ -376,12 +380,100 @@ class P2PConnector {
 
       const roomInput = document.createElement('input');
       roomInput.type = 'text';
-      roomInput.value = '7777';
+      roomInput.value = this.roomCode || localStorage.getItem('drawing-app-p2p-room') || '7777';
       roomInput.style.cssText = 'width: 80px; padding: 4px; background: #222; border: 1px solid #555; color: #fff; border-radius: 3px; text-align: center;';
 
       roomRow.appendChild(roomLabel);
       roomRow.appendChild(roomInput);
       content.appendChild(roomRow);
+
+      // Embedded QR Code White Card Container
+      const qrBox = document.createElement('div');
+      qrBox.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 8px 0;';
+      
+      const qrContainer = document.createElement('div');
+      qrContainer.style.cssText = 'width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; background: #ffffff; box-sizing: border-box; overflow: hidden; cursor: pointer;';
+      qrContainer.title = 'Click to enlarge for scanning';
+      qrBox.appendChild(qrContainer);
+
+      // Click to open high-contrast, pure-white pop-up dialog
+      qrContainer.onclick = (e) => {
+        e.preventDefault();
+        const room = roomInput.value.trim();
+        if (!room) return;
+        
+        const pairURL = `${window.location.origin}/TouchController/index.html?room=${room}`;
+        const activeEnv = this.receiver.env || this.receiver;
+
+        const popup = UITools.makeDialog({
+          env: activeEnv,
+          title: 'Scan QR Code',
+          size: [240, 240],
+          position: [window.innerWidth / 2 - 120, window.innerHeight / 2 - 120],
+        });
+
+        // Apply strict white-card overrides to bypass dark-theme global resets
+        if (popup && popup.element) {
+          popup.element.style.setProperty('background-color', '#ffffff', 'important');
+          popup.element.style.setProperty('border', '1px solid #cbd5e1', 'important');
+          popup.element.style.setProperty('box-shadow', '0 20px 25px -5px rgba(0,0,0,0.1), 0 10px 10px -5px rgba(0,0,0,0.04)', 'important');
+          popup.element.style.setProperty('border-radius', '10px', 'important');
+        }
+
+        if (popup && popup.headerElement) {
+          popup.headerElement.style.setProperty('background', '#f8fafc', 'important');
+          popup.headerElement.style.setProperty('border-bottom', '1px solid #cbd5e1', 'important');
+          popup.headerElement.style.setProperty('color', '#1e293b', 'important');
+          popup.headerElement.style.setProperty('border-radius', '10px 10px 0 0', 'important');
+        }
+
+        if (popup && popup.contentElement) {
+          popup.contentElement.style.setProperty('background', '#ffffff', 'important');
+          popup.contentElement.style.setProperty('display', 'flex', 'important');
+          popup.contentElement.style.setProperty('align-items', 'center', 'important');
+          popup.contentElement.style.setProperty('justify-content', 'center', 'important');
+          popup.contentElement.style.setProperty('padding', '20px', 'important');
+          popup.contentElement.style.setProperty('border-radius', '0 0 10px 10px', 'important');
+
+          const popupQR = document.createElement('div');
+          popupQR.style.cssText = 'width: 180px; height: 180px; display: flex; align-items: center; justify-content: center; background: #ffffff;';
+          popup.contentElement.appendChild(popupQR);
+
+          if (typeof QRCodeGenerator !== 'undefined') {
+            QRCodeGenerator.drawSVG(pairURL, popupQR);
+          }
+        }
+      };
+
+      const qrLinkDisplay = document.createElement('div');
+      qrLinkDisplay.style.cssText = 'font-size: 9px; color: #475569; text-align: center; margin-top: 8px; word-break: break-all; width: 100%; font-family: monospace; font-weight: bold;';
+      qrBox.appendChild(qrLinkDisplay);
+      content.appendChild(qrBox);
+
+      const updateQRCanvas = () => {
+        const room = roomInput.value.trim();
+        if (!room) return;
+        localStorage.setItem('drawing-app-p2p-room', room);
+        
+        // Build direct URL targeting the TouchController
+        const pairURL = `${window.location.origin}/TouchController/index.html?room=${room}`;
+        qrLinkDisplay.textContent = `Pair Link: /?room=${room}`;
+        
+        if (typeof QRCodeGenerator !== 'undefined') {
+          QRCodeGenerator.drawSVG(pairURL, qrContainer);
+        } else {
+          console.warn("QRCodeGenerator class not defined at runtime");
+        }
+      };
+
+      roomInput.oninput = () => {
+        updateQRCanvas();
+        if (this.isHostMode) {
+          // Re-host automatically if code is updated
+          const room = roomInput.value.trim();
+          if (room) this.startWirelessHost(room, this.statusLabel, true);
+        }
+      };
 
       const connectBtn = document.createElement('button');
       connectBtn.style.cssText = 'padding: 8px; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; transition: all 0.15s;';
@@ -417,13 +509,13 @@ class P2PConnector {
         const enabled = midiCheckbox.checked;
         localStorage.setItem('midi-controller-enabled', enabled ? 'true' : 'false');
         if (enabled) {
-          if (!this.app.midiMapper) {
-            this.app.midiMapper = new MidiMapper(this.app.sidePanel.toolSettingsSection, this.app);
+          if (!this.receiver.midiMapper) {
+            this.receiver.midiMapper = new MidiMapper(this.receiver.sidePanel.toolSettingsSection, this.receiver);
           }
-          this.app.midiMapper.activate();
+          this.receiver.midiMapper.activate();
         } else {
-          if (this.app.midiMapper) {
-            this.app.midiMapper.deactivate();
+          if (this.receiver.midiMapper) {
+            this.receiver.midiMapper.deactivate();
           }
         }
       };
@@ -441,10 +533,6 @@ class P2PConnector {
       diagLabel.htmlFor = 'p2p-diag-toggle-sidebar';
       diagLabel.textContent = 'Show diagnostics';
       diagLabel.style.cssText = 'cursor: pointer; font-size: 11px; color: #bbb;';
-
-      diagRow.appendChild(diagCheckbox);
-      diagLabel.style.fontSize = '11px';
-      diagLabel.style.color = '#bbb';
 
       diagRow.appendChild(diagCheckbox);
       diagRow.appendChild(diagLabel);
@@ -483,6 +571,9 @@ class P2PConnector {
       };
 
       container.appendChild(content);
+      
+      // Paint the QR Canvas on load
+      updateQRCanvas();
     }
 
     logDiag(text) {
@@ -496,4 +587,96 @@ class P2PConnector {
         container.scrollTop = container.scrollHeight;
       }
     }
-  }
+  
+    
+
+    static drawQRCodeOnCanvas(text, canvas, size = 150) {
+      try {
+        const matrix = this._generateQRMatrix(text);
+        const ctx = canvas.getContext('2d');
+        const N = matrix.length;
+        const scale = Math.floor(size / N);
+        const pad = Math.floor((size - (scale * N)) / 2);
+        
+        canvas.width = size;
+        canvas.height = size;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, size, size);
+        
+        ctx.fillStyle = '#000000';
+        for (let r = 0; r < N; r++) {
+          for (let c = 0; c < N; c++) {
+            if (matrix[r][c]) {
+              ctx.fillRect(pad + c * scale, pad + r * scale, scale, scale);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("QR drawing failed offline:", err);
+      }
+    }
+
+    sendCapabilities() {
+      if (!this.dataChannel || this.dataChannel.readyState !== 'open') return;
+      
+      let config = null;
+      if (this.receiver && typeof this.receiver.getP2PCapabilities === 'function') {
+        config = this.receiver.getP2PCapabilities();
+      } else {
+        // Fallback default capabilities
+        config = {
+          leftTrackpad: {
+            title: "Navigation",
+            modes: {
+              pan: { label: "Pan & Zoom", type: "drag_pinch" },
+              rotate: { label: "Rotate Model", type: "drag" }
+            }
+          },
+          rightTrackpad: {
+            title: "Transform Settings",
+            modes: {
+              sliders: { label: "Sliders", type: "sliders" }
+            }
+          }
+        };
+      }
+
+      this.dataChannel.send(JSON.stringify({
+        type: 'configure',
+        config: config
+      }));
+      this.logDiag('Handshake: Transmitted capabilities schema to client');
+    }
+
+  static async drawQRCodeSVG(text, container) {
+      try {
+        if (typeof QRCodeGenerator !== 'undefined' && typeof QRCodeGenerator.drawSVG === 'function') {
+          await QRCodeGenerator.drawSVG(text, container);
+        } else {
+          container.innerHTML = '<div style="color: #ff5555; font-size: 11px;">QRCodeGenerator not available</div>';
+        }
+      } catch (err) {
+        console.error("QR drawing failed:", err);
+      }
+    }
+
+  static async downloadQRAsPNG(text, filename = 'qr_code.png') {
+      try {
+        const canvas = document.createElement('canvas');
+        const size = 300;
+        
+        if (typeof QRCodeGenerator !== 'undefined') {
+          await QRCodeGenerator.draw(text, canvas, size);
+          
+          const link = document.createElement('a');
+          link.download = filename;
+          link.href = canvas.toDataURL('image/png');
+          link.click();
+        } else {
+          console.error("QRCodeGenerator not initialized.");
+        }
+      } catch (err) {
+        console.error("Failed to export QR code as PNG:", err);
+      }
+    }
+}

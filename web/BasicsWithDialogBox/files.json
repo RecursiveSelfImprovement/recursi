@@ -3,7 +3,14 @@
   "main": [
     "js/BasicsWithDialogBox.js"
   ],
-  "local": [],
-  "library": ["UITools.js", "CodeMirrorWidget.js"],
-  "thirdParty": []
+  "local": [
+    "js/QRGeneratorTool.js"
+  ],
+  "library": [
+    "UITools.js",
+    "CodeMirrorWidget.js"
+  ],
+  "thirdParty": [
+    "https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+  ]
 }

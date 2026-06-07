@@ -71,6 +71,10 @@ class DrawingApp {
         if (this.sidePanel && this.sidePanel.p2pSection) {
           console.log('[DrawingApp] Appending P2P Controller controls to side panel');
           this.p2pConnector.renderControls(this.sidePanel.p2pSection);
+          
+          // AUTO LAUNCH HOST CONNECTION ON STARTUP (frictionless experience)
+          const savedRoom = localStorage.getItem('drawing-app-p2p-room') || '7777';
+          this.p2pConnector.startWirelessHost(savedRoom, this.p2pConnector.statusLabel);
         } else {
           console.warn('[DrawingApp] p2pSection container was missing during load');
         }
@@ -3558,6 +3562,24 @@ class DrawingApp {
 
       this.zoom = newZoom;
       this.updateZoom();
+    }
+
+  getP2PCapabilities() {
+      // Returns exact drawing workspace schema coordinates for Touch Controller
+      return {
+        leftTrackpad: {
+          title: "Canvas Navigation",
+          modes: {
+            pan: { label: "Pan & Zoom", type: "drag_pinch" }
+          }
+        },
+        rightTrackpad: {
+          title: "Brushes / Sliders",
+          modes: {
+            sliders: { label: "Thickness & Curve Settings", type: "sliders" }
+          }
+        }
+      };
     }
 }
 

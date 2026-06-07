@@ -19,6 +19,7 @@
     "HueRingCP.js",
     "MidiInputHandler.js",
     "P2PConnector.js",
+    "QRCodeGenerator.js",
     "SidePanel.js",
     "SliderControl.js",
     "TriangleCP.js",

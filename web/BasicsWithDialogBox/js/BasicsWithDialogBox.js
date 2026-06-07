@@ -3,7 +3,7 @@ class BasicsWithDialogBox {
       if (!env || !env.container) {
         throw new Error("[BasicsWithDialogBox] run() requires an environment object with a valid container.");
       }
-      this.env = env; // Save environment securely
+      this.env = env;
       const targetElement = env.container;
 
       this.titleElement = null;
@@ -14,6 +14,7 @@ class BasicsWithDialogBox {
       this.autoLoadedBox = null;
       this.autoLoadedBoxDimensionDisplay = null;
       this.configuredBoxes = [];
+      this.qrTool = null;
 
       this._handleResize = () => {
         if (typeof this.onResize === 'function') {
@@ -54,51 +55,41 @@ class BasicsWithDialogBox {
         .config-section button:hover { background-color: #2563eb; }
         .dimension-display { font-size: 0.85em; color: #64748b; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
         .svg-demo-container { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
+        .qrgen-section {
+            margin-top: 20px; padding: 15px; border: 1px solid #a78bfa;
+            background-color: #faf5ff; border-radius: 8px; max-width: 450px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        .qrgen-section-label { font-weight: 600; color: #6d28d9; margin-bottom: 6px; font-size: 0.95em; }
+        .qrgen-section p { margin: 0 0 10px; font-size: 0.85em; color: #555; }
+        .qrgen-open-btn {
+            padding: 8px 16px; background: #7c3aed; color: white;
+            border: none; border-radius: 4px; cursor: pointer; font-weight: 600;
+        }
+        .qrgen-open-btn:hover { background: #6d28d9; }
         `,
         'basicsWithDialogBox-app-styles'
       );
 
       targetElement.classList.add('basics-app-container');
 
-      this.titleElement = makeElement(
-        'h1',
-        { className: 'app-title' },
-        'Basics With DialogBox'
-      );
+      this.titleElement = makeElement('h1', { className: 'app-title' }, 'Basics With DialogBox');
 
-      this.containerSizeDisplay = makeElement(
-        'div',
-        {
-          className: 'dimension-display',
-          style: {
-            fontWeight: 'bold',
-            color: '#336',
-            marginBottom: '10px',
-            borderTop: 'none',
-            paddingTop: 0,
-          },
-        },
-        'Container size: W x H'
-      );
+      this.containerSizeDisplay = makeElement('div', {
+        className: 'dimension-display',
+        style: { fontWeight: 'bold', color: '#336', marginBottom: '10px', borderTop: 'none', paddingTop: 0 }
+      }, 'Container size: W x H');
 
-      this.statusDiv = makeElement(
-        'div',
-        { className: 'status-message' },
-        'App loaded.'
-      );
+      this.statusDiv = makeElement('div', { className: 'status-message' }, 'App loaded.');
 
       targetElement.appendChild(this.titleElement);
       targetElement.appendChild(this.containerSizeDisplay);
       targetElement.appendChild(this.statusDiv);
 
-      this.autoLoadedBoxDimensionDisplay = makeElement(
-        'div',
-        { className: 'dimension-display' },
-        'Inner size: W x H'
-      );
+      this.autoLoadedBoxDimensionDisplay = makeElement('div', { className: 'dimension-display' }, 'Inner size: W x H');
 
       this.autoLoadedBox = UITools.makeDialog({
-        env: this.env, // ENSURE DIALOG IS BOUND TO ENVIRONMENT
+        env: this.env,
         title: 'Auto-Loaded Box',
         size: [350, 250],
         position: [550, 80],
@@ -113,58 +104,29 @@ class BasicsWithDialogBox {
         makeElement('p', { style: { marginTop: 0 } }, 'This box appears automagically.')
       );
       this.autoLoadedBox.contentElement.appendChild(
-        makeElement(
-          'button',
-          {
-            style: { padding: '6px 12px', cursor: 'pointer' },
-            onclick: () => {
-              this.autoLoadedBox.contentElement.querySelector('p').textContent = 'Box 1 button clicked!';
-              this.statusDiv.textContent = 'Box 1 button clicked.';
-            },
-          },
-          'Click Me (Box 1)'
-        )
+        makeElement('button', {
+          style: { padding: '6px 12px', cursor: 'pointer' },
+          onclick: () => {
+            this.autoLoadedBox.contentElement.querySelector('p').textContent = 'Box 1 button clicked!';
+            this.statusDiv.textContent = 'Box 1 button clicked.';
+          }
+        }, 'Click Me (Box 1)')
       );
-
       this.autoLoadedBox.contentElement.appendChild(this.autoLoadedBoxDimensionDisplay);
 
-      const svgDemoContainer = makeElement(
-        'div',
-        { className: 'svg-demo-container' },
+      const svgDemoContainer = makeElement('div', { className: 'svg-demo-container' },
         makeElement('span', { style: { fontSize: '0.8em', color: '#666' } }, 'SVG Demo: '),
-        makeElement(
-          'svg:svg',
-          {
-            width: 100,
-            height: 30,
-            style: { verticalAlign: 'middle', marginLeft: '5px' },
-          },
-          [
-            ['svg:rect', { x: 5, y: 5, width: 20, height: 20, fill: 'cornflowerblue', stroke: 'black', 'stroke-width': 1 }],
-            ['svg:circle', { cx: 45, cy: 15, r: 10, fill: 'lightcoral' }],
-            ['svg:line', { x1: 65, y1: 5, x2: 95, y2: 25, stroke: 'green', 'stroke-width': 2 }],
-          ]
-        )
+        makeElement('svg:svg', { width: 100, height: 30, style: { verticalAlign: 'middle', marginLeft: '5px' } }, [
+          ['svg:rect', { x: 5, y: 5, width: 20, height: 20, fill: 'cornflowerblue', stroke: 'black', 'stroke-width': 1 }],
+          ['svg:circle', { cx: 45, cy: 15, r: 10, fill: 'lightcoral' }],
+          ['svg:line', { x1: 65, y1: 5, x2: 95, y2: 25, stroke: 'green', 'stroke-width': 2 }],
+        ])
       );
       this.autoLoadedBox.contentElement.appendChild(svgDemoContainer);
 
-      const arrayDemoElement = makeElement(
-        'p',
-        {
-          style: {
-            fontSize: '0.8em',
-            color: '#666',
-            marginTop: '10px',
-            borderTop: '1px solid #eee',
-            paddingTop: '5px',
-          },
-        },
-        [
-          'makeElement array demo: ',
-          ['strong', 'bold text'],
-          ' and regular text.',
-        ]
-      );
+      const arrayDemoElement = makeElement('p', {
+        style: { fontSize: '0.8em', color: '#666', marginTop: '10px', borderTop: '1px solid #eee', paddingTop: '5px' }
+      }, ['makeElement array demo: ', ['strong', 'bold text'], ' and regular text.']);
       this.autoLoadedBox.contentElement.appendChild(arrayDemoElement);
 
       const defaultBoxOptions = {
@@ -177,19 +139,17 @@ class BasicsWithDialogBox {
 
       this.configSection = makeElement('div', { className: 'config-section' });
       const configLabel = makeElement('label', { htmlFor: 'boxConfigInput' }, 'Configure & Create New Box (JSON):');
-      this.configTextarea = makeElement(
-        'textarea',
-        { style: { height: '240px' }, id: 'boxConfigInput' },
-        JSON.stringify(defaultBoxOptions, null, 2)
-      );
+      this.configTextarea = makeElement('textarea', { style: { height: '240px' }, id: 'boxConfigInput' }, JSON.stringify(defaultBoxOptions, null, 2));
       this.createBoxButton = makeElement('button', 'Create Box from Config');
-
       this.createBoxButton.onclick = () => this.createConfigurableBox();
 
       this.configSection.appendChild(configLabel);
       this.configSection.appendChild(this.configTextarea);
       this.configSection.appendChild(this.createBoxButton);
       targetElement.appendChild(this.configSection);
+
+      // QR Generator section
+      this._initQRSection(targetElement);
 
       this.statusDiv.textContent = 'App Initialized. Try resizing/moving the first box or creating new ones.';
 
@@ -284,4 +244,21 @@ class BasicsWithDialogBox {
     };
   }
 
+
+  _initQRSection(targetElement) {
+      this.qrTool = new QRGeneratorTool();
+
+      const section = makeElement('div', { className: 'qrgen-section' });
+      const label = makeElement('div', { className: 'qrgen-section-label' }, '🔲 QR Code Generator');
+      const desc = makeElement('p', {}, 'Generate a QR code from any URL or text, then download the PNG to test with an online scanner.');
+      const openBtn = makeElement('button', {
+        className: 'qrgen-open-btn',
+        onclick: () => this.qrTool.open(this.env)
+      }, 'Open QR Generator');
+
+      section.appendChild(label);
+      section.appendChild(desc);
+      section.appendChild(openBtn);
+      targetElement.appendChild(section);
+    }
 }

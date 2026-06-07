@@ -1,7 +1,7 @@
 {
   "meta": "This file is managed locally, LLMs should not edit this file",
   "main": [
-    "touch_src/TouchControllerV3.js"
+    "js/TouchController.js"
   ],
   "local": [],
   "library": [

@@ -1,4 +1,4 @@
-class TouchControllerV3 {
+class TouchController {
     constructor() {
       this.env = null;
       this.rootElement = null;
@@ -79,15 +79,25 @@ class TouchControllerV3 {
       // Start the P2P connection card expanded on page load so the user can instantly pair
       this.setPanelExpanded(true);
 
-      this._log('TouchController initialized [v3.2]');
+      this._log('TouchController initialized');
+
+      // AUTOMATIC HANDSHAKE TRIGGER IF ROOM PARAMETER EXISTS
+      const params = new URLSearchParams(window.location.search);
+      const room = params.get('room') || params.get('roomCode');
+      if (room) {
+        this._log(`URL room parameter detected. Auto-connecting to: ${room}`);
+        const roomInput = this.rootElement.querySelector('input[placeholder="Code"]');
+        if (roomInput) {
+          roomInput.value = room;
+        }
+        setTimeout(() => {
+          this._startWirelessClient(room, statusSpan);
+        }, 400);
+      }
+
       return this;
     }
 
-    
-
-    
-
-    
 
     _setupEvents() {
       // 1. View trackpad listeners
@@ -394,6 +404,12 @@ class TouchControllerV3 {
         this._log('Data channel open. Awaiting handshake...');
         statusLabel.textContent = 'Awaiting handshake...';
         statusLabel.style.color = '#0288d1';
+        
+        const welcomeStatus = document.getElementById('p2p-welcome-pairing-status');
+        if (welcomeStatus) {
+          welcomeStatus.textContent = 'Verifying Handshake Routes...';
+          welcomeStatus.style.color = '#0288d1';
+        }
       };
 
       channel.onclose = () => {
@@ -431,6 +447,8 @@ class TouchControllerV3 {
             
             // Auto collapse ONLY upon verified linkage
             this.setPanelExpanded(false);
+          } else if (payload.type === 'configure') {
+            this._applyAppConfiguration(payload.config);
           } else if (payload.type === 'ping') {
             channel.send(JSON.stringify({ type: 'pong' }));
           }
@@ -572,7 +590,25 @@ class TouchControllerV3 {
       this.isVerified = false;
       this._updateButtonState(false);
       
-      // Keep the panel expanded so the user doesn't lose visibility during drop/disconnect
+      // Keep panel visible and reset to default offline instructions
+      this.appConfig = null;
+      if (this.connectionWelcome) {
+        this.connectionWelcome.style.display = 'flex';
+        const welcomeStatus = document.getElementById('p2p-welcome-pairing-status');
+        if (welcomeStatus) {
+          welcomeStatus.textContent = 'Awaiting Host Synchronization...';
+          welcomeStatus.style.color = '#ffa726';
+          welcomeStatus.style.border = '1px solid rgba(255,167,38,0.2)';
+          welcomeStatus.style.background = 'rgba(255,167,38,0.08)';
+        }
+      }
+      if (this.trackpadView) {
+        this.trackpadView.style.display = 'none';
+      }
+      if (this.trackpadControls) {
+        this.trackpadControls.style.display = 'none';
+      }
+
       this.setPanelExpanded(true);
     }
 
@@ -692,8 +728,8 @@ class TouchControllerV3 {
   _initUI(parentElement, statusLabel) {
       this.rootElement = makeElement('div', { id: 'touch-app-container' });
 
-      // View Trackpad (camera manipulation)
-      this.trackpadView = makeElement('div', { className: 'trackpad-view' });
+      // View Trackpad (camera manipulation) - HIDDEN BY DEFAULT
+      this.trackpadView = makeElement('div', { className: 'trackpad-view', style: { display: 'none' } });
       const svgView = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       const gridGroupView = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       gridGroupView.setAttribute('opacity', '0.07');
@@ -718,8 +754,8 @@ class TouchControllerV3 {
       this.viewStatusText = makeElement('div', { className: 'status-text' }, 'VIEW: ROTATE');
       this.trackpadView.appendChild(this.viewStatusText);
 
-      // Controls Trackpad (manipulating sliders/parameters)
-      this.trackpadControls = makeElement('div', { className: 'trackpad-controls' });
+      // Controls Trackpad (manipulating sliders/parameters) - HIDDEN BY DEFAULT
+      this.trackpadControls = makeElement('div', { className: 'trackpad-controls', style: { display: 'none' } });
       const svgCtrl = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
       const gridGroupCtrl = document.createElementNS('http://www.w3.org/2000/svg', 'g');
       gridGroupCtrl.setAttribute('opacity', '0.07');
@@ -744,7 +780,39 @@ class TouchControllerV3 {
       this.ctrlStatusText = makeElement('div', { className: 'status-text' }, 'CONTROLS: COMPASS');
       this.trackpadControls.appendChild(this.ctrlStatusText);
 
+      // Connection instructions welcome card - SHOWN BY DEFAULT
+      this.connectionWelcome = makeElement('div', {
+        id: 'p2p-connection-welcome-card',
+        style: {
+          position: 'absolute',
+          top: '55%',
+          left: '50%',
+          transform: 'translate(-50%, -50%)',
+          textAlign: 'center',
+          color: '#e0e0e0',
+          fontFamily: 'sans-serif',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '12px',
+          padding: '24px',
+          background: 'rgba(25, 25, 25, 0.95)',
+          borderRadius: '10px',
+          border: '1px dashed #444',
+          zIndex: '100',
+          width: '85%',
+          maxWidth: '310px',
+          boxSizing: 'border-box',
+          boxShadow: '0 10px 30px rgba(0,0,0,0.6)'
+        }
+      }, [
+        makeElement('div', { style: { fontSize: '18px', fontWeight: 'bold', color: '#00e676', letterSpacing: '0.5px' } }, 'Touch Controller'),
+        makeElement('div', { style: { fontSize: '12px', color: '#888', lineHeight: '1.4', margin: '4px 0 10px' } }, 'Scan the QR code displayed in your web app to pair instantly, or input the matching Room Code manually above.'),
+        makeElement('div', { id: 'p2p-welcome-pairing-status', style: { fontSize: '11px', color: '#ffa726', fontWeight: 'bold', background: 'rgba(255,167,38,0.08)', padding: '6px 12px', borderRadius: '4px', border: '1px solid rgba(255,167,38,0.2)' } }, 'Awaiting Host Synchronization...')
+      ]);
+
       // Assemble layout
+      this.rootElement.appendChild(this.connectionWelcome);
       this.rootElement.appendChild(this.trackpadControls);
       this.rootElement.appendChild(this.trackpadView);
 
@@ -979,15 +1047,28 @@ class TouchControllerV3 {
         const tapDist = Math.hypot(clientX - this.viewLastTapX, clientY - this.viewLastTapY);
 
         if (this.viewLastTapTime && (now - this.viewLastTapTime < DOUBLE_TAP_THRESHOLD) && tapDist < 30) {
-          this.viewMode = this.viewMode === 'rotate' ? 'pan' : 'rotate';
-          this.currentMode = this.viewMode;
-          this._updateTrackpadLabels();
-          
-          if (this.dataChannel && this.dataChannel.readyState === 'open') {
-            this.dataChannel.send(JSON.stringify({
-              type: 'modeChange',
-              mode: this.viewMode
-            }));
+          // Double Tap: Toggle modes dynamically using keys from handshake schema
+          if (this.appConfig && this.appConfig.leftTrackpad && this.appConfig.leftTrackpad.modes) {
+            const keys = Object.keys(this.appConfig.leftTrackpad.modes);
+            if (keys.length > 1) {
+              const currentIdx = keys.indexOf(this.viewMode);
+              const nextIdx = (currentIdx + 1) % keys.length;
+              this.viewMode = keys[nextIdx];
+              this.currentMode = this.viewMode;
+              this._updateTrackpadLabels();
+              
+              if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                this.dataChannel.send(JSON.stringify({
+                  type: 'modeChange',
+                  mode: this.viewMode
+                }));
+              }
+            }
+          } else {
+            // Default fallback
+            this.viewMode = this.viewMode === 'rotate' ? 'pan' : 'rotate';
+            this.currentMode = this.viewMode;
+            this._updateTrackpadLabels();
           }
           
           this.viewLastTapTime = 0;
@@ -1112,17 +1193,28 @@ class TouchControllerV3 {
         const wasRecentlyAdjusting = (now - this.ctrlLastAdjustmentTime < 600);
 
         if (this.ctrlLastTapTime && (now - this.ctrlLastTapTime < DOUBLE_TAP_THRESHOLD) && tapDist < 30 && !wasRecentlyAdjusting) {
-          // Double tap: Toggle between compass 'sliders' and 'tool' settings
-          this.controlMode = this.controlMode === 'sliders' ? 'tool' : 'sliders';
-          this.currentMode = this.controlMode;
-          
-          this._updateTrackpadLabels();
-          
-          if (this.dataChannel && this.dataChannel.readyState === 'open') {
-            this.dataChannel.send(JSON.stringify({
-              type: 'modeChange',
-              mode: this.controlMode
-            }));
+          // Double Tap: Toggle modes dynamically using keys from handshake schema
+          if (this.appConfig && this.appConfig.rightTrackpad && this.appConfig.rightTrackpad.modes) {
+            const keys = Object.keys(this.appConfig.rightTrackpad.modes);
+            if (keys.length > 1) {
+              const currentIdx = keys.indexOf(this.controlMode);
+              const nextIdx = (currentIdx + 1) % keys.length;
+              this.controlMode = keys[nextIdx];
+              this.currentMode = this.controlMode;
+              this._updateTrackpadLabels();
+              
+              if (this.dataChannel && this.dataChannel.readyState === 'open') {
+                this.dataChannel.send(JSON.stringify({
+                  type: 'modeChange',
+                  mode: this.controlMode
+                }));
+              }
+            }
+          } else {
+            // Default fallback
+            this.controlMode = this.controlMode === 'sliders' ? 'tool' : 'sliders';
+            this.currentMode = this.controlMode;
+            this._updateTrackpadLabels();
           }
 
           this.ctrlLastTapTime = 0;
@@ -1252,12 +1344,25 @@ class TouchControllerV3 {
     }
 
   _updateTrackpadLabels() {
+      let viewLabel = `VIEW: ${this.viewMode.toUpperCase()}`;
+      let ctrlLabel = `CONTROLS: ${this.controlMode.toUpperCase()}`;
+
+      if (this.appConfig) {
+        if (this.appConfig.leftTrackpad && this.appConfig.leftTrackpad.modes && this.appConfig.leftTrackpad.modes[this.viewMode]) {
+          const modeObj = this.appConfig.leftTrackpad.modes[this.viewMode];
+          viewLabel = `${this.appConfig.leftTrackpad.title.toUpperCase()}: ${modeObj.label.toUpperCase()}`;
+        }
+        if (this.appConfig.rightTrackpad && this.appConfig.rightTrackpad.modes && this.appConfig.rightTrackpad.modes[this.controlMode]) {
+          const modeObj = this.appConfig.rightTrackpad.modes[this.controlMode];
+          ctrlLabel = `${this.appConfig.rightTrackpad.title.toUpperCase()}: ${modeObj.label.toUpperCase()}`;
+        }
+      }
+
       if (this.viewStatusText) {
-        this.viewStatusText.textContent = `VIEW: ${this.viewMode.toUpperCase()}`;
+        this.viewStatusText.textContent = viewLabel;
       }
       if (this.ctrlStatusText) {
-        const modeLabel = this.controlMode === 'sliders' ? 'COMPASS' : this.controlMode === 'tool' ? 'TOOL SETTINGS' : this.controlMode.toUpperCase();
-        this.ctrlStatusText.textContent = `CONTROLS: ${modeLabel}`;
+        this.ctrlStatusText.textContent = ctrlLabel;
       }
     }
 
@@ -1365,5 +1470,33 @@ class TouchControllerV3 {
         cancelAnimationFrame(this.viewInertiaFrameId);
         this.viewInertiaFrameId = null;
       }
+    }
+
+  _applyAppConfiguration(config) {
+      this.appConfig = config;
+      
+      // Hide Pairing screen, show responsive trackpads
+      if (this.connectionWelcome) {
+        this.connectionWelcome.style.display = 'none';
+      }
+      if (this.trackpadView) {
+        this.trackpadView.style.display = 'block';
+      }
+      if (this.trackpadControls) {
+        this.trackpadControls.style.display = 'block';
+      }
+
+      // Automatically initialize parameters list based on config payload
+      if (config.leftTrackpad && config.leftTrackpad.modes) {
+        const keys = Object.keys(config.leftTrackpad.modes);
+        if (keys.length > 0) this.viewMode = keys[0];
+      }
+      if (config.rightTrackpad && config.rightTrackpad.modes) {
+        const keys = Object.keys(config.rightTrackpad.modes);
+        if (keys.length > 0) this.controlMode = keys[0];
+      }
+      this.currentMode = this.viewMode;
+      this._updateTrackpadLabels();
+      this._log('Capabilities schema successfully updated.');
     }
 }
