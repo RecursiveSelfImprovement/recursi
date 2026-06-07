@@ -90,6 +90,7 @@ class Main {
         commonLoaders: true,
         hdrPath:
           'https://recursi.dev/thirdparty/three-js-r153/assets/textures/venice_sunset_1k.hdr',
+        onUpdate: () => this._onUpdate(),
       });
 
       await this.app.init(canvasContainer);
@@ -151,22 +152,24 @@ class Main {
 
       // Setup SidePanel UI structure using the new, generic constructor
       if (typeof SidePanel !== 'undefined') {
-        this.sidePanel = new SidePanel('left', 260, layoutWrapper, 'margin');
+        const sidePanelEnv = { container: layoutWrapper };
+        this.sidePanel = new SidePanel('left', 260, sidePanelEnv);
         
         // Populate the specific CAD sections from here
         this.sidePanel.toolSettingsSection = this.sidePanel.addSection('setup', 'Tool Settings', true);
         this.sidePanel.compassSection = this.sidePanel.addSection('compass', 'Compass Controls', true);
-        // Renamed P2P Connection section to "Controller" as requested
         this.sidePanel.p2pSection = this.sidePanel.addSection('p2p', 'Controller', false);
 
-        // ESSENTIAL ASSIGNMENT: Store the sidePanel reference directly on baseController so ViewControls can reach it!
         this.baseController.sidePanel = this.sidePanel;
 
         layoutWrapper.insertBefore(this.sidePanel.element, canvasContainer);
         this._setupToolSettingsWatcher();
+        
+        // Explicitly open the sidebar on startup for accuCad
+        this.sidePanel.open();
       }
 
-      // Initialize P2PConnector on the controller
+      // Initialize P2PConnector (pointing to our shared library module)
       if (typeof P2PConnector !== 'undefined') {
         this.baseController.p2pConnector = new P2PConnector(this.baseController);
         if (this.sidePanel) {

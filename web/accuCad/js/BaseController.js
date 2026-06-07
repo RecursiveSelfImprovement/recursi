@@ -180,5 +180,61 @@ class BaseController {
     this.lineWidth = width;
   }
 
+
+  handleRemoteDrag(dx, dy, mode) {
+      if (!this.view || !this.view.camera) return;
+      const camera = this.view.camera;
+      
+      if (mode === 'rotate') {
+        const sensitivity = 0.5;
+        TransformView.transform({
+          spin: dx * sensitivity,
+          tilt: -dy * sensitivity
+        }, this.view);
+      } else if (mode === 'pan') {
+        const vX = new THREE.Vector3();
+        const vY = new THREE.Vector3();
+        camera.matrix.extractBasis(vX, vY, new THREE.Vector3());
+
+        const distance = camera.position.distanceTo(this.view.target);
+        const panSpeed = 0.003 * (distance / 3);
+        const translation = new THREE.Vector3()
+          .addScaledVector(vX, -dx * panSpeed)
+          .addScaledVector(vY, dy * panSpeed);
+
+        const tx = (translation.x * 300) / distance;
+        const ty = (translation.y * 300) / distance;
+        const tz = (translation.z * 300) / distance;
+
+        TransformView.transform({ dx: tx, dy: ty, dz: tz }, this.view);
+      }
+    }
+
+  handleRemoteZoom(ratio) {
+      if (!this.view) return;
+      const factor = 1 / ratio;
+      let ddiag;
+      if (factor > 1) {
+        ddiag = (factor - 1) * 100;
+      } else {
+        ddiag = (1 - 1 / factor) * 100;
+      }
+      ddiag = Math.max(-50, Math.min(50, ddiag));
+      TransformView.transform({ ddiag }, this.view);
+    }
+
+  handleRemotePerspective(dy) {
+      if (!this.view) return;
+      const sensitivity = 0.15;
+      TransformView.transform({ dfov: dy * sensitivity }, this.view)
+        .then((finalValues) => {
+          if (window.tableDialog) {
+            window.tableDialog.updateValues({
+              perspective: finalValues.fov
+            });
+          }
+        })
+        .catch((err) => console.error(err));
+    }
 }
 

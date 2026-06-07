@@ -47,35 +47,45 @@ class HeaderControlsUI {
   }
 
   _buildLibraryButton() {
-    const isLibOpen =
-      this.player.leftPanel.isOpen &&
-      this.player.leftPanel.sections['playlist']?.element.open;
+      // Robust multi-tier check to guarantee we never read properties of undefined during page boot
+      const isLibOpen =
+        this.player.leftPanel &&
+        this.player.leftPanel.isOpen &&
+        this.player.leftPanel.sections &&
+        this.player.leftPanel.sections['playlist'] &&
+        this.player.leftPanel.sections['playlist'].element &&
+        this.player.leftPanel.sections['playlist'].element.open;
 
-    const btn = makeElement(
-      'button',
-      {
-        className: 'dialog-button',
-        style: `padding:1px 5px; font-size:9px; background:${
-          isLibOpen ? '#4a90e2' : '#222'
-        }; color:${
-          isLibOpen ? '#fff' : '#eee'
-        }; border:1px solid #444; border-radius:3px; margin-right:auto;`,
-        onclick: () => {
-          if (
-            this.player.leftPanel.isOpen &&
-            this.player.leftPanel.sections['playlist']?.element.open
-          ) {
-            this.player.leftPanel.close();
-          } else {
-            this.player.leftPanel.open('playlist');
-          }
-          this.build();
+      const btn = makeElement(
+        'button',
+        {
+          className: 'dialog-button',
+          style: `padding:1px 5px; font-size:9px; background:${
+            isLibOpen ? '#4a90e2' : '#222'
+          }; color:${
+            isLibOpen ? '#fff' : '#eee'
+          }; border:1px solid #444; border-radius:3px; margin-right:auto;`,
+          onclick: () => {
+            const isPlaylistOpen =
+              this.player.leftPanel &&
+              this.player.leftPanel.isOpen &&
+              this.player.leftPanel.sections &&
+              this.player.leftPanel.sections['playlist'] &&
+              this.player.leftPanel.sections['playlist'].element &&
+              this.player.leftPanel.sections['playlist'].element.open;
+
+            if (isPlaylistOpen) {
+              this.player.leftPanel.close();
+            } else if (this.player.leftPanel) {
+              this.player.leftPanel.open('playlist');
+            }
+            this.build();
+          },
         },
-      },
-      '☰'
-    );
-    this.player.headerControls.appendChild(btn);
-  }
+        '☰'
+      );
+      this.player.headerControls.appendChild(btn);
+    }
 
   _buildVideoVolumeOnly() {
     const container = makeElement('div', {

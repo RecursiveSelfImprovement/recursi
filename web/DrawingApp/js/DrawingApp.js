@@ -17,11 +17,12 @@ class DrawingApp {
 
   init(targetElement) {
       console.log('Initializing Drawing Panel v10 (Tools)...');
-      targetElement.innerHTML = '';
+      console.log('[DrawingApp] Debug P2PConnector load state:', typeof P2PConnector);
+      console.log('[DrawingApp] Debug SidePanel load state:', typeof SidePanel);
 
+      targetElement.innerHTML = '';
       this.drawnPaths = [];
 
-      // Safe initialization using the newly isolated DrawingHistory class
       if (!this.history || typeof this.history.clear !== 'function') {
         this.history = new DrawingHistory();
       }
@@ -34,40 +35,62 @@ class DrawingApp {
       this.loadSettings();
       this.injectStyles();
 
-      const rect = targetElement.getBoundingClientRect();
-      const containerW = (rect.width && rect.width > 100) ? rect.width : window.innerWidth;
-      const containerH = (rect.height && rect.height > 100) ? rect.height : window.innerHeight;
+      // Create AccuCAD style layout wrapper
+      const layoutWrapper = document.createElement('div');
+      layoutWrapper.id = 'drawing-app-layout-wrapper';
+      layoutWrapper.style.cssText = 'display: flex; flex-direction: row; width: 100%; height: 100%; overflow: hidden; position: relative;';
+      targetElement.appendChild(layoutWrapper);
+      this.layoutWrapper = layoutWrapper;
 
-      const pad = 20;
-      const settingsW = 280;
-      const mainW = Math.max(
-        400,
-        Math.min(
-          containerW * 0.70,
-          containerW - pad * 3 - settingsW
-        )
-      );
-      const mainH = Math.floor(containerH * 0.85);
+      // Instantiate SidePanel passing a structured environment object
+      if (typeof SidePanel !== 'undefined') {
+        const sidePanelEnv = { container: layoutWrapper };
+        this.sidePanel = new SidePanel('left', 260, sidePanelEnv);
+        this.sidePanel.toolSettingsSection = this.sidePanel.addSection('setup', 'Tool Settings', true);
+        this.sidePanel.p2pSection = this.sidePanel.addSection('p2p', 'Controller', false);
+        
+        // Explicitly open the sidebar on startup for DrawingApp
+        this.sidePanel.open();
+      }
 
-      this.createDrawingInterface({ x: pad, y: pad, w: mainW, h: mainH });
-      this.createSettingsInterface({
-        x: pad + mainW + pad,
-        y: pad,
-        w: settingsW,
-        h: Math.min(400, containerH - pad * 2),
-      });
+      // Create canvas container next to SidePanel
+      const canvasContainer = document.createElement('div');
+      canvasContainer.id = 'drawing-canvas-container';
+      canvasContainer.style.cssText = 'flex-grow: 1; height: 100%; position: relative; overflow: hidden;';
+      layoutWrapper.appendChild(canvasContainer);
+      this.canvasContainer = canvasContainer;
+
+      // Initialize workspace/canvas and sidebar settings
+      this.createDrawingInterface(canvasContainer);
+      this.createSettingsInterface();
       this.setupGlobalKeys();
 
+      // Setup P2PConnector inside sidebar layout with strict safety checks
+      if (typeof P2PConnector !== 'undefined') {
+        this.p2pConnector = new P2PConnector(this);
+        if (this.sidePanel && this.sidePanel.p2pSection) {
+          console.log('[DrawingApp] Appending P2P Controller controls to side panel');
+          this.p2pConnector.renderControls(this.sidePanel.p2pSection);
+        } else {
+          console.warn('[DrawingApp] p2pSection container was missing during load');
+        }
+      } else {
+        console.warn('[DrawingApp] P2PConnector class was not defined at runtime');
+      }
+
+      // Check for saved mappings or auto-enable MIDI if persistent
       const savedMappings = localStorage.getItem('drawingAppMidiMappings_v1');
-      if (savedMappings) {
+      const midiEnabled = localStorage.getItem('midi-controller-enabled') === 'true';
+      if (midiEnabled || savedMappings) {
         try {
-          const parsed = JSON.parse(savedMappings);
-          if (parsed.mappings && Object.keys(parsed.mappings).length > 0) {
-            console.log('Found saved MIDI mappings, initializing controller...');
+          if (!this.midiMapper) {
             this.midiMapper = new MidiMapper(
-              this.settingsDialog.contentElement,
+              this.sidePanel ? this.sidePanel.toolSettingsSection : this.settingsDialog.contentElement,
               this
             );
+          }
+          if (midiEnabled) {
+            this.midiMapper.activate();
           }
         } catch (e) {
           console.warn('Error checking MIDI mappings', e);
@@ -197,251 +220,325 @@ class DrawingApp {
     }
 
   injectStyles() {
-    applyCss(
-      `
-    /* --- Dialog Box Beautification Overrides --- */
-    .dialog-box {
-        border: 1px solid #444 !important;
-        box-shadow: 0 15px 40px rgba(0,0,0,0.6) !important;
-        background-color: rgba(35, 35, 35, 0.95) !important;
-        backdrop-filter: blur(12px);
-        border-radius: 10px !important;
-    }
-    .dialog-header {
-        background: linear-gradient(to bottom, #3a3a3a, #2b2b2b) !important;
-        border-bottom: 1px solid #444 !important;
-        font-family: 'Segoe UI', system-ui, sans-serif !important;
-        font-size: 13px !important;
-        letter-spacing: 0.5px;
-        padding: 8px 12px !important;
-        border-radius: 10px 10px 0 0 !important;
-    }
-    .dialog-content {
-        background-color: transparent !important;
-        color: #e0e0e0 !important;
-    }
-    .dialog-button {
-        background: linear-gradient(to bottom, #4a4a4a, #3a3a3a) !important;
-        border: 1px solid #555 !important;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.2);
-        border-radius: 4px !important;
-        color: #eee !important;
-    }
-    .dialog-button:hover {
-        background: linear-gradient(to bottom, #555, #454545) !important;
-        border-color: #777 !important;
-    }
-    .dialog-footer {
-        background-color: rgba(30, 30, 30, 0.5) !important;
-        border-top: 1px solid #444 !important;
-        border-radius: 0 0 10px 10px !important;
-    }
+      applyCss(
+        `
+      /* --- Dynamic Sidebar CAD Styling (Scoped specifically to DrawingApp - Targeting .yt-side-panel) --- */
+      #drawing-app-layout-wrapper .yt-side-panel {
+        background: rgba(18, 18, 18, 0.96) !important;
+        border-right: 1.5px solid rgba(255, 255, 255, 0.05) !important;
+      }
+      
+      #drawing-app-layout-wrapper .yt-side-panel div:first-child {
+        padding: 12px 14px !important;
+        background: #141416 !important;
+        border-bottom: 1.5px solid rgba(255, 255, 255, 0.06) !important;
+      }
 
-    /* --- App Specific Styles --- */
-    .setting-row { 
-      margin-bottom: 15px; 
-      display: flex; 
-      flex-direction: column; 
-      gap: 6px; 
-    }
-    /* Compact Row for Construction settings */
-    .setting-row.compact-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10px;
-        margin-bottom: 10px;
-    }
-    .compact-control {
-        display: flex;
-        flex-direction: column;
-        gap: 2px;
-    }
-    .compact-control .setting-label {
-        font-size: 10px;
-        color: #888;
-    }
+      #drawing-app-layout-wrapper details {
+        background: #1c1c1f !important;
+        border: 1.2px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 6px !important;
+        overflow: hidden !important;
+        transition: all 0.2s ease !important;
+        display: block !important;
+        margin-bottom: 8px !important;
+      }
 
-    .setting-label { 
-      color: #aaa; 
-      font-size: 12px; 
-      font-weight: 600; 
-      text-transform: uppercase; 
-      letter-spacing: 0.5px; 
-      display: flex; 
-      justify-content: space-between; 
-      align-items: center; 
-    }
-    .value-display { 
-      font-family: 'Consolas', monospace; 
-      color: #4fc3f7; 
-      font-size: 11px; 
-      background: rgba(0,0,0,0.3); 
-      padding: 2px 6px; 
-      border-radius: 4px; 
-    }
-    .drawing-surface { 
-      background-color: var(--bg-color, #222); 
-      width: 100%; 
-      height: 100%; 
-      display: block; 
-      touch-action: none; 
-      cursor: crosshair; 
-    }
-    
-    /* --- Construction Line Styles --- */
-    .construction-line {
-        stroke: #95a5a6;
-        stroke-width: var(--const-width, 1px);
-        opacity: var(--const-opacity, 0.5);
-        stroke-dasharray: 4,2;
-        vector-effect: non-scaling-stroke; /* Keep lines crisp on zoom */
-    }
-    .construction-cp {
-        fill: #f1c40f;
-        stroke: none;
-        r: calc(var(--const-width, 1px) + 2px);
-        opacity: var(--const-opacity, 0.5);
-    }
-    .construction-label {
-        font-family: monospace;
-        font-weight: bold;
-        font-size: var(--const-label-size, 10px);
-        fill: #bdc3c7;
-        opacity: var(--const-opacity, 0.5);
-        pointer-events: none;
-        user-select: none;
-    }
-    
-    /* Visibility Modifiers */
-    .hide-all-construction .curve-group .controls,
-    .hide-all-construction .curve-group .construction-label { 
-        display: none !important; 
-    }
-    
-    /* Hide construction on non-active curves if 'Active Only' is enabled */
-    .active-only-construction .curve-group:not(.active-curve) .controls,
-    .active-only-construction .curve-group:not(.active-curve) .construction-label {
-        display: none !important;
-    }
+      #drawing-app-layout-wrapper summary {
+        padding: 10px 12px !important;
+        font-family: sans-serif !important;
+        font-size: 11px !important;
+        font-weight: bold !important;
+        color: #aaa !important;
+        cursor: pointer !important;
+        user-select: none !important;
+        display: flex !important;
+        justify-content: space-between !important;
+        align-items: center !important;
+        background: #232328 !important;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.02) !important;
+        outline: none !important;
+      }
 
-    /* Panning Cursor State */
-    .drawing-surface.panning { cursor: grab !important; }
-    .drawing-surface.panning:active { cursor: grabbing !important; }
-
-    /* Compact Swatch Styles */
-    .color-swatch {
-      width: 100%;
-      height: 32px;
-      border-radius: 6px;
-      cursor: pointer;
-      border: 2px solid rgba(255,255,255,0.15);
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      transition: all 0.15s ease;
-    }
-    .color-swatch:hover { 
-      transform: translateY(-1px);
-      border-color: rgba(255,255,255,0.4);
-      box-shadow: 0 4px 8px rgba(0,0,0,0.4);
-    }
-
-    /* --- Image Tool Styles --- */
-    .image-preview-container {
-        transition: max-height 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
-        max-height: 0;
-        opacity: 0;
-        overflow: hidden;
-        background: rgba(0,0,0,0.3);
-        border-radius: 6px;
-        border: 1px dashed #555;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        margin-top: 0;
-    }
-    .image-preview-container.active {
-        max-height: 150px;
-        opacity: 1;
-        margin-top: 10px;
-        padding: 5px;
-    }
-    .image-thumb {
-        max-width: 100%;
-        max-height: 140px;
-        border-radius: 4px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-    }
-    .tool-option.drag-over {
-        border-color: #00ff00 !important;
-        background-color: rgba(0, 255, 0, 0.2) !important;
+      #drawing-app-layout-wrapper summary:hover {
+        background: #2a2a30 !important;
         color: #fff !important;
-        box-shadow: 0 0 10px rgba(0,255,0,0.3);
+      }
+
+      /* Hide native summary disclosure markers inside DrawingApp side panel */
+      #drawing-app-layout-wrapper details summary::-webkit-details-marker {
+        display: none !important;
+      }
+      #drawing-app-layout-wrapper details summary {
+        list-style: none !important;
+        outline: none !important;
+      }
+
+      /* Custom caret symbols on summary headers */
+      #drawing-app-layout-wrapper summary::after {
+        content: '▼' !important;
+        font-size: 8px !important;
+        color: #555 !important;
+        transition: transform 0.2s ease !important;
+        display: inline-block !important;
+      }
+
+      #drawing-app-layout-wrapper details[open] summary::after {
+        transform: rotate(-180deg) !important;
+        color: #00ff66 !important;
+      }
+
+      #drawing-app-layout-wrapper details > div {
+        padding: 0 !important;
+        height: 0 !important;
+        overflow: hidden !important;
+        transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1) !important;
+        opacity: 0 !important;
+        background: #141416 !important;
+      }
+
+      #drawing-app-layout-wrapper details[open] > div {
+        padding: 10px !important;
+        height: auto !important;
+        opacity: 1 !important;
+        overflow: visible !important;
+        border-top: 1px solid rgba(255, 255, 255, 0.03) !important;
+      }
+
+      /* --- Dialog Box Beautification Overrides --- */
+      .dialog-box {
+          border: 1px solid #444 !important;
+          box-shadow: 0 15px 40px rgba(0,0,0,0.6) !important;
+          background-color: rgba(35, 35, 35, 0.95) !important;
+          backdrop-filter: blur(12px);
+          border-radius: 10px !important;
+      }
+      .dialog-header {
+          background: linear-gradient(to bottom, #3a3a3a, #2b2b2b) !important;
+          border-bottom: 1px solid #444 !important;
+          font-family: 'Segoe UI', system-ui, sans-serif !important;
+          font-size: 13px !important;
+          letter-spacing: 0.5px;
+          padding: 8px 12px !important;
+          border-radius: 10px 10px 0 0 !important;
+      }
+      .dialog-content {
+          background-color: transparent !important;
+          color: #e0e0e0 !important;
+      }
+      .dialog-button {
+          background: linear-gradient(to bottom, #4a4a4a, #3a3a3a) !important;
+          border: 1px solid #555 !important;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+          border-radius: 4px !important;
+          color: #eee !important;
+      }
+      .dialog-button:hover {
+          background: linear-gradient(to bottom, #555, #454545) !important;
+          border-color: #777 !important;
+      }
+      .dialog-footer {
+          background-color: rgba(30, 30, 30, 0.5) !important;
+          border-top: 1px solid #444 !important;
+          border-radius: 0 0 10px 10px !important;
+      }
+
+      .setting-row { 
+        margin-bottom: 15px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 6px; 
+      }
+      .setting-row.compact-grid {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 10px;
+          margin-bottom: 10px;
+      }
+      .compact-control {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+      }
+      .compact-control .setting-label {
+          font-size: 10px;
+          color: #888;
+      }
+
+      .setting-label { 
+        color: #aaa; 
+        font-size: 12px; 
+        font-weight: 600; 
+        text-transform: uppercase; 
+        letter-spacing: 0.5px; 
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+      }
+      .value-display { 
+        font-family: 'Consolas', monospace; 
+        color: #4fc3f7; 
+        font-size: 11px; 
+        background: rgba(0,0,0,0.3); 
+        padding: 2px 6px; 
+        border-radius: 4px; 
+      }
+      .drawing-surface { 
+        background-color: var(--bg-color, #222); 
+        width: 100%; 
+        height: 100%; 
+        display: block; 
+        touch-action: none; 
+        cursor: crosshair; 
+      }
+      
+      .construction-line {
+          stroke: #95a5a6;
+          stroke-width: var(--const-width, 1px);
+          opacity: var(--const-opacity, 0.5);
+          stroke-dasharray: 4,2;
+          vector-effect: non-scaling-stroke;
+      }
+      .construction-cp {
+          fill: #f1c40f;
+          stroke: none;
+          r: calc(var(--const-width, 1px) + 2px);
+          opacity: var(--const-opacity, 0.5);
+      }
+      .construction-label {
+          font-family: monospace;
+          font-weight: bold;
+          font-size: var(--const-label-size, 10px);
+          fill: #bdc3c7;
+          opacity: var(--const-opacity, 0.5);
+          pointer-events: none;
+          user-select: none;
+      }
+      
+      .hide-all-construction .curve-group .controls,
+      .hide-all-construction .curve-group .construction-label { 
+          display: none !important; 
+      }
+      
+      .active-only-construction .curve-group:not(.active-curve) .controls,
+      .active-only-construction .curve-group:not(.active-curve) .construction-label {
+          display: none !important;
+      }
+
+      .drawing-surface.panning { cursor: grab !important; }
+      .drawing-surface.panning:active { cursor: grabbing !important; }
+
+      .color-swatch {
+        width: 100%;
+        height: 32px;
+        border-radius: 6px;
+        cursor: pointer;
+        border: 2px solid rgba(255,255,255,0.15);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        transition: all 0.15s ease;
+      }
+      .color-swatch:hover { 
+        transform: translateY(-1px);
+        border-color: rgba(255,255,255,0.4);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.4);
+      }
+
+      .image-preview-container {
+          transition: max-height 0.3s ease, margin 0.3s ease, opacity 0.3s ease;
+          max-height: 0;
+          opacity: 0;
+          overflow: hidden;
+          background: rgba(0,0,0,0.3);
+          border-radius: 6px;
+          border: 1px dashed #555;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          margin-top: 0;
+      }
+      .image-preview-container.active {
+          max-height: 150px;
+          opacity: 1;
+          margin-top: 10px;
+          padding: 5px;
+      }
+      .image-thumb {
+          max-width: 100%;
+          max-height: 140px;
+          border-radius: 4px;
+          box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+      }
+      .tool-option.drag-over {
+          border-color: #00ff00 !important;
+          background-color: rgba(0, 255, 0, 0.2) !important;
+          color: #fff !important;
+          box-shadow: 0 0 10px rgba(0,255,0,0.3);
+      }
+
+      .midi-toggle-btn {
+        width: 100%;
+        padding: 8px;
+        margin-top: 20px;
+        background: rgba(50, 50, 50, 0.5);
+        border: 1px solid #555;
+        color: #aaa;
+        cursor: pointer;
+        border-radius: 6px;
+        font-size: 11px;
+        transition: all 0.2s;
+      }
+      .midi-toggle-btn:hover {
+        background: rgba(70, 70, 70, 0.7);
+        color: #fff;
+      }
+      .midi-toggle-btn.active {
+        background: #007acc;
+        color: #fff;
+        border-color: #0088e0;
+      }
+      
+      @keyframes midi-pulse {
+        0%, 100% { 
+          border-color: #ffff00; 
+          box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.7);
+        }
+        50% { 
+          border-color: #ffaa00;
+          box-shadow: 0 0 0 8px rgba(255, 255, 0, 0);
+        }
+      }
+      
+      .settings-container { position: relative; }
+      .drawing-path { stroke-linecap: round; stroke-linejoin: round; fill: none; transition: stroke 0.2s, stroke-width 0.2s; }
+      .drawing-path.highlighted { stroke: white !important; filter: drop-shadow(0 0 5px white); cursor: pointer; }
+      .rubber-band { stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0.8; pointer-events: none; stroke-dasharray: 4 4; }
+      .arc-chord-guide { stroke: white; stroke-width: 2px; stroke-dasharray: 6 6; fill: none; opacity: 0.7; pointer-events: none; }
+      .snap-highlight { fill: rgba(255, 255, 255, 0.2); stroke: #ff00ff; stroke-width: 3px; pointer-events: none; transition: r 0.1s ease-out; }
+      .cursor-tip { font-family: monospace; font-size: 14px; fill: white; text-shadow: 0px 0px 3px black; pointer-events: none; font-weight: bold; }
+      .mode-toast {
+        position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 20px;
+        background-color: rgba(30, 30, 30, 0.85); color: #ccc; font-family: sans-serif; font-size: 13px;
+        pointer-events: none; user-select: none; border: 1px solid rgba(255,255,255,0.15); transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: center; white-space: nowrap; backdrop-filter: blur(4px);
+      }
+      .mode-toast.highlight { color: #fff; background-color: rgba(0, 120, 215, 0.8); border-color: rgba(100, 200, 255, 0.4); }
+      .mode-toast.edit-mode { background-color: rgba(200, 50, 50, 0.8); border-color: #ff8888; }
+      .settings-container { padding: 10px; color: #eee; }
+      input[type=range] { width: 100%; background: transparent; margin: 2px 0 0 0; cursor: pointer; accent-color: #007acc; }
+      .action-btn { width: 100%; padding: 10px; margin-top: 15px; background: #3a3a3a; border: 1px solid #555; color: #e0e0e0; cursor: pointer; border-radius: 6px; font-weight: 500; transition: all 0.2s; }
+      .action-btn:hover { background: #4a4a4a; border-color: #666; color: white; }
+      .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
+      .tool-option { text-align: center; padding: 10px; cursor: pointer; border-radius: 6px; font-size: 13px; background: #2a2a2a; transition: all 0.2s; color: #aaa; border: 1px solid #3c3c3c; }
+      .tool-option:hover { color: #fff; border-color: #555; background: #333; }
+      .tool-option.active { background: #007acc; color: #fff; font-weight: 600; border-color: #0088e0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+      .tool-option.danger:hover { color: #ff8888; border-color: #800; }
+      .tool-option.danger.active { background: #d32f2f; color: white; border-color: #ff5252; }
+    `,
+        'DrawingAppStyles_v13'
+      );
     }
 
-    /* --- MIDI Mapping Styles --- */
-    .midi-toggle-btn {
-      width: 100%;
-      padding: 8px;
-      margin-top: 20px;
-      background: rgba(50, 50, 50, 0.5);
-      border: 1px solid #555;
-      color: #aaa;
-      cursor: pointer;
-      border-radius: 6px;
-      font-size: 11px;
-      transition: all 0.2s;
-    }
-    .midi-toggle-btn:hover {
-      background: rgba(70, 70, 70, 0.7);
-      color: #fff;
-    }
-    .midi-toggle-btn.active {
-      background: #007acc;
-      color: #fff;
-      border-color: #0088e0;
-    }
-    
-    @keyframes midi-pulse {
-      0%, 100% { 
-        border-color: #ffff00; 
-        box-shadow: 0 0 0 0 rgba(255, 255, 0, 0.7);
-      }
-      50% { 
-        border-color: #ffaa00;
-        box-shadow: 0 0 0 8px rgba(255, 255, 0, 0);
-      }
-    }
-    
-    .settings-container { position: relative; }
-    .drawing-path { stroke-linecap: round; stroke-linejoin: round; fill: none; transition: stroke 0.2s, stroke-width 0.2s; }
-    .drawing-path.highlighted { stroke: white !important; filter: drop-shadow(0 0 5px white); cursor: pointer; }
-    .rubber-band { stroke-linecap: round; stroke-linejoin: round; fill: none; opacity: 0.8; pointer-events: none; stroke-dasharray: 4 4; }
-    .arc-chord-guide { stroke: white; stroke-width: 2px; stroke-dasharray: 6 6; fill: none; opacity: 0.7; pointer-events: none; }
-    .snap-highlight { fill: rgba(255, 255, 255, 0.2); stroke: #ff00ff; stroke-width: 3px; pointer-events: none; transition: r 0.1s ease-out; }
-    .cursor-tip { font-family: monospace; font-size: 14px; fill: white; text-shadow: 0px 0px 3px black; pointer-events: none; font-weight: bold; }
-    .mode-toast {
-      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 8px 16px; border-radius: 20px;
-      background-color: rgba(30, 30, 30, 0.85); color: #ccc; font-family: sans-serif; font-size: 13px;
-      pointer-events: none; user-select: none; border: 1px solid rgba(255,255,255,0.15); transition: all 0.2s ease;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-align: center; white-space: nowrap; backdrop-filter: blur(4px);
-    }
-    .mode-toast.highlight { color: #fff; background-color: rgba(0, 120, 215, 0.8); border-color: rgba(100, 200, 255, 0.4); }
-    .mode-toast.edit-mode { background-color: rgba(200, 50, 50, 0.8); border-color: #ff8888; }
-    .settings-container { padding: 10px; color: #eee; }
-    input[type=range] { width: 100%; background: transparent; margin: 2px 0 0 0; cursor: pointer; accent-color: #007acc; }
-    .action-btn { width: 100%; padding: 10px; margin-top: 15px; background: #3a3a3a; border: 1px solid #555; color: #e0e0e0; cursor: pointer; border-radius: 6px; font-weight: 500; transition: all 0.2s; }
-    .action-btn:hover { background: #4a4a4a; border-color: #666; color: white; }
-    .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
-    .tool-option { text-align: center; padding: 10px; cursor: pointer; border-radius: 6px; font-size: 13px; background: #2a2a2a; transition: all 0.2s; color: #aaa; border: 1px solid #3c3c3c; }
-    .tool-option:hover { color: #fff; border-color: #555; background: #333; }
-    .tool-option.active { background: #007acc; color: #fff; font-weight: 600; border-color: #0088e0; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
-    .tool-option.danger:hover { color: #ff8888; border-color: #800; }
-    .tool-option.danger.active { background: #d32f2f; color: white; border-color: #ff5252; }
-  `,
-      'DrawingAppStyles_v13'
-    );
-  }
-
-  createDrawingInterface(layout) {
+  createDrawingInterface(canvasContainer) {
       this.svgElement = makeElement('svg:svg', {
         viewBox: `0 0 ${this.vbWidth} ${this.vbHeight}`,
         preserveAspectRatio: 'xMidYMid meet',
@@ -538,547 +635,15 @@ class DrawingApp {
         this.updateZoom();
       });
 
-      const stateId = 'drawing_panel_v10';
-      this.drawingDialog = UITools.makeDialog({
-        env: this.env,
-        title: 'Drawing Panel',
-        size: [layout.w, layout.h],
-        position: [layout.x, layout.y],
-        contentElement: wrapper,
-        noPadding: true,
-        allowMaximize: true,
-        stateId: stateId,
-      });
-
-      if (!localStorage.getItem(`uw_${stateId}`)) {
-        Object.assign(this.drawingDialog.element.style, {
-          left: layout.x + 'px',
-          top: layout.y + 'px',
-          width: layout.w + 'px',
-          height: layout.h + 'px',
-          transform: 'none',
-        });
-        this.drawingDialog._saveState();
-      }
+      // Append directly to our adjacent canvas layout container rather than a pop-up window
+      canvasContainer.appendChild(wrapper);
+      this.canvasWrapper = wrapper;
       this.updateZoom();
     }
 
-  createSettingsInterface(layout) {
-      const container = makeElement('div', { className: 'settings-container' });
-
-      const toolModes = [
-        { id: 'curve', label: 'Curve', group: 'draw' },
-        { id: 'drawstring', label: 'DrawString', group: 'draw' },
-        { id: 'polyarc', label: 'PolyArc', group: 'draw' },
-        { id: 'arc', label: 'Arc (3-Pt)', group: 'draw' },
-        { id: 'image', label: 'Image', group: 'draw' },
-        { id: 'move', label: 'Move', group: 'edit' },
-        { id: 'copy', label: 'Copy', group: 'edit' },
-        { id: 'delete', label: 'Delete', group: 'edit', danger: true },
-      ];
-
-      this.fileInput = makeElement('input', {
-        type: 'file',
-        accept: 'image/*',
-        style: { display: 'none' },
-        onchange: (e) => this.handleImageFileSelect(e.target.files[0]),
-      });
-      container.appendChild(this.fileInput);
-
-      const grid = makeElement('div', { className: 'tool-grid' });
-      this.toolButtons = {};
-
-      const setTool = (mode, suppressDialog = false) => {
-        this.stopDrawing();
-
-        if (this.currentToolInstance) {
-          if (this.currentToolInstance.deactivate)
-            this.currentToolInstance.deactivate();
-          this.currentToolInstance = null;
-        }
-
-        if (this.carriedElement) this.cancelCarry();
-        this.settings.toolMode = mode;
-
-        if (mode === 'drawstring') {
-          if (!this.drawStringTool)
-            this.drawStringTool = new DrawStringTool(this);
-          this.currentToolInstance = this.drawStringTool;
-          this.currentToolInstance.activate();
-        }
-
-        Object.values(this.toolButtons).forEach((b) =>
-          b.classList.remove('active')
-        );
-        if (this.toolButtons[mode])
-          this.toolButtons[mode].classList.add('active');
-
-        if (this.arcBendRow) {
-          this.arcBendRow.style.display = mode === 'polyarc' ? 'flex' : 'none';
-        }
-        if (this.curveParamsRow) {
-          this.curveParamsRow.style.display = mode === 'curve' ? 'block' : 'none';
-        }
-        if (this.radiusRow) {
-          this.radiusRow.style.display = mode === 'polyarc' ? 'flex' : 'none';
-        }
-
-        if (mode === 'image' && !this.pendingImage && !suppressDialog) {
-          this.fileInput.click();
-        }
-        this.updateUIState();
-        this.saveSettings();
-      };
-
-      toolModes.forEach((m) => {
-        const btn = makeElement(
-          'button',
-          {
-            className: `tool-option ${m.danger ? 'danger' : ''}`,
-            onclick: () => setTool(m.id),
-          },
-          m.label
-        );
-        if (m.id === 'image') {
-          btn.ondragover = (e) => {
-            e.preventDefault();
-            btn.classList.add('drag-over');
-          };
-          btn.ondragleave = (e) => {
-            btn.classList.remove('drag-over');
-          };
-          btn.ondrop = (e) => {
-            e.preventDefault();
-            btn.classList.remove('drag-over');
-            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-              this.handleImageFileSelect(e.dataTransfer.files[0]);
-              setTool('image', true);
-            }
-          };
-        }
-        if (this.settings.toolMode === m.id) btn.classList.add('active');
-        this.toolButtons[m.id] = btn;
-        grid.appendChild(btn);
-      });
-
-      container.appendChild(
-        makeElement('div', { className: 'setting-label' }, 'Tools')
-      );
-      container.appendChild(grid);
-
-      this.imagePreviewEl = makeElement('div', {
-        className: 'image-preview-container',
-      });
-      container.appendChild(this.imagePreviewEl);
-
-      container.appendChild(
-        this.createColorSwatch('Line Color', this.settings.strokeColor, (c) => {
-          this.settings.strokeColor = c;
-          this.updateSettingsForActive();
-          if (this.activeElement) {
-            this.activeElement.setAttribute('stroke', c);
-          }
-          this.saveSettings();
-        })
-      );
-
-      const thicknessDisplay = makeElement(
-        'span',
-        { className: 'value-display' },
-        this.settings.strokeWidth + 'px'
-      );
-      container.appendChild(
-        makeElement('div', { className: 'setting-row' }, [
-          makeElement('div', { className: 'setting-label' }, [
-            'Thickness',
-            thicknessDisplay,
-          ]),
-          makeElement('input', {
-            type: 'range',
-            min: 1,
-            max: 50,
-            step: 1,
-            value: this.settings.strokeWidth,
-            oninput: (e) => {
-              this.settings.strokeWidth = parseInt(e.target.value);
-              thicknessDisplay.textContent = this.settings.strokeWidth + 'px';
-              this.updateSettingsForActive();
-              this.saveSettings();
-            },
-          }),
-        ])
-      );
-
-      const radiusDisplay = makeElement(
-        'span',
-        { className: 'value-display' },
-        this.settings.cornerRadius
-      );
-      const MAX_RAD = 800;
-      const POWER = 3;
-      const toSlider = (val) =>
-        Math.round(100 * Math.pow(val / MAX_RAD, 1 / POWER));
-      const fromSlider = (val) =>
-        Math.round(MAX_RAD * Math.pow(val / 100, POWER));
-
-      this.radiusRow = makeElement(
-        'div',
-        {
-          className: 'setting-row',
-          style: {
-            display: this.settings.toolMode === 'polyarc' ? 'flex' : 'none',
-          },
-        },
-        [
-          makeElement('div', { className: 'setting-label' }, [
-            'Corner Radius',
-            radiusDisplay,
-          ]),
-          makeElement('input', {
-            type: 'range',
-            min: 0,
-            max: 100,
-            step: 1,
-            value: toSlider(this.settings.cornerRadius),
-            oninput: (e) => {
-              const val = fromSlider(parseInt(e.target.value));
-              this.settings.cornerRadius = val;
-              radiusDisplay.textContent = val;
-              if (
-                this.isDrawing &&
-                this.settings.toolMode === 'polyarc' &&
-                this.currentPoints.length > 0
-              ) {
-                this.currentPoints.forEach((p) => (p.cornerRadius = val));
-                if (this.activeElement) {
-                  this.activeElement.setAttribute(
-                    'd',
-                    this.buildPolyArcPath(this.currentPoints)
-                  );
-                }
-              }
-              this.saveSettings();
-            },
-          }),
-        ]
-      );
-      container.appendChild(this.radiusRow);
-
-      const arcAngleDisplay = makeElement(
-        'span',
-        { className: 'value-display' },
-        this.settings.arcAngle + '°'
-      );
-      this.arcAngleInput = makeElement('input', {
-        type: 'range',
-        min: -180,
-        max: 180,
-        step: 1,
-        value: this.settings.arcAngle,
-        oninput: (e) => {
-          const val = parseInt(e.target.value);
-          this.settings.arcAngle = val;
-          arcAngleDisplay.textContent = val + '°';
-          if (
-            this.isDrawing &&
-            this.settings.toolMode === 'polyarc' &&
-            this.currentMousePt
-          ) {
-            this.updateRubberBand(this.currentMousePt);
-          }
-        },
-      });
-      this.arcBendRow = makeElement(
-        'div',
-        {
-          className: 'setting-row',
-          style: {
-            display: this.settings.toolMode === 'polyarc' ? 'flex' : 'none',
-          },
-        },
-        [
-          makeElement('div', { className: 'setting-label' }, [
-            'Arc Bend (L/R)',
-            arcAngleDisplay,
-          ]),
-          this.arcAngleInput,
-        ]
-      );
-      container.appendChild(this.arcBendRow);
-
-      this.curveParams = { curvature: 1.0, balance: 1.0 };
-      const curvDisplay = makeElement(
-        'span',
-        { className: 'value-display' },
-        '1.00'
-      );
-      const balDisplay = makeElement(
-        'span',
-        { className: 'value-display' },
-        '1.00'
-      );
-      this.curveParamsRow = makeElement(
-        'div',
-        {
-          style: {
-            display: this.settings.toolMode === 'curve' ? 'block' : 'none',
-          },
-        },
-        [
-          makeElement('div', { className: 'setting-row' }, [
-            makeElement('div', { className: 'setting-label' }, [
-              'Curvature',
-              curvDisplay,
-            ]),
-            makeElement('input', {
-              type: 'range',
-              min: 0.1,
-              max: 3.0,
-              step: 0.01,
-              value: 1.0,
-              oninput: (e) => {
-                this.curveParams.curvature = parseFloat(e.target.value);
-                curvDisplay.textContent = this.curveParams.curvature.toFixed(2);
-                this.updateActiveCurveParams();
-              },
-            }),
-          ]),
-          makeElement('div', { className: 'setting-row' }, [
-            makeElement('div', { className: 'setting-label' }, [
-              'Balance',
-              balDisplay,
-            ]),
-            makeElement('input', {
-              type: 'range',
-              min: 0.0,
-              max: 2.0,
-              step: 0.01,
-              value: 1.0,
-              oninput: (e) => {
-                this.curveParams.balance = parseFloat(e.target.value);
-                balDisplay.textContent = this.curveParams.balance.toFixed(2);
-                this.updateActiveCurveParams();
-              },
-            }),
-          ]),
-        ]
-      );
-      container.appendChild(this.curveParamsRow);
-
-      container.appendChild(
-        this.createColorSwatch('Background Color', this.settings.bgColor, (c) => {
-          this.settings.bgColor = c;
-          this.svgElement.style.setProperty('--bg-color', this.settings.bgColor);
-          this.saveSettings();
-        })
-      );
-
-      container.appendChild(
-        makeElement('div', {
-          style: {
-            margin: '15px 0 5px 0',
-            borderTop: '1px solid #444',
-            paddingTop: '10px',
-          },
-        })
-      );
-      container.appendChild(
-        makeElement(
-          'div',
-          { className: 'setting-label', style: { marginBottom: '10px' } },
-          'Construction'
-        )
-      );
-
-      const defC = this.settings.construction || {};
-
-      const activeOnlyCheck = makeElement('input', {
-        type: 'checkbox',
-        checked: defC.activeOnly,
-        onchange: (e) => {
-          this.settings.construction.activeOnly = e.target.checked;
-          this.updateConstructionVisuals();
-          this.saveSettings();
-        },
-      });
-
-      const showAllCheck = makeElement('input', {
-        type: 'checkbox',
-        checked: defC.visible,
-        onchange: (e) => {
-          this.settings.construction.visible = e.target.checked;
-          this.updateConstructionVisuals();
-          this.saveSettings();
-        },
-      });
-
-      container.appendChild(
-        makeElement('div', { className: 'setting-row compact-grid' }, [
-          makeElement(
-            'label',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '11px',
-                color: '#ccc',
-              },
-            },
-            [showAllCheck, 'Show Construction']
-          ),
-          makeElement(
-            'label',
-            {
-              style: {
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                fontSize: '11px',
-                color: '#ccc',
-              },
-            },
-            [activeOnlyCheck, 'Active Only']
-          ),
-        ])
-      );
-
-      const opDisplay = makeElement(
-        'span',
-        { className: 'value-display', style: { fontSize: '9px' } },
-        defC.opacity
-      );
-      const opControl = makeElement('div', { className: 'compact-control' }, [
-        makeElement('div', { className: 'setting-label' }, [
-          'Constr. Opacity',
-          opDisplay,
-        ]),
-        makeElement('input', {
-          type: 'range',
-          min: 0,
-          max: 1,
-          step: 0.05,
-          value: defC.opacity,
-          oninput: (e) => {
-            this.settings.construction.opacity = parseFloat(e.target.value);
-            opDisplay.textContent = this.settings.construction.opacity.toFixed(2);
-            this.updateConstructionVisuals();
-            this.saveSettings();
-          },
-        }),
-      ]);
-
-      const lwDisplay = makeElement(
-        'span',
-        { className: 'value-display', style: { fontSize: '9px' } },
-        defC.lineWidth
-      );
-      const lwControl = makeElement('div', { className: 'compact-control' }, [
-        makeElement('div', { className: 'setting-label' }, [
-          'Constr. Width',
-          lwDisplay,
-        ]),
-        makeElement('input', {
-          type: 'range',
-          min: 0.5,
-          max: 5,
-          step: 0.5,
-          value: defC.lineWidth,
-          oninput: (e) => {
-            this.settings.construction.lineWidth = parseFloat(e.target.value);
-            lwDisplay.textContent = this.settings.construction.lineWidth;
-            this.updateConstructionVisuals();
-            this.saveSettings();
-          },
-        }),
-      ]);
-
-      const lsDisplay = makeElement(
-        'span',
-        { className: 'value-display', style: { fontSize: '9px' } },
-        defC.labelSize
-      );
-      const lsControl = makeElement('div', { className: 'compact-control' }, [
-        makeElement('div', { className: 'setting-label' }, [
-          'Label Size',
-          lsDisplay,
-        ]),
-        makeElement('input', {
-          type: 'range',
-          min: 6,
-          max: 32,
-          step: 1,
-          value: defC.labelSize,
-          oninput: (e) => {
-            this.settings.construction.labelSize = parseInt(e.target.value);
-            lsDisplay.textContent = this.settings.construction.labelSize;
-            this.updateConstructionVisuals();
-            this.saveSettings();
-          },
-        }),
-      ]);
-
-      container.appendChild(
-        makeElement('div', { className: 'setting-row compact-grid' }, [
-          opControl,
-          lwControl,
-        ])
-      );
-      container.appendChild(
-        makeElement('div', { className: 'setting-row compact-grid' }, [lsControl])
-      );
-
-      container.appendChild(
-        makeElement(
-          'button',
-          { className: 'action-btn', onclick: () => this.performUndo() },
-          'Undo (Ctrl+Z)'
-        )
-      );
-
-      const midiBtn = makeElement(
-        'button',
-        {
-          className: 'midi-toggle-btn',
-          onclick: () => {
-            if (!this.midiMapper)
-              this.midiMapper = new MidiMapper(container, this);
-            if (this.midiMapper.isActive) {
-              this.midiMapper.deactivate();
-              midiBtn.textContent = '🎹 Map MIDI';
-              midiBtn.classList.remove('active');
-            } else {
-              this.midiMapper.activate();
-              midiBtn.textContent = '✓ Done Mapping';
-              midiBtn.classList.add('active');
-            }
-          },
-        },
-        '🎹 Map MIDI'
-      );
-      container.appendChild(midiBtn);
-
-      const stateId = 'drawing_settings_v12';
-      this.settingsDialog = UITools.makeDialog({
-        env: this.env,
-        title: 'Settings',
-        size: [layout.w, layout.h || 400],
-        position: [layout.x, layout.y],
-        contentElement: container,
-        allowMinimize: true,
-        stateId: stateId,
-      });
-
-      if (!localStorage.getItem(`uw_${stateId}`)) {
-        Object.assign(this.settingsDialog.element.style, {
-          left: layout.x + 'px',
-          top: layout.y + 'px',
-          transform: 'none',
-        });
-        this.settingsDialog._saveState();
-      }
-
-      setTimeout(() => this.updateConstructionVisuals(), 0);
+  createSettingsInterface() {
+      // Re-routed completely to our dynamic renderToolSettings engine
+      this.renderToolSettings();
     }
 
   getSvgPoint(evt) {
@@ -2437,15 +2002,17 @@ class DrawingApp {
   }
 
   updateZoom() {
-    if (this.zoomGroup) {
-      this.zoomGroup.setAttribute(
-        'transform',
-        `scale(${this.zoom}) translate(${this.panX},${this.panY})`
-      );
+      if (this.zoomGroup) {
+        this.zoomGroup.setAttribute(
+          'transform',
+          `scale(${this.zoom}) translate(${this.panX},${this.panY})`
+        );
+      }
+      const pct = Math.round(this.zoom * 100);
+      if (this.drawingDialog && typeof this.drawingDialog.setTitle === 'function') {
+        this.drawingDialog.setTitle(`Drawing Panel - ${pct}%`);
+      }
     }
-    const pct = Math.round(this.zoom * 100);
-    this.drawingDialog.setTitle(`Drawing Panel - ${pct}%`);
-  }
 
   handleWheel(e) {
     e.preventDefault();
@@ -3001,47 +2568,46 @@ class DrawingApp {
   }
 
   updateActiveCurveParams() {
-    // 1. Drawing Mode: Update the last placed vertex
-    if (
-      this.isDrawing &&
-      this.settings.toolMode === 'curve' &&
-      this.activeCurve
-    ) {
-      const vertices = this.activeCurve.vertices;
-      if (vertices.length > 0) {
-        const lastV = vertices[vertices.length - 1];
-        lastV.curvature = this.curveParams.curvature;
-        lastV.balance = this.curveParams.balance;
+      const curvature = this.curveParams?.curvature !== undefined ? this.curveParams.curvature : 1.0;
+      const balance = this.curveParams?.balance !== undefined ? this.curveParams.balance : 1.0;
+      const tangencyDeg = this.toolSliders && this.toolSliders['tangency'] ? this.toolSliders['tangency'].value : 0;
+      const tangencyRad = tangencyDeg * (Math.PI / 180);
 
-        // Re-render including the ephemeral segment to mouse
-        if (this.currentMousePt) {
-          const activeIdx = vertices.length - 1;
-          const activeV = { curve: this.activeCurve, index: activeIdx };
-          this.activeCurve.render(this.identityTransform, activeV, null, [
-            this.currentMousePt.x,
-            this.currentMousePt.y,
-          ]);
-        } else {
-          this.activeCurve.render(this.identityTransform);
+      if (this.isDrawing && this.settings.toolMode === 'curve' && this.activeCurve) {
+        const vertices = this.activeCurve.vertices;
+        if (vertices.length > 0) {
+          const lastV = vertices[vertices.length - 1];
+          lastV.curvature = curvature;
+          lastV.balance = balance;
+          lastV.tangentAngleOffset = tangencyRad;
+
+          if (this.currentMousePt) {
+            const activeIdx = vertices.length - 1;
+            const activeV = { curve: this.activeCurve, index: activeIdx };
+            this.activeCurve.render(this.identityTransform, activeV, null, [
+              this.currentMousePt.x,
+              this.currentMousePt.y,
+            ]);
+          } else {
+            this.activeCurve.render(this.identityTransform);
+          }
+        }
+      } else if (this.editingPoint) {
+        const pathObj = this.drawnPaths[this.editingPoint.pathIndex];
+        if (pathObj && pathObj.type === 'curve') {
+          const v = pathObj.instance.vertices[this.editingPoint.pointIndex];
+          v.curvature = curvature;
+          v.balance = balance;
+          v.tangentAngleOffset = tangencyRad;
+
+          const activeV = {
+            curve: pathObj.instance,
+            index: this.editingPoint.pointIndex,
+          };
+          pathObj.instance.render(this.identityTransform, activeV);
         }
       }
     }
-    // 2. Edit Mode: Update the selected vertex
-    else if (this.editingPoint) {
-      const pathObj = this.drawnPaths[this.editingPoint.pathIndex];
-      if (pathObj && pathObj.type === 'curve') {
-        const v = pathObj.instance.vertices[this.editingPoint.pointIndex];
-        v.curvature = this.curveParams.curvature;
-        v.balance = this.curveParams.balance;
-
-        const activeV = {
-          curve: pathObj.instance,
-          index: this.editingPoint.pointIndex,
-        };
-        pathObj.instance.render(this.identityTransform, activeV);
-      }
-    }
-  }
 
   updateConstructionVisuals() {
     const c = this.settings.construction || {};
@@ -3111,6 +2677,9 @@ class DrawingApp {
     }
 
   destroy() {
+      if (this.sidePanel && typeof this.sidePanel.destroy === 'function') {
+        try { this.sidePanel.destroy(); } catch(e) {}
+      }
       if (this.drawingDialog && typeof this.drawingDialog.close === 'function') {
         this.drawingDialog.close();
       }
@@ -3123,11 +2692,872 @@ class DrawingApp {
         });
       }
       this.configuredBoxes = [];
+      if (this.canvasWrapper) {
+        this.canvasWrapper.remove();
+      }
+      if (this.canvasContainer) {
+        this.canvasContainer.remove();
+      }
+      if (this.layoutWrapper) {
+        this.layoutWrapper.remove();
+      }
       if (this.rootElement) {
         this.rootElement.innerHTML = '';
         this.rootElement = null;
       }
     }
 
+
+  setTool(mode, suppressDialog = false) {
+      this.stopDrawing();
+
+      if (this.currentToolInstance) {
+        if (this.currentToolInstance.deactivate)
+          this.currentToolInstance.deactivate();
+        this.currentToolInstance = null;
+      }
+
+      if (this.carriedElement) this.cancelCarry();
+      this.settings.toolMode = mode;
+
+      if (mode === 'drawstring') {
+        if (!this.drawStringTool)
+          this.drawStringTool = new DrawStringTool(this);
+        this.currentToolInstance = this.drawStringTool;
+        this.currentToolInstance.activate();
+      }
+
+      if (mode === 'image' && !this.pendingImage && !suppressDialog) {
+        this.fileInput.click();
+      }
+
+      this.updateUIState();
+      this.saveSettings();
+
+      // Dynamically rebuild the sidebar controls to display contextual sliders
+      this.renderToolSettings();
+    }
+
+  renderToolSettings() {
+      if (!this.sidePanel || !this.sidePanel.toolSettingsSection) return;
+      this.sidePanel.toolSettingsSection.innerHTML = '';
+      this.toolSliders = {};
+
+      const container = makeElement('div', { className: 'settings-container', style: { padding: '5px' } });
+
+      const toolModes = [
+        { id: 'curve', label: 'Curve', group: 'draw' },
+        { id: 'drawstring', label: 'DrawString', group: 'draw' },
+        { id: 'polyarc', label: 'PolyArc', group: 'draw' },
+        { id: 'arc', label: 'Arc (3-Pt)', group: 'draw' },
+        { id: 'image', label: 'Image', group: 'draw' },
+        { id: 'move', label: 'Move', group: 'edit' },
+        { id: 'copy', label: 'Copy', group: 'edit' },
+        { id: 'delete', label: 'Delete', group: 'edit', danger: true },
+      ];
+
+      // File input cache
+      this.fileInput = makeElement('input', {
+        type: 'file',
+        accept: 'image/*',
+        style: { display: 'none' },
+        onchange: (e) => this.handleImageFileSelect(e.target.files[0]),
+      });
+      container.appendChild(this.fileInput);
+
+      // Tools title and grid
+      const toolsHeader = makeElement('div', { 
+        className: 'setting-label', 
+        style: { marginBottom: '8px', fontSize: '11px', color: '#888' } 
+      }, 'Tools');
+      container.appendChild(toolsHeader);
+
+      const grid = makeElement('div', { className: 'tool-grid' });
+      this.toolButtons = {};
+
+      toolModes.forEach((m) => {
+        const btn = makeElement(
+          'button',
+          {
+            className: `tool-option ${m.danger ? 'danger' : ''}`,
+            onclick: () => this.setTool(m.id),
+          },
+          m.label
+        );
+        if (m.id === 'image') {
+          btn.ondragover = (e) => {
+            e.preventDefault();
+            btn.classList.add('drag-over');
+          };
+          btn.ondragleave = (e) => {
+            btn.classList.remove('drag-over');
+          };
+          btn.ondrop = (e) => {
+            e.preventDefault();
+            btn.classList.remove('drag-over');
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+              this.handleImageFileSelect(e.dataTransfer.files[0]);
+              this.setTool('image', true);
+            }
+          };
+        }
+        if (this.settings.toolMode === m.id) btn.classList.add('active');
+        this.toolButtons[m.id] = btn;
+        grid.appendChild(btn);
+      });
+      container.appendChild(grid);
+
+      // Image preview container if active
+      this.imagePreviewEl = makeElement('div', {
+        className: 'image-preview-container',
+      });
+      container.appendChild(this.imagePreviewEl);
+
+      // Contextual Parameters header
+      const paramsHeader = makeElement('div', { 
+        className: 'setting-label', 
+        style: { marginTop: '15px', marginBottom: '10px', fontSize: '11px', color: '#888' } 
+      }, 'Parameters');
+      container.appendChild(paramsHeader);
+
+      // Dynamic Color swatch picker utilizing shared library ColorPicker.js
+      const colorContainer = document.createElement('div');
+      colorContainer.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 12px;';
+
+      const colorLabel = document.createElement('div');
+      colorLabel.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+      colorLabel.textContent = 'Line Color';
+
+      const swatch = document.createElement('div');
+      swatch.className = 'drawing-color-swatch-picker';
+      swatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
+        this.settings.strokeColor || '#00ffaa'
+      }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+
+      this.colorSwatchPicker = swatch;
+
+      swatch.onclick = (e) => {
+        e.stopPropagation();
+        this.colorPicker.openSmartPicker(
+          swatch,
+          this.settings.strokeColor || '#00ffaa',
+          (newColor) => {
+            swatch.style.backgroundColor = newColor;
+            this.settings.strokeColor = newColor;
+            this.updateSettingsForActive();
+            this.saveSettings();
+          }
+        );
+      };
+
+      colorContainer.appendChild(colorLabel);
+      colorContainer.appendChild(swatch);
+      container.appendChild(colorContainer);
+
+      // Universal Slider: Line Thickness
+      const thicknessSlider = new SliderControl({
+        label: 'thickness',
+        min: 1,
+        max: 50,
+        initialValue: this.settings.strokeWidth || 4,
+        showValue: true,
+        callback: (val) => {
+          this.settings.strokeWidth = Math.round(val);
+          this.updateSettingsForActive();
+          this.saveSettings();
+        }
+      });
+      container.appendChild(thicknessSlider.container);
+      this.toolSliders['thickness'] = thicknessSlider;
+
+      const activeTool = this.settings.toolMode;
+
+      // Tool Contextual Slider: Tangency, Curvature & Balance (Curve tool only)
+      if (activeTool === 'curve') {
+        const tangencySlider = new SliderControl({
+          label: 'tangency',
+          min: -90,
+          max: 90,
+          initialValue: 0,
+          showValue: true,
+          callback: (val) => {
+            this.updateActiveCurveParams();
+          }
+        });
+        container.appendChild(tangencySlider.container);
+        this.toolSliders['tangency'] = tangencySlider;
+
+        const curvSlider = new SliderControl({
+          label: 'curvature',
+          min: 0.1,
+          max: 3.0,
+          initialValue: this.curveParams?.curvature || 1.0,
+          showValue: true,
+          callback: (val) => {
+            if (!this.curveParams) this.curveParams = {};
+            this.curveParams.curvature = val;
+            this.updateActiveCurveParams();
+          }
+        });
+        container.appendChild(curvSlider.container);
+        this.toolSliders['curvature'] = curvSlider;
+
+        const balSlider = new SliderControl({
+          label: 'balance',
+          min: 0.0,
+          max: 2.0,
+          initialValue: this.curveParams?.balance || 1.0,
+          showValue: true,
+          callback: (val) => {
+            if (!this.curveParams) this.curveParams = {};
+            this.curveParams.balance = val;
+            this.updateActiveCurveParams();
+          }
+        });
+        container.appendChild(balSlider.container);
+        this.toolSliders['balance'] = balSlider;
+      }
+
+      // Tool Contextual Slider: Corner Radius & Arc Bend (PolyArc tool only)
+      if (activeTool === 'polyarc') {
+        const radiusSlider = new SliderControl({
+          label: 'radius',
+          min: 0,
+          max: 800,
+          initialValue: this.settings.cornerRadius || 0,
+          showValue: true,
+          callback: (val) => {
+            this.settings.cornerRadius = Math.round(val);
+            if (this.isDrawing && this.currentPoints.length > 0) {
+              this.currentPoints.forEach((p) => (p.cornerRadius = this.settings.cornerRadius));
+              if (this.activeElement) {
+                this.activeElement.setAttribute('d', this.buildPolyArcPath(this.currentPoints));
+              }
+            }
+            this.saveSettings();
+          }
+        });
+        container.appendChild(radiusSlider.container);
+        this.toolSliders['radius'] = radiusSlider;
+
+        const bendSlider = new SliderControl({
+          label: 'bend',
+          min: -180,
+          max: 180,
+          initialValue: this.settings.arcAngle || 0,
+          showValue: true,
+          callback: (val) => {
+            this.settings.arcAngle = Math.round(val);
+            if (this.isDrawing && this.currentMousePt) {
+              this.updateRubberBand(this.currentMousePt);
+            }
+          }
+        });
+        container.appendChild(bendSlider.container);
+        this.toolSliders['bend'] = bendSlider;
+      }
+
+      // Tool Contextual Slider: Image Opacity (Image tool only)
+      if (activeTool === 'image') {
+        const opacitySlider = new SliderControl({
+          label: 'image opacity',
+          min: 0.0,
+          max: 1.0,
+          initialValue: this.imageOpacity || 0.5,
+          showValue: true,
+          callback: (val) => {
+            this.imageOpacity = val;
+            if (this.svgElement) {
+              const images = this.svgElement.querySelectorAll('.drawing-image');
+              images.forEach(img => {
+                img.style.opacity = val;
+              });
+            }
+          }
+        });
+        container.appendChild(opacitySlider.container);
+        this.toolSliders['opacity'] = opacitySlider;
+      }
+
+      // Color Swatch: Background Color
+      const bgContainer = document.createElement('div');
+      bgContainer.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 12px; margin-top: 8px;';
+
+      const bgLabel = document.createElement('div');
+      bgLabel.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+      bgLabel.textContent = 'Bg Color';
+
+      const bgSwatch = document.createElement('div');
+      bgSwatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
+        this.settings.bgColor || '#222222'
+      }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+
+      bgSwatch.onclick = (e) => {
+        e.stopPropagation();
+        this.colorPicker.openSmartPicker(
+          bgSwatch,
+          this.settings.bgColor || '#222222',
+          (newColor) => {
+            bgSwatch.style.backgroundColor = newColor;
+            this.settings.bgColor = newColor;
+            this.svgElement.style.setProperty('--bg-color', newColor);
+            this.saveSettings();
+          }
+        );
+      };
+
+      bgContainer.appendChild(bgLabel);
+      bgContainer.appendChild(bgSwatch);
+      container.appendChild(bgContainer);
+
+      // Compact Folding Construction settings Card
+      const constHeader = makeElement('div', { 
+        className: 'setting-label', 
+        style: { marginTop: '15px', marginBottom: '10px', fontSize: '11px', color: '#888' } 
+      }, 'Construction');
+      container.appendChild(constHeader);
+
+      const defC = this.settings.construction || {};
+
+      const activeOnlyCheck = makeElement('input', {
+        type: 'checkbox',
+        checked: defC.activeOnly,
+        style: { accentColor: '#00ff66' },
+        onchange: (e) => {
+          this.settings.construction.activeOnly = e.target.checked;
+          this.updateConstructionVisuals();
+          this.saveSettings();
+        },
+      });
+
+      const showAllCheck = makeElement('input', {
+        type: 'checkbox',
+        checked: defC.visible,
+        style: { accentColor: '#00ff66' },
+        onchange: (e) => {
+          this.settings.construction.visible = e.target.checked;
+          this.updateConstructionVisuals();
+          this.saveSettings();
+        },
+      });
+
+      container.appendChild(
+        makeElement('div', { className: 'setting-row compact-grid' }, [
+          makeElement('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#ccc', cursor: 'pointer' } }, [showAllCheck, 'Show Constr.']),
+          makeElement('label', { style: { display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#ccc', cursor: 'pointer' } }, [activeOnlyCheck, 'Active Only']),
+        ])
+      );
+
+      // Undo button
+      container.appendChild(
+        makeElement(
+          'button',
+          { className: 'action-btn', style: { marginTop: '10px' }, onclick: () => this.performUndo() },
+          'Undo (Ctrl+Z)'
+        )
+      );
+
+      this.sidePanel.toolSettingsSection.appendChild(container);
+
+      // Restore highlight outlines on re-renders
+      this.setSelectedSliderIndex(this.selectedSliderIndex || 0);
+    }
+
+  getNavigatableSliders() {
+      const list = [];
+      
+      // 1. Line Color Swatch (First in order)
+      if (this.colorSwatchPicker) {
+        list.push({
+          key: 'drawingColor',
+          slider: {
+            container: this.colorSwatchPicker.parentElement || this.colorSwatchPicker,
+            value: this._hexToHsv(this.settings.strokeColor || '#00ffaa').h,
+            setValue: (val) => {
+              const hsv = this._hexToHsv(this.settings.strokeColor || '#00ffaa');
+              const newHex = this._hsvToHex(val % 360, hsv.s, hsv.v);
+              this.settings.strokeColor = newHex;
+              if (this.colorSwatchPicker) {
+                this.colorSwatchPicker.style.backgroundColor = newHex;
+              }
+              this.updateSettingsForActive();
+            }
+          },
+          type: 'tool'
+        });
+      }
+
+      // 2. Active sliders in exact physical layout order
+      if (this.toolSliders) {
+        Object.entries(this.toolSliders).forEach(([key, slider]) => {
+          if (slider) {
+            list.push({ key: key, slider: slider, type: 'tool' });
+          }
+        });
+      }
+      
+      return list;
+    }
+
+  setSelectedSliderIndex(index) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      this.selectedSliderIndex = Math.max(0, Math.min(list.length - 1, index));
+      this._updateSlidersHighlighting();
+    }
+
+  selectSliderRelative(change) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      const currentIdx = this.selectedSliderIndex || 0;
+      const nextIdx = (currentIdx + change + list.length) % list.length;
+      this.setSelectedSliderIndex(nextIdx);
+      this.recenterDragLineOnActive();
+    }
+
+  _updateSlidersHighlighting() {
+      const list = this.getNavigatableSliders();
+      list.forEach((item, idx) => {
+        const slider = item.slider;
+        if (slider && slider.container) {
+          slider.container.style.setProperty('transition', 'all 0.15s ease', 'important');
+          slider.container.style.removeProperty('border-left');
+          slider.container.style.removeProperty('background');
+          slider.container.style.removeProperty('padding-left');
+
+          if (idx === this.selectedSliderIndex) {
+            slider.container.style.setProperty('border-left', '4px solid #00e676', 'important');
+            slider.container.style.setProperty('background', 'rgba(0, 230, 118, 0.15)', 'important');
+            slider.container.style.setProperty('padding-left', '6px', 'important');
+          }
+        }
+      });
+    }
+
+  _clearSlidersHighlighting() {
+      const list = this.getNavigatableSliders();
+      list.forEach((item) => {
+        const slider = item.slider;
+        if (slider && slider.container) {
+          slider.container.style.borderLeft = '';
+          slider.container.style.background = '';
+          slider.container.style.paddingLeft = '';
+        }
+      });
+    }
+
+  startSliderAdjustment() {
+      if (this.hoverIndicatorLine) {
+        this.hoverIndicatorLine.style.opacity = '0';
+        setTimeout(() => {
+          if (this.hoverIndicatorLine && this.hoverIndicatorLine.style.opacity === '0') {
+            this.hoverIndicatorLine.style.display = 'none';
+          }
+        }, 150);
+      }
+
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
+        this.selectedSliderIndex = 0;
+      }
+      const item = list[this.selectedSliderIndex];
+      if (item) {
+        const slider = item.slider;
+        if (item.key === 'drawingColor') {
+          const hsv = this._hexToHsv(this.settings.strokeColor || '#00ffaa');
+          this.sliderStartValue = hsv.h;
+          if (this.colorSwatchPicker) {
+            const activePicker = document.querySelector('.smart-picker-surface');
+            if (!activePicker) {
+              this.colorSwatchPicker.click();
+            }
+          }
+          return;
+        }
+
+        let val = slider.value;
+        if (val === undefined) {
+          if (slider.options && slider.options.value !== undefined) {
+            val = slider.options.value;
+          } else if (typeof slider.getValue === 'function') {
+            val = slider.getValue();
+          }
+        }
+        this.sliderStartValue = val !== undefined && !isNaN(val) ? val : 0;
+      }
+    }
+
+  adjustSelectedSlider(ratio) {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
+        this.selectedSliderIndex = 0;
+      }
+      const item = list[this.selectedSliderIndex];
+      if (item && this.sliderStartValue !== undefined) {
+        const slider = item.slider;
+        const key = item.key;
+
+        // Fully resolved and synced Drawing Color updates
+        if (key === 'drawingColor') {
+          let newHue = (this.sliderStartValue + ratio * 360) % 360;
+          if (newHue < 0) newHue += 360;
+          const hsv = this._hexToHsv(this.settings.strokeColor || '#00ffaa');
+          const newHex = this._hsvToHex(newHue, hsv.s, hsv.v);
+          this.settings.strokeColor = newHex;
+          if (this.colorSwatchPicker) {
+            this.colorSwatchPicker.style.backgroundColor = newHex;
+          }
+          this.updateSettingsForActive();
+          if (this.activeElement) {
+            this.activeElement.setAttribute('stroke', newHex);
+          }
+          this.saveSettings();
+
+          if (typeof ColorPicker !== 'undefined' && ColorPicker.activeInstance) {
+            ColorPicker.activeInstance.updateColorExternal(newHex);
+          }
+          return;
+        }
+
+        const rangeInfo = this._getSliderRange(key, slider);
+        const min = rangeInfo.min;
+        const max = rangeInfo.max;
+        const range = max - min;
+
+        let newVal = this.sliderStartValue + ratio * range;
+        newVal = Math.max(min, Math.min(max, newVal));
+        slider.setValue(newVal);
+
+        // Force callback triggers so slider values connect immediately with drawing logic
+        if (slider.options && typeof slider.options.callback === 'function') {
+          slider.options.callback(newVal);
+        } else if (typeof slider.callback === 'function') {
+          slider.callback(newVal);
+        }
+      }
+    }
+
+  _getSliderRange(key, slider) {
+      let min = undefined;
+      let max = undefined;
+      if (slider) {
+        if (slider.min !== undefined) min = slider.min;
+        if (slider.max !== undefined) max = slider.max;
+        if (slider.options) {
+          if (slider.options.min !== undefined) min = slider.options.min;
+          if (slider.options.max !== undefined) max = slider.options.max;
+        }
+      }
+      const staticRanges = {
+        thickness: { min: 1, max: 50 },
+        tangency: { min: -90, max: 90 },
+        curvature: { min: 0.1, max: 3.0 },
+        balance: { min: 0.0, max: 2.0 },
+        radius: { min: 0, max: 800 },
+        bend: { min: -180, max: 180 },
+        opacity: { min: 0.0, max: 1.0 }
+      };
+      const fb = staticRanges[key] || { min: 0, max: 100 };
+      return {
+        min: min !== undefined ? min : fb.min,
+        max: max !== undefined ? max : fb.max
+      };
+    }
+
+  handleSliderDragStart(mode) {
+      const sidePanel = this.sidePanel;
+      if (!sidePanel) return;
+
+      if (!this.hoverIndicatorLine) {
+        this.hoverIndicatorLine = document.createElement('div');
+        this.hoverIndicatorLine.id = 'p2p-hover-indicator-line';
+        this.hoverIndicatorLine.style.cssText = 'position: fixed; left: 12px; right: 12px; height: 1px; border-top: 1.2px dashed rgba(255, 255, 255, 0.25); pointer-events: none; z-index: 999999; opacity: 0; transition: opacity 0.15s ease;';
+      }
+
+      if (this.hoverIndicatorLine.parentElement !== document.body) {
+        document.body.appendChild(this.hoverIndicatorLine);
+      }
+
+      const allSliders = this.getNavigatableSliders();
+      const N = allSliders.length;
+      if (N === 0) return;
+
+      const localIndex = this.selectedSliderIndex || 0;
+      this.dragLocalIndex = localIndex;
+
+      const firstSlider = allSliders[0].slider.container;
+      const lastSlider = allSliders[N - 1].slider.container;
+
+      const firstRect = firstSlider.getBoundingClientRect();
+      const lastRect = lastSlider.getBoundingClientRect();
+
+      const firstCenterY = (firstRect.top + firstRect.bottom) / 2;
+      const lastCenterY = (lastRect.top + lastRect.bottom) / 2;
+
+      this.dragTotalHeight = lastCenterY - firstCenterY;
+      this.dragMinY = firstCenterY;
+      this.dragMaxY = lastCenterY;
+
+      const parentRect = sidePanel.toolSettingsSection.getBoundingClientRect();
+      this.hoverIndicatorLine.style.left = `${parentRect.left + 8}px`;
+      this.hoverIndicatorLine.style.width = `${parentRect.width - 16}px`;
+
+      const selectedSlider = allSliders[localIndex].slider.container;
+      const selectedRect = selectedSlider.getBoundingClientRect();
+
+      const centerY = (selectedRect.top + selectedRect.bottom) / 2;
+      this.dragStartCenterY = centerY;
+      this.dragCurrentY = centerY;
+
+      this.hoverIndicatorLine.style.top = `${centerY}px`;
+      this.hoverIndicatorLine.style.display = 'block';
+      this.hoverIndicatorLine.style.opacity = '1';
+    }
+
+  handleSliderDragMove(dy, phoneHeight) {
+      if (!this.hoverIndicatorLine) return;
+      const allSliders = this.getNavigatableSliders();
+      const N = allSliders.length;
+      if (N === 0) return;
+
+      const scale = phoneHeight ? (this.dragTotalHeight / (phoneHeight * 0.45)) : 1.8;
+      const hostDy = dy * scale;
+      
+      const targetY = Math.max(this.dragMinY, Math.min(this.dragMaxY, this.dragStartCenterY + hostDy));
+      this.dragCurrentY = targetY;
+      this.hoverIndicatorLine.style.top = `${targetY}px`;
+
+      let closestIdx = 0;
+      let minDistance = Infinity;
+
+      allSliders.forEach((item, idx) => {
+        const rect = item.slider.container.getBoundingClientRect();
+        const centerY = (rect.top + rect.bottom) / 2;
+        const dist = Math.abs(targetY - centerY);
+        if (dist < minDistance) {
+          minDistance = dist;
+          closestIdx = idx;
+        }
+      });
+
+      if (this.dragLocalIndex !== closestIdx) {
+        this.dragLocalIndex = closestIdx;
+        this.setSelectedSliderIndex(closestIdx);
+      }
+    }
+
+  handleSliderDragEnd() {
+      if (this.hoverIndicatorLine) {
+        this.hoverIndicatorLine.style.opacity = '0';
+        setTimeout(() => {
+          if (this.hoverIndicatorLine && this.hoverIndicatorLine.style.opacity === '0') {
+            this.hoverIndicatorLine.style.display = 'none';
+          }
+        }, 150);
+      }
+
+      const activePicker = document.querySelector('.smart-picker-surface');
+      if (activePicker) {
+        activePicker.style.opacity = '0';
+        activePicker.style.transform = 'scale(0.8)';
+        setTimeout(() => activePicker.remove(), 200);
+      }
+    }
+
+  recenterDragLineOnActive() {
+      if (!this.hoverIndicatorLine) return;
+      const allSliders = this.getNavigatableSliders();
+      const localIndex = this.selectedSliderIndex || 0;
+      if (!allSliders[localIndex]) return;
+
+      const selectedSlider = allSliders[localIndex].slider.container;
+      const selectedRect = selectedSlider.getBoundingClientRect();
+
+      const centerY = (selectedRect.top + selectedRect.bottom) / 2;
+      this.dragStartCenterY = centerY;
+      this.dragCurrentY = centerY;
+
+      this.hoverIndicatorLine.style.top = `${centerY}px`;
+    }
+
+  highlightActiveControlBox(mode) {
+      const sidePanel = this.sidePanel;
+      if (!sidePanel || !sidePanel.toolSettingsSection) return;
+
+      const card = sidePanel.sectionObjects?.['setup']?.container;
+      const header = sidePanel.sectionObjects?.['setup']?.header;
+
+      if (!card) return;
+
+      const highlight = (mode === 'tool');
+
+      if (highlight) {
+        card.style.setProperty('box-shadow', '0 0 25px rgba(0, 230, 118, 0.45)', 'important');
+        card.style.setProperty('border-color', '#00e676', 'important');
+        card.style.setProperty('border-width', '1.5px', 'important');
+        card.style.setProperty('border-style', 'solid', 'important');
+        card.style.setProperty('border-radius', '6px', 'important');
+        card.style.setProperty('background', 'rgba(0, 230, 118, 0.05)', 'important');
+        
+        if (header) {
+          header.style.setProperty('background', 'linear-gradient(90deg, rgba(0, 230, 118, 0.35), rgba(0, 230, 118, 0.06))', 'important');
+          header.style.setProperty('color', '#00ff66', 'important');
+          header.style.setProperty('text-shadow', '0 0 6px rgba(0, 255, 102, 0.8)', 'important');
+        }
+        this._updateSlidersHighlighting();
+      } else {
+        card.style.removeProperty('box-shadow');
+        card.style.removeProperty('border-color');
+        card.style.removeProperty('border-width');
+        card.style.removeProperty('border-style');
+        card.style.removeProperty('border-radius');
+        card.style.removeProperty('background');
+        
+        if (header) {
+          header.style.removeProperty('background');
+          header.style.removeProperty('color');
+          header.style.removeProperty('text-shadow');
+        }
+        this._clearSlidersHighlighting();
+      }
+    }
+
+  _hexToHsv(colorStr) {
+      if (!colorStr) return { h: 0, s: 1, v: 1 };
+      let r = 0, g = 0, b = 0;
+      colorStr = String(colorStr).trim();
+
+      // Robustly match functional rgb(r, g, b) strings generated by the standard ColorPicker
+      if (colorStr.startsWith('rgb')) {
+        const match = colorStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+        if (match) {
+          r = parseInt(match[1], 10) / 255;
+          g = parseInt(match[2], 10) / 255;
+          b = parseInt(match[3], 10) / 255;
+        }
+      } else {
+        let hex = colorStr.replace('#', '');
+        if (hex.length === 3) {
+          hex = hex.split('').map(c => c + c).join('');
+        }
+        r = parseInt(hex.substring(0, 2), 16) / 255;
+        g = parseInt(hex.substring(2, 4), 16) / 255;
+        b = parseInt(hex.substring(4, 6), 16) / 255;
+      }
+
+      if (isNaN(r) || isNaN(g) || isNaN(b)) {
+        return { h: 0, s: 1, v: 1 }; // Default fallback to prevent NaN color updates
+      }
+
+      let max = Math.max(r, g, b), min = Math.min(r, g, b);
+      let h, s, v = max;
+      let d = max - min;
+      s = max === 0 ? 0 : d / max;
+      if (max === min) {
+        h = 0;
+      } else {
+        switch (max) {
+          case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+          case g: h = (b - r) / d + 2; break;
+          case b: h = (r - g) / d + 4; break;
+        }
+        h /= 6;
+      }
+      return { h: h * 360, s, v };
+    }
+
+  _hsvToHex(h, s, v) {
+      h /= 360;
+      let r, g, b;
+      let i = Math.floor(h * 6);
+      let f = h * 6 - i;
+      let p = v * (1 - s);
+      let q = v * (1 - f * s);
+      let t = v * (1 - (1 - f) * s);
+      switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+      }
+      const toHex = x => {
+        const hex = Math.round(x * 255).toString(16);
+        return hex.length === 1 ? '0' + hex : hex;
+      };
+      return '#' + toHex(r) + toHex(g) + toHex(b);
+    }
+
+  _updatePropertiesPanel() {
+      if (!this.toolSliders) return;
+
+      const thicknessSlider = this.toolSliders['thickness'];
+      const tangencySlider = this.toolSliders['tangency'];
+      const curvatureSlider = this.toolSliders['curvature'];
+      const balanceSlider = this.toolSliders['balance'];
+      const radiusSlider = this.toolSliders['radius'];
+      const bendSlider = this.toolSliders['bend'];
+      const opacitySlider = this.toolSliders['opacity'];
+
+      if (thicknessSlider) thicknessSlider.setValue(this.settings.strokeWidth);
+
+      if (this.activeVertex) {
+        const vertex = this.activeVertex.curve.vertices[this.activeVertex.index];
+        
+        if (tangencySlider) {
+          const deg = vertex.tangentAngleOffset ? Math.round(vertex.tangentAngleOffset * (180 / Math.PI)) : 0;
+          tangencySlider.setValue(deg);
+        }
+        if (curvatureSlider) curvatureSlider.setValue(vertex.curvature !== undefined ? vertex.curvature : 1.0);
+        if (balanceSlider) balanceSlider.setValue(vertex.balance !== undefined ? vertex.balance : 1.0);
+      } else {
+        if (tangencySlider) tangencySlider.setValue(0);
+        if (curvatureSlider) curvatureSlider.setValue(this.curveParams?.curvature || 1.0);
+        if (balanceSlider) balanceSlider.setValue(this.curveParams?.balance || 1.0);
+      }
+
+      if (radiusSlider) radiusSlider.setValue(this.settings.cornerRadius || 0);
+      if (bendSlider) bendSlider.setValue(this.settings.arcAngle || 0);
+      if (opacitySlider) opacitySlider.setValue(this.imageOpacity || 0.5);
+    }
+
+  handleRemoteDrag(dx, dy, mode) {
+      if (mode === 'pan') {
+        const panSensitivity = 0.8;
+        this.panX += dx * panSensitivity / this.zoom;
+        this.panY += dy * panSensitivity / this.zoom;
+        this.updateZoom();
+      }
+    }
+
+  handleRemoteZoom(ratio) {
+      const factor = 1 / ratio;
+      const oldZoom = this.zoom;
+      const newZoom = Math.max(0.1, Math.min(20, oldZoom * factor));
+      if (newZoom === oldZoom) return;
+
+      // 1. Identify the center of the SVG viewport in ViewBox units
+      const cx = this.vbWidth / 2;
+      const cy = this.vbHeight / 2;
+
+      // 2. Map this screen center to World Coordinates using the old transform state
+      const worldCx = (cx / oldZoom) - this.panX;
+      const worldCy = (cy / oldZoom) - this.panY;
+
+      // 3. Compute the new pan offsets so the calculated center remains anchored
+      const zoomRatio = oldZoom / newZoom;
+      this.panX = this.panX * zoomRatio + worldCx * (zoomRatio - 1);
+      this.panY = this.panY * zoomRatio + worldCy * (zoomRatio - 1);
+
+      this.zoom = newZoom;
+      this.updateZoom();
+    }
 }
 

@@ -47,23 +47,23 @@
     "js/ui/AccuDrawInput.js",
     "js/ui/AccuDrawTestHarness.js",
     "js/ui/AccuDrawUi.js",
-    "js/ui/P2PConnector.js",
     "js/ui/ViewControls.js",
     "js/ui/ViewControlsManager.js"
   ],
   "library": [
-    "ThreeJSLoader.js",
-    "ColorPicker.js",
     "AppColorUtils.js",
-    "TriangleCP.js",
+    "ColorPicker.js",
     "HueRingCP.js",
-    "UITools.js",
-    "SliderControl.js",
-    "SpinnerWidget.js",
+    "KeyCommandHandler.js",
+    "MidiInputHandler.js",
+    "P2PConnector.js",
     "PopupBox.js",
     "SidePanel.js",
-    "KeyCommandHandler.js",
-    "MidiInputHandler.js"
+    "SliderControl.js",
+    "SpinnerWidget.js",
+    "ThreeJSLoader.js",
+    "TriangleCP.js",
+    "UITools.js"
   ],
   "thirdParty": []
 }

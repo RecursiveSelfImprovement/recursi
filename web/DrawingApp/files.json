@@ -14,12 +14,15 @@
     "js/utils/MidiMapper.js"
   ],
   "library": [
-    "UITools.js",
     "AppColorUtils.js",
-    "HueRingCP.js",
-    "TriangleCP.js",
     "ColorPicker.js",
-    "MidiInputHandler.js"
+    "HueRingCP.js",
+    "MidiInputHandler.js",
+    "P2PConnector.js",
+    "SidePanel.js",
+    "SliderControl.js",
+    "TriangleCP.js",
+    "UITools.js"
   ],
   "thirdParty": []
 }

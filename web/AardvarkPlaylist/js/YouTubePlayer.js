@@ -468,7 +468,7 @@ class YouTubePlayer {
       this.pianoLogic = new PianoRollController(this);
       this.headerControlsUI = new HeaderControlsUI(this);
 
-      // Pass the environment into SidePanel
+      // Reverted: Pass the actual environment context (this.env) exactly as originally designed!
       this.leftPanel = new SidePanel('left', 360, this.env);
 
       this._buildLeftPanel();

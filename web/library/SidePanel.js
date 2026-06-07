@@ -1,18 +1,83 @@
 class SidePanel {
-    constructor(side = 'left', width = 360, container = null, transitionMode = 'transform') {
+    constructor(side, width = 360, env = null) {
       this.side = side;
       this.width = width;
-      this.transitionMode = transitionMode;
-      this.isOpen = transitionMode === 'margin'; // Default open if pushing, closed if absolute
+      this.isOpen = false;
       this.sections = {};
-      this.sectionObjects = {}; // Reference registry to completely bypass DOM queries
-
-      this.container = container || document.body;
-
-      this._injectGenericStyles();
-      this._createElements();
-
-      SidePanel.getInstances()[this.side] = this;
+      this.env = env;
+  
+      // Strictly resolve the container from the environment object, falling back to document.body
+      this.container = (env && env.container) ? env.container : document.body;
+  
+      this.element = document.createElement('div');
+      this.element.className = `yt-side-panel ${side}`;
+      
+      const isAbsolute = this.container !== document.body;
+      
+      Object.assign(this.element.style, {
+        position: isAbsolute ? 'absolute' : 'fixed',
+        top: '0',
+        [side]: '0',
+        width: `${this.width}px`,
+        height: '100%',
+        background: 'rgba(18, 18, 18, 0.95)',
+        borderLeft: side === 'right' ? '1px solid #333' : 'none',
+        borderRight: side === 'left' ? '1px solid #333' : 'none',
+        transition: 'transform 0.25s cubic-bezier(0.2, 0.0, 0.2, 1)',
+        transform: side === 'left' ? 'translateX(-100%)' : 'translateX(100%)',
+        display: 'flex',
+        flexDirection: 'column',
+        zIndex: 9999
+      });
+  
+      this.header = document.createElement('div');
+      Object.assign(this.header.style, {
+        display: 'flex',
+        justify: side === 'left' ? 'flex-end' : 'flex-start',
+        padding: '8px 10px',
+        borderBottom: '1px solid #333',
+        background: 'rgba(0,0,0,0.2)'
+      });
+  
+      const closeBtn = document.createElement('button');
+      Object.assign(closeBtn.style, {
+        background: 'transparent',
+        border: 'none',
+        color: '#888',
+        fontSize: '18px',
+        cursor: 'pointer',
+        padding: '0 5px',
+        lineHeight: '1',
+        borderRadius: '4px'
+      });
+      closeBtn.textContent = '✖';
+      closeBtn.onmouseenter = (e) => (e.target.style.color = '#fff');
+      closeBtn.onmouseleave = (e) => (e.target.style.color = '#888');
+      closeBtn.onclick = () => {
+        this.close();
+        window.dispatchEvent(new CustomEvent('panel-toggle-complete'));
+      };
+  
+      this.header.appendChild(closeBtn);
+  
+      this.contentContainer = document.createElement('div');
+      this.contentContainer.style.cssText = 'flex:1; overflow-y:auto; overflow-x:hidden; padding:10px;';
+  
+      this.element.appendChild(this.header);
+      this.element.appendChild(this.contentContainer);
+      this.container.appendChild(this.element);
+  
+      SidePanel.getInstances()[side] = this;
+      
+      // Auto-destroy lifecycle
+      if (this.env && this.env.container) {
+        this._lifecycleObserver = new MutationObserver(() => {
+          if (!document.body.contains(this.env.container)) {
+            this.destroy();
+          }
+        });
+        this._lifecycleObserver.observe(document.body, { childList: true, subtree: true });
+      }
     }
 
     _injectGenericStyles() {
@@ -308,38 +373,43 @@ class SidePanel {
       }
     }
 
-    addSection(id, title, defaultOpen = true) {
+    addSection(id, title, defaultOpen) {
       const content = document.createElement('div');
-      content.className = 'generic-sidebar-section-body';
-
+      content.style.padding = '10px';
+  
       const summary = document.createElement('summary');
+      Object.assign(summary.style, {
+        padding: '10px',
+        cursor: 'pointer',
+        fontWeight: '700',
+        color: '#bbb',
+        fontSize: '11px',
+        textTransform: 'uppercase'
+      });
       summary.textContent = title;
-
-      const lsKey = `panel_sec_${id}`;
+  
+      const lsKey = `yt_panel_sec_${id}`;
       const stored = localStorage.getItem(lsKey);
       const isOpen = stored !== null ? stored === 'true' : defaultOpen;
-
+  
       const det = document.createElement('details');
-      det.className = 'generic-sidebar-section';
       det.open = isOpen;
+      Object.assign(det.style, {
+        marginBottom: '8px',
+        border: '1px solid #333',
+        background: '#222',
+        borderRadius: '4px'
+      });
       det.appendChild(summary);
       det.appendChild(content);
-
+  
       det.addEventListener('toggle', () => {
         localStorage.setItem(lsKey, det.open);
         window.dispatchEvent(new CustomEvent('panel-toggle-complete'));
       });
-
+  
       this.contentContainer.appendChild(det);
-      this.sections[id] = content;
-
-      // Save direct references
-      this.sectionObjects[id] = {
-        container: det,
-        header: summary,
-        body: content
-      };
-
+      this.sections[id] = { element: det, content: content };
       return content;
     }
 
@@ -390,27 +460,28 @@ class SidePanel {
 
     open(sectionId) {
       this.isOpen = true;
-      if (this.transitionMode === 'transform') {
-        this.element.classList.add('open-panel');
-        if (sectionId && this.sections[sectionId]) {
-          const parentDetails = this.sections[sectionId].parentNode;
-          if (parentDetails && parentDetails.tagName === 'DETAILS') {
-            parentDetails.open = true;
-          }
-        }
-        this._animateLayoutUpdate();
-      } else {
-        this.toggle(true);
+      this.element.style.transform = 'translateX(0)';
+
+      if (sectionId && this.sections[sectionId]) {
+        this.sections[sectionId].element.open = true;
+      }
+
+      this._animateLayoutUpdate();
+
+      if (this.side === 'left' && window.player && window.player.floatingMenuBtn) {
+        window.player.floatingMenuBtn.style.display = 'none';
       }
     }
 
     close() {
       this.isOpen = false;
-      if (this.transitionMode === 'transform') {
-        this.element.classList.remove('open-panel');
-        this._animateLayoutUpdate();
-      } else {
-        this.toggle(false);
+      this.element.style.transform =
+        this.side === 'left' ? 'translateX(-100%)' : 'translateX(100%)';
+
+      this._animateLayoutUpdate();
+
+      if (this.side === 'left' && window.player && window.player.floatingMenuBtn) {
+        window.player.floatingMenuBtn.style.display = 'block';
       }
     }
 
@@ -436,11 +507,9 @@ class SidePanel {
     }
 
     destroy() {
+      this._lifecycleObserver?.disconnect();
       if (this.element && this.element.parentElement) {
         this.element.remove();
-      }
-      if (this.showButton && this.showButton.parentElement) {
-        this.showButton.remove();
       }
       SidePanel.getInstances()[this.side] = null;
     }
@@ -495,4 +564,92 @@ class SidePanel {
       }
       return this._instances;
     }
-  }
+  
+  _injectStyles() {
+      // Renamed to match the constructor call exactly and avoid uncaught reference crashes
+      const css = `
+        /* Generic Reusable SidePanel Styles */
+        .generic-side-panel {
+          position: absolute;
+          top: 0;
+          height: 100%;
+          transition: transform 0.25s cubic-bezier(0.2, 0, 0.2, 1);
+          display: flex;
+          flex-direction: column;
+          z-index: 9999;
+          box-sizing: border-box;
+        }
+        
+        .generic-side-panel.left {
+          left: 0;
+          transform: translateX(-100%);
+        }
+        
+        .generic-side-panel.right {
+          right: 0;
+          transform: translateX(100%);
+        }
+        
+        .generic-side-panel.open {
+          transform: translateX(0) !important;
+        }
+
+        .generic-side-panel-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+        }
+
+        .generic-side-panel-sections {
+          flex-grow: 1;
+          overflow-y: auto;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+      `;
+      const style = document.createElement('style');
+      style.textContent = css;
+      document.head.appendChild(style);
+    }
+
+  toggleSection(id) {
+      const section = this.sections[id];
+      if (!section) return;
+  
+      if (!this.isOpen) {
+        section.element.open = true;
+        this.open();
+      } else {
+        if (section.element.open) {
+          this.close();
+        } else {
+          section.element.open = true;
+          this._animateLayoutUpdate();
+        }
+      }
+    }
+
+  toggleGroup(mainId, others = []) {
+      const main = this.sections[mainId];
+      if (!main) return;
+  
+      if (!this.isOpen) {
+        main.element.open = true;
+        others.forEach((id) => {
+          if (this.sections[id]) this.sections[id].element.open = true;
+        });
+        this.open();
+      } else {
+        if (main.element.open) {
+          this.close();
+        } else {
+          main.element.open = true;
+          others.forEach((id) => {
+            if (this.sections[id]) this.sections[id].element.open = true;
+          });
+          this._animateLayoutUpdate();
+        }
+      }
+    }
+}
