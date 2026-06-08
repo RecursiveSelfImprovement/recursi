@@ -56,7 +56,6 @@ class ViewControls {
       this.rotations = { x: 0, y: 0, z: 0 };
       const savedSettings = this._loadSettings();
 
-      // Programmatic setting load start
       this._isProgrammaticReset = true;
 
       if (this.customCompassContainer) {
@@ -85,7 +84,6 @@ class ViewControls {
         this.compassBox.contentElement.style.padding = '4px 6px 6px 6px';
       }
 
-      // Compass Size slider renamed to "size"
       this.sliders.size = new SliderControl({
         label: 'size',
         min: 10,
@@ -100,7 +98,6 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.size.container);
 
-      // Dedicated Swatch Picker for Compass Color - Separated cleanly from drawing color
       const compassColorContainer = document.createElement('div');
       compassColorContainer.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
       
@@ -162,7 +159,6 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.sqrcl.container);
 
-      // Rotation angles constrained cleanly to -90..90
       ['x', 'y', 'z'].forEach((axis) => {
         this.sliders[`${axis}rot`] = new SliderControl({
           label: `${axis} rotation`,
@@ -172,6 +168,7 @@ class ViewControls {
           saveToLocalStorage: false,
           relativeMidi: true,
           showValue: true,
+          directEntry: true,
           callback: (val) =>
             this._applyCompassSetting(`${axis} rotation`, Math.round(val)),
         });
@@ -194,7 +191,6 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.bg.container);
 
-      // Dedicated 3D infinite roller wheel to displace the AccuDraw coordinate plane along its active Z-vector infinitely
       this.sliders.accudrawZ = new SliderControl({
         label: 'accudraw Z position',
         isInfiniteWheel: true,
@@ -204,7 +200,6 @@ class ViewControls {
           const delta = typeof window.zMoveDelta !== 'undefined' ? window.zMoveDelta : 0.002;
           const rm = this.baseController.rotationMatrix;
           const zAxis = rm[2];
-          // val is the relative horizontal displacement increment
           const displacement = zAxis.map((component) => component * val * delta * 1.5);
           const newOrigin = [
             currentOrigin[0] + displacement[0],
@@ -216,7 +211,6 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.accudrawZ.container);
 
-      // Release initial setup setting lock BEFORE applying settings on start
       this._isProgrammaticReset = false;
 
       this._applyAllSavedSettings(savedSettings);
@@ -728,11 +722,13 @@ class ViewControls {
           slider.container.style.removeProperty('background');
           slider.container.style.removeProperty('padding-left');
 
-          // Only apply green accent trims if the item belongs to the active box
           if (idx === this.selectedSliderIndex && item.type === activeMode) {
             slider.container.style.setProperty('border-left', '4px solid #00e676', 'important');
             slider.container.style.setProperty('background', 'rgba(0, 230, 118, 0.15)', 'important');
             slider.container.style.setProperty('padding-left', '6px', 'important');
+
+            // Scroll the active target container into view
+            slider.container.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
           }
         }
       });
@@ -1329,6 +1325,21 @@ class ViewControls {
         // Fire the underlying displacement callback
         if (typeof this.sliders.accudrawZ.options.callback === 'function') {
           this.sliders.accudrawZ.options.callback(-dy * 1.5);
+        }
+      }
+    }
+
+  handleSliderTap() {
+      const list = this.getNavigatableSliders();
+      if (list.length === 0) return;
+
+      if (this.selectedSliderIndex === undefined || this.selectedSliderIndex === null) {
+        this.selectedSliderIndex = 0;
+      }
+      const item = list[this.selectedSliderIndex];
+      if (item && item.slider && item.slider.options && item.slider.options.directEntry) {
+        if (typeof item.slider.showDirectEntryPopup === 'function') {
+          item.slider.showDirectEntryPopup();
         }
       }
     }

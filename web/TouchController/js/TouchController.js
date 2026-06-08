@@ -1365,14 +1365,28 @@ class TouchController {
 
   _onCtrlTouchEnd(e) {
       e.preventDefault();
+      
+      const now = Date.now();
+      const dt = now - this.ctrlLastTapTime;
+      const dx = e.changedTouches[0].clientX - this.ctrlTouchStartX;
+      const dy = e.changedTouches[0].clientY - this.ctrlTouchStartY;
+
       this.ctrlDragging = false;
       this.ctrlGestureLock = null;
 
       if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
-        if (this.dataChannel && this.dataChannel.readyState === 'open') {
-          this.dataChannel.send(JSON.stringify({
-            type: 'sliderDragEnd'
-          }));
+        if (Math.hypot(dx, dy) < 10 && dt < 250) {
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'sliderTap'
+            }));
+          }
+        } else {
+          if (this.dataChannel && this.dataChannel.readyState === 'open') {
+            this.dataChannel.send(JSON.stringify({
+              type: 'sliderDragEnd'
+            }));
+          }
         }
       } else if (this.controlMode === 'paint') {
         if (this.dataChannel && this.dataChannel.readyState === 'open') {

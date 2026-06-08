@@ -353,147 +353,143 @@ class Main {
   }
 
   _setupToolSettingsWatcher() {
-    this.toolSliders = {};
-    const render = () => {
-      if (!this.sidePanel || !this.sidePanel.toolSettingsSection) return;
-      this.sidePanel.toolSettingsSection.innerHTML = '';
       this.toolSliders = {};
+      const render = () => {
+        if (!this.sidePanel || !this.sidePanel.toolSettingsSection) return;
+        this.sidePanel.toolSettingsSection.innerHTML = '';
+        this.toolSliders = {};
 
-      const controller = this.baseController;
-      if (!controller) return;
+        const controller = this.baseController;
+        if (!controller) return;
 
-      const activeCmd = controller.activeCommand;
-      const cmdName = activeCmd
-        ? activeCmd.constructor
-          ? activeCmd.constructor.name
-          : 'Unknown'
-        : 'None';
+        const activeCmd = controller.activeCommand;
+        const cmdName = activeCmd
+          ? activeCmd.constructor
+            ? activeCmd.constructor.name
+            : 'Unknown'
+          : 'None';
 
-      const friendlyNames = {
-        DrawRectangleCommand: 'Rectangle Tool',
-        DrawArcCommand: 'Arc Tool',
-        DrawPathCommand: 'Rounding Tool',
-        DrawCurveCommand: 'Bezier Curve Tool',
-        DrawCircleCommand: 'Circle Tool',
-        DrawCapsuleCommand: 'Capsule Tool',
-        ElementPickCommand: 'Selection Tool',
-      };
-      const displayName =
-        friendlyNames[cmdName] || cmdName.replace('Command', ' Tool');
+        const friendlyNames = {
+          DrawRectangleCommand: 'Rectangle Tool',
+          DrawArcCommand: 'Arc Tool',
+          DrawPathCommand: 'Rounding Tool',
+          DrawCurveCommand: 'Bezier Curve Tool',
+          DrawCircleCommand: 'Circle Tool',
+          DrawCapsuleCommand: 'Capsule Tool',
+          ElementPickCommand: 'Selection Tool',
+        };
+        const displayName =
+          friendlyNames[cmdName] || cmdName.replace('Command', ' Tool');
 
-      // Dynamically update the main section summary header directly
-      if (
-        this.sidePanel.sectionObjects &&
-        this.sidePanel.sectionObjects['setup']
-      ) {
-        this.sidePanel.sectionObjects['setup'].header.textContent = displayName;
-      }
-
-      // Drawing Color using custom ColorPicker
-      const colorContainer = document.createElement('div');
-      colorContainer.style.cssText =
-        'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
-
-      const colorLabel = document.createElement('div');
-      colorLabel.style.cssText =
-        'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-      colorLabel.textContent = 'Drawing Color';
-
-      const swatch = document.createElement('div');
-      swatch.className = 'drawing-color-swatch-picker';
-      swatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
-        controller.currentColor || '#00ff00'
-      }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
-
-      // Save direct reference on the controller to completely avoid DOM query lookups
-      controller.colorSwatchPicker = swatch;
-
-      swatch.onclick = (e) => {
-        e.stopPropagation();
-        const picker = new ColorPicker();
-        picker.openSmartPicker(
-          swatch,
-          controller.currentColor || '#00ff00',
-          (newColor) => {
-            swatch.style.backgroundColor = newColor;
-            controller.setColor(newColor);
-            controller.refreshMousePosition();
-          }
-        );
-      };
-
-      colorContainer.appendChild(colorLabel);
-      colorContainer.appendChild(swatch);
-      this.sidePanel.toolSettingsSection.appendChild(colorContainer);
-
-      const widthSlider = new SliderControl({
-        label: 'line thickness',
-        min: 1,
-        max: 20,
-        initialValue: controller.lineWidth || 2,
-        showValue: true,
-        callback: (val) => {
-          controller.setLineWidth(Math.round(val));
-          controller.refreshMousePosition();
-        },
-      });
-      this.sidePanel.toolSettingsSection.appendChild(widthSlider.container);
-      this.toolSliders['lineWidth'] = widthSlider;
-
-      const supportsControlValue = [
-        'DrawPathCommand',
-        'DrawCapsuleCommand',
-      ].includes(cmdName);
-
-      if (supportsControlValue) {
-        let label = 'tool custom parameter';
-        let minVal = 0.05,
-          maxVal = 2.0;
-        if (cmdName === 'DrawPathCommand') {
-          label = 'rounding radius';
-          minVal = 0;
-          maxVal = 1.0;
-        } else if (cmdName === 'DrawCapsuleCommand') {
-          label = 'capsule radius';
-          minVal = 0.1;
-          maxVal = 1.5;
+        if (
+          this.sidePanel.sectionObjects &&
+          this.sidePanel.sectionObjects['setup']
+        ) {
+          this.sidePanel.sectionObjects['setup'].header.textContent = displayName;
         }
 
-        const controlValueSlider = new SliderControl({
-          label: label,
-          min: minVal,
-          max: maxVal,
-          initialValue: controller.commandControlValue || 0.25,
+        const colorContainer = document.createElement('div');
+        colorContainer.style.cssText =
+          'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
+
+        const colorLabel = document.createElement('div');
+        colorLabel.style.cssText =
+          'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+        colorLabel.textContent = 'Drawing Color';
+
+        const swatch = document.createElement('div');
+        swatch.className = 'drawing-color-swatch-picker';
+        swatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
+          controller.currentColor || '#00ff00'
+        }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+
+        controller.colorSwatchPicker = swatch;
+
+        swatch.onclick = (e) => {
+          e.stopPropagation();
+          const picker = new ColorPicker();
+          picker.openSmartPicker(
+            swatch,
+            controller.currentColor || '#00ff00',
+            (newColor) => {
+              swatch.style.backgroundColor = newColor;
+              controller.setColor(newColor);
+              controller.refreshMousePosition();
+            }
+          );
+        };
+
+        colorContainer.appendChild(colorLabel);
+        colorContainer.appendChild(swatch);
+        this.sidePanel.toolSettingsSection.appendChild(colorContainer);
+
+        const widthSlider = new SliderControl({
+          label: 'line thickness',
+          min: 1,
+          max: 20,
+          initialValue: controller.lineWidth || 2,
           showValue: true,
           callback: (val) => {
-            controller.commandControlValue = val;
+            controller.setLineWidth(Math.round(val));
             controller.refreshMousePosition();
           },
         });
-        this.sidePanel.toolSettingsSection.appendChild(
-          controlValueSlider.container
-        );
-        this.toolSliders['commandControlValue'] = controlValueSlider;
-      }
+        this.sidePanel.toolSettingsSection.appendChild(widthSlider.container);
+        this.toolSliders['lineWidth'] = widthSlider;
 
-      // Publish the sliders onto the baseController so ViewControls can reach them instantly
-      controller.toolSliders = this.toolSliders;
+        const supportsControlValue = [
+          'DrawPathCommand',
+          'DrawCapsuleCommand',
+        ].includes(cmdName);
 
-      if (
-        window.ViewControlsManager &&
-        window.ViewControlsManager.instance &&
-        typeof window.ViewControlsManager.instance
-          ._updateSlidersHighlighting === 'function'
-      ) {
-        window.ViewControlsManager.instance._updateSlidersHighlighting();
-      }
-    };
+        if (supportsControlValue) {
+          let label = 'tool custom parameter';
+          let minVal = 0.05,
+            maxVal = 2.0;
+          if (cmdName === 'DrawPathCommand') {
+            label = 'rounding radius';
+            minVal = 0;
+            maxVal = 1.0;
+          } else if (cmdName === 'DrawCapsuleCommand') {
+            label = 'capsule radius';
+            minVal = 0.1;
+            maxVal = 1.5;
+          }
 
-    // Listen to the tool change event dynamically. (Completely eliminates the 500ms setInterval polling loop)
-    window.addEventListener('accucad-tool-changed', () => {
+          const controlValueSlider = new SliderControl({
+            label: label,
+            min: minVal,
+            max: maxVal,
+            initialValue: controller.commandControlValue || 0.25,
+            showValue: true,
+            directEntry: true,
+            callback: (val) => {
+              controller.commandControlValue = val;
+              controller.refreshMousePosition();
+            },
+          });
+          this.sidePanel.toolSettingsSection.appendChild(
+            controlValueSlider.container
+          );
+          this.toolSliders['commandControlValue'] = controlValueSlider;
+        }
+
+        controller.toolSliders = this.toolSliders;
+
+        if (
+          window.ViewControlsManager &&
+          window.ViewControlsManager.instance &&
+          typeof window.ViewControlsManager.instance
+            ._updateSlidersHighlighting === 'function'
+        ) {
+          window.ViewControlsManager.instance._updateSlidersHighlighting();
+        }
+      };
+
+      window.addEventListener('accucad-tool-changed', () => {
+        render();
+      });
+
       render();
-    });
-
-    render();
-  }
+    }
 }

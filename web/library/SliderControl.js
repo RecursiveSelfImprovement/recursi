@@ -5,7 +5,7 @@ class SliderControl {
       this.options = {
         saveToLocalStorage: true,
         relativeMidi: false,
-        isInfiniteWheel: false, // New infinite scroll wheel option
+        isInfiniteWheel: false,
         ...options,
       };
 
@@ -44,6 +44,13 @@ class SliderControl {
       }
       SliderControl.allSliders.push(this);
       this.registerWithMidiHandler();
+
+      const outOfRange = this.value < this.options.min || this.value > this.options.max;
+      this.container.classList.toggle('out-of-range', outOfRange);
+
+      if (this.options.directEntry) {
+        this.setupDirectEntryTouchHandlers();
+      }
     }
 
     createElements() {
@@ -303,11 +310,11 @@ class SliderControl {
           top: 4px !important;
           right: 8px !important;
           height: 12px !important;
-          width: 12px !important; /* Constrain tightly to the corner */
+          width: 12px !important;
           cursor: pointer !important;
           overflow: visible !important;
           z-index: 10 !important;
-          display: flex; /* Remove !important so P2P inline none toggle works smoothly */
+          display: flex;
           align-items: center !important;
           justify-content: center !important;
           background: transparent !important;
@@ -319,7 +326,7 @@ class SliderControl {
         }
 
         .midi-box.expanded {
-          width: auto !important; /* Expand horizontally only when actively mapping */
+          width: auto !important;
         }
 
         .midi-emoji {
@@ -328,7 +335,7 @@ class SliderControl {
           font-size: 8px !important;
           line-height: 12px !important;
           text-align: center !important;
-          background: rgba(255, 255, 255, 0.05) !important; /* Neutral background removes the ugly black box */
+          background: rgba(255, 255, 255, 0.05) !important;
           color: rgba(255, 255, 255, 0.7) !important;
           border-radius: 3px !important;
           backdrop-filter: blur(2px) !important;
@@ -348,7 +355,7 @@ class SliderControl {
         }
 
         .midi-input {
-          display: none !important; /* Entirely strip the input element from layout when collapsed */
+          display: none !important;
           position: absolute !important;
           top: 0px !important;
           right: 22px !important;
@@ -370,12 +377,72 @@ class SliderControl {
         }
 
         .midi-box.expanded .midi-input {
-          display: block !important; /* Re-integrate the input block for typing */
+          display: block !important;
           width: 65px !important;
           opacity: 1 !important;
           padding: 0 4px !important;
           border: 1px solid hsla(var(--hue), 100%, 50%, 0.4) !important;
           pointer-events: auto !important;
+        }
+
+        .slider-direct-entry-popup {
+          position: absolute;
+          z-index: 1000000;
+          background: rgba(25, 25, 30, 0.98);
+          border: 2px solid hsl(var(--hue), 100%, 65%);
+          border-radius: 8px;
+          padding: 6px;
+          box-shadow: 0 8px 25px rgba(0,0,0,0.6), 0 0 15px hsla(var(--hue), 100%, 50%, 0.35);
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-family: monospace;
+          animation: slider-popup-fade 0.15s ease-out;
+        }
+        @keyframes slider-popup-fade {
+          from { opacity: 0; transform: translateY(-5px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        .slider-direct-entry-input {
+          background: #111 !important;
+          border: 1px solid hsl(var(--hue), 100%, 50%) !important;
+          color: #ffffff !important;
+          font-family: monospace !important;
+          font-size: 15px !important;
+          font-weight: bold !important;
+          padding: 4px 8px !important;
+          width: 80px !important;
+          border-radius: 4px !important;
+          text-align: center !important;
+          outline: none !important;
+          box-shadow: inset 0 2px 4px rgba(0,0,0,0.8) !important;
+        }
+        .slider-direct-entry-input:focus {
+          border-color: hsl(var(--hue), 100%, 60%) !important;
+          box-shadow: 0 0 8px hsl(var(--hue), 100%, 50%) !important;
+        }
+        .slider-direct-entry-key {
+          font-size: 11px;
+          color: hsl(var(--hue), 100%, 75%);
+          font-weight: bold;
+          border: 1px solid hsl(var(--hue), 100%, 60%);
+          border-radius: 4px;
+          padding: 2px 6px;
+          background: rgba(255,255,255,0.1);
+          text-transform: uppercase;
+          box-shadow: 0 0 5px hsla(var(--hue), 100%, 50%, 0.2);
+        }
+        .slider-container.out-of-range input[type="range"]::-webkit-slider-thumb {
+          opacity: 0 !important;
+          pointer-events: none !important;
+          background: transparent !important;
+          box-shadow: none !important;
+        }
+        .slider-container.out-of-range input[type="range"]::-moz-range-thumb {
+          opacity: 0 !important;
+          pointer-events: none !important;
+          background: transparent !important;
+          box-shadow: none !important;
         }
         `,
         'sliderControlStyles'
@@ -541,6 +608,8 @@ class SliderControl {
       if (this.options.callback && !this.options.isInfiniteWheel) {
         this.options.callback(this.value);
       }
+      const outOfRange = this.value < this.options.min || this.value > this.options.max;
+      this.container.classList.toggle('out-of-range', outOfRange);
     }
 
     getSavedValue() {
@@ -751,6 +820,159 @@ class SliderControl {
       if (this.wheelInertiaId) {
         cancelAnimationFrame(this.wheelInertiaId);
         this.wheelInertiaId = null;
+      }
+    }
+
+  setupDirectEntryTouchHandlers() {
+      let touchStartX = 0;
+      let touchStartY = 0;
+      let touchStartTime = 0;
+
+      this.container.addEventListener('touchstart', (e) => {
+        const touch = e.touches[0];
+        touchStartX = touch.clientX;
+        touchStartY = touch.clientY;
+        touchStartTime = Date.now();
+      }, { passive: true });
+
+      this.container.addEventListener('touchend', (e) => {
+        const touch = e.changedTouches[0];
+        const dx = touch.clientX - touchStartX;
+        const dy = touch.clientY - touchStartY;
+        const dt = Date.now() - touchStartTime;
+
+        if (Math.hypot(dx, dy) < 8 && dt < 250) {
+          e.preventDefault();
+          e.stopPropagation();
+          this.showDirectEntryPopup();
+        }
+      }, { passive: false });
+
+      let clickStartX = 0;
+      let clickStartY = 0;
+      let clickStartTime = 0;
+
+      this.container.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        clickStartX = e.clientX;
+        clickStartY = e.clientY;
+        clickStartTime = Date.now();
+      }, { passive: true });
+
+      this.container.addEventListener('mouseup', (e) => {
+        if (e.button !== 0) return;
+        const dx = e.clientX - clickStartX;
+        const dy = e.clientY - clickStartY;
+        const dt = Date.now() - clickStartTime;
+
+        if (Math.hypot(dx, dy) < 4 && dt < 250) {
+          this.showDirectEntryPopup();
+        }
+      }, { passive: true });
+    }
+
+  showDirectEntryPopup() {
+      if (this.directEntryPopup) {
+        const input = this.directEntryPopup.querySelector('input');
+        if (input) {
+          input.focus();
+          input.select();
+        }
+        return;
+      }
+
+      const rect = this.container.getBoundingClientRect();
+      const popupWidth = 140;
+      
+      const popup = makeElement('div', {
+        className: 'slider-direct-entry-popup',
+        style: {
+          position: 'absolute',
+          left: `${rect.left + window.scrollX + (rect.width - popupWidth) / 2}px`,
+          top: `${rect.bottom + window.scrollY + 4}px`,
+          setProperty: ['--hue', this.hue]
+        }
+      });
+
+      const keyEl = makeElement('div', { className: 'slider-direct-entry-key' }, 'VAL');
+      const inputEl = makeElement('input', {
+        type: 'text',
+        className: 'accudrawInput slider-direct-entry-input',
+        value: this.value.toString()
+      });
+
+      popup.appendChild(keyEl);
+      popup.appendChild(inputEl);
+      document.body.appendChild(popup);
+
+      this.directEntryPopup = popup;
+
+      // Real-time evaluation on every keystroke
+      inputEl.addEventListener('input', () => {
+        let trimmed = inputEl.value.trim();
+        if (trimmed === '') {
+          const targetVal = Math.max(0, this.options.min);
+          this.setValue(targetVal);
+          return;
+        }
+
+        // Handle decimal point followed by nothing
+        if (trimmed.endsWith('.')) {
+          trimmed += '0';
+        }
+
+        let parsed = parseFloat(trimmed);
+        if (!isNaN(parsed)) {
+          if (this.options.max <= 1.0 && parsed > 1.0) {
+            parsed = parsed / 100;
+          }
+          this.setValue(parsed);
+        }
+      });
+
+      inputEl.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') {
+          e.preventDefault();
+          e.stopPropagation();
+          this.commitDirectEntry(inputEl.value);
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          e.stopPropagation();
+          this.closeDirectEntryPopup();
+        }
+      });
+
+      const outsideClickListener = (e) => {
+        if (this.directEntryPopup && !this.directEntryPopup.contains(e.target) && !this.container.contains(e.target)) {
+          this.closeDirectEntryPopup();
+          document.removeEventListener('mousedown', outsideClickListener);
+          document.removeEventListener('touchstart', outsideClickListener);
+        }
+      };
+      document.addEventListener('mousedown', outsideClickListener);
+      document.addEventListener('touchstart', outsideClickListener);
+
+      setTimeout(() => {
+        inputEl.focus();
+        inputEl.select();
+      }, 50);
+    }
+
+  commitDirectEntry(typedValue) {
+      let parsed = parseFloat(typedValue);
+      if (!isNaN(parsed)) {
+        if (this.options.max <= 1.0 && parsed > 1.0) {
+          parsed = parsed / 100;
+        }
+        this.setValue(parsed);
+      }
+      this.closeDirectEntryPopup();
+    }
+
+  closeDirectEntryPopup() {
+      if (this.directEntryPopup) {
+        this.directEntryPopup.remove();
+        this.directEntryPopup = null;
       }
     }
 }

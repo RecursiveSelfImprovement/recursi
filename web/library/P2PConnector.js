@@ -187,10 +187,7 @@ class P2PConnector {
               this.updateStatus('Connected', '#00e676');
               this.logDiag('Handshake verified!');
               channel.send(JSON.stringify({ type: 'h-verified' }));
-              
-              // Immediately configure the client layout
               this.sendCapabilities();
-              
               this.startHeartbeat(channel);
             }
           } else if (payload.type === 'ping') {
@@ -203,9 +200,10 @@ class P2PConnector {
             this.dispatch('handleRemotePerspective', payload.dy);
           } else if (payload.type === 'accudrawZ') {
             this.dispatch('handleRemoteAccudrawZ', payload.dy);
+          } else if (payload.type === 'sliderTap') {
+            this.dispatch('handleSliderTap');
           } else if (payload.type === 'modeChange') {
             if (payload.mode === 'rotate' || payload.mode === 'pan') {
-              // It is a View Mode Change! Present a subtle on-screen computer HUD notification
               if (typeof UITools !== 'undefined' && typeof UITools.showHUD === 'function') {
                 const label = payload.mode === 'rotate' ? 'Rotate View' : 'Pan View';
                 const icon = payload.mode === 'rotate' ? '🔄' : '🖐️';
@@ -219,7 +217,6 @@ class P2PConnector {
                 });
               }
             } else {
-              // It is a Control Panel Change! Translate payload accurately (sliders -> compass, tool -> tool)
               this.dispatch('highlightActiveControlBox', payload.mode);
             }
           } else if (payload.type === 'sliderSelect') {
