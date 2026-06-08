@@ -54,6 +54,7 @@ class PairwiseMatrixWidget {
         view: 'both',
         displayMode: 'none',
         useLocalStorage: true,
+        onStateChange: null
       };
       this.options = { ...defaults, ...options };
       this.env = hostEnv;
@@ -102,6 +103,7 @@ class PairwiseMatrixWidget {
           if (radioToSelect) radioToSelect.checked = true;
         }
         this.renderContent();
+        this.options.onStateChange?.();
       };
 
       this._handleKeydown = (e) => {
@@ -629,12 +631,14 @@ class PairwiseMatrixWidget {
       const viewModeOptions = [{ label: 'Pie Charts', value: 'pies' }, { label: 'Scores', value: 'scores' }, { label: 'Both', value: 'both' }];
       this.viewModeRadioGroup = this.createRadioGroup('pmwViewMode', 'Display:', viewModeOptions, this.options.view, (val) => {
         this.options.view = val; this.saveSettings(); this.renderContent();
+        this.options.onStateChange?.();
       }, 'row');
       controlsPanel.append(this.viewModeRadioGroup);
       const pieContentOptions = [{ label: 'Numbers', value: 'numbers' }, { label: 'Percentages', value: 'percentages' }, { label: 'Hide Text', value: 'none' }];
       this.pieContentRadioGroup = this.createRadioGroup('pmwPieContentDisplay', 'Pie Content:', pieContentOptions, this.displayMode, (val) => {
         this.displayMode = val; this.saveSettings();
         if (this.options.view === 'pies' || this.options.view === 'both') this.renderContent();
+        this.options.onStateChange?.();
       }, 'row');
       this.pieContentRadioGroup.classList.add('pmw-pie-content-group');
       controlsPanel.append(this.pieContentRadioGroup);

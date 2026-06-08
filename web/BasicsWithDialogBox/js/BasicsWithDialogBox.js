@@ -14,7 +14,6 @@ class BasicsWithDialogBox {
       this.autoLoadedBox = null;
       this.autoLoadedBoxDimensionDisplay = null;
       this.configuredBoxes = [];
-      this.qrTool = null;
 
       this._handleResize = () => {
         if (typeof this.onResize === 'function') {
@@ -55,18 +54,6 @@ class BasicsWithDialogBox {
         .config-section button:hover { background-color: #2563eb; }
         .dimension-display { font-size: 0.85em; color: #64748b; margin-top: 10px; border-top: 1px solid #e2e8f0; padding-top: 8px; }
         .svg-demo-container { margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0; }
-        .qrgen-section {
-            margin-top: 20px; padding: 15px; border: 1px solid #a78bfa;
-            background-color: #faf5ff; border-radius: 8px; max-width: 450px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        }
-        .qrgen-section-label { font-weight: 600; color: #6d28d9; margin-bottom: 6px; font-size: 0.95em; }
-        .qrgen-section p { margin: 0 0 10px; font-size: 0.85em; color: #555; }
-        .qrgen-open-btn {
-            padding: 8px 16px; background: #7c3aed; color: white;
-            border: none; border-radius: 4px; cursor: pointer; font-weight: 600;
-        }
-        .qrgen-open-btn:hover { background: #6d28d9; }
         `,
         'basicsWithDialogBox-app-styles'
       );
@@ -148,9 +135,6 @@ class BasicsWithDialogBox {
       this.configSection.appendChild(this.createBoxButton);
       targetElement.appendChild(this.configSection);
 
-      // QR Generator section
-      this._initQRSection(targetElement);
-
       this.statusDiv.textContent = 'App Initialized. Try resizing/moving the first box or creating new ones.';
 
       setTimeout(() => {
@@ -229,36 +213,4 @@ class BasicsWithDialogBox {
     }
   }
 
-  static _doc_BasicsWithDialogBox() {
-    return {
-      generatedBy: 'MigrateOwnedSidecarDocsToCapsulesV2',
-      migratedAt: '2026-04-29T05:02:29.319Z',
-      sourcePath: '/BasicsWithDialogBox/js/BasicsWithDialogBox_js.md',
-      ownerPath: '/BasicsWithDialogBox/js/BasicsWithDialogBox.js',
-      ownerClass: 'BasicsWithDialogBox',
-      migrationStatus: 'sidecar-embedded-sidecar-deleted',
-      visibilityRole: 'documentation',
-      note: 'Migrated from legacy *_js.md sidecar into the managed JS capsule. This method is documentation payload, not runtime code. Prompt visibility docsLevel should control inclusion.',
-      content:
-        '# `BasicsWithDialogBox.js`\n\nThis module exports the main application class, `BasicsWithDialogBox`. It serves as the central controller for the user interface, managing state and handling user interactions.\n\n## Class: `BasicsWithDialogBox`\n\n### Purpose\n\nThis class is responsible for initializing the application\'s UI, creating and managing `DialogBox` instances, and responding to user actions. It demonstrates how to use the `DialogBox`, `makeElement`, and `applyCss` utilities to build a functional web application.\n\n### Key Instance Properties\n\n-   **`titleElement`**: Reference to the main `<h1>` title of the application.\n-   **`statusDiv`**: Reference to the DOM element used for displaying status messages.\n-   **`configSection`**: The DOM element containing the configuration controls.\n-   **`configTextarea`**: The `<textarea>` where users can input JSON to configure a new `DialogBox`.\n-   **`createBoxButton`**: The button that triggers the creation of a new box from the config.\n-   **`autoLoadedBox`**: The first `DialogBox` instance that is created automatically on startup.\n-   **`autoLoadedBoxDimensionDisplay`**: A DOM element inside the auto-loaded box that shows its current inner dimensions.\n-   **`configuredBoxes`**: An array that stores references to all `DialogBox` instances created by the user via the configuration form.\n\n### Core Methods\n\n#### `init(targetElement)`\n\nThis is the main entry point for the application. It should be called once after the class is instantiated.\n\n-   **Purpose**: Builds the entire initial user interface, including the title, status area, and the configuration form. It also creates the first "auto-loaded" `DialogBox` and sets up all necessary event listeners.\n-   **Parameters**:\n    -   **`targetElement`** (Node): The DOM element into which the application\'s UI should be rendered (typically `document.body`).\n\n#### `createConfigurableBox()`\n\n-   **Purpose**: This method is called when the "Create Box from Config" button is clicked. It reads the JSON string from `this.configTextarea`, parses it, and uses the resulting object to instantiate a new `DialogBox`. It includes error handling for invalid JSON.\n\n#### `updateStatus(message)`\n\n-   **Purpose**: A simple helper method to update the text content of the status message display area.\n\n#### `getLastConfiguredBox()`\n\n-   **Purpose**: A utility method to retrieve the most recently created user-configured `DialogBox` instance.',
-    };
-  }
-
-
-  _initQRSection(targetElement) {
-      this.qrTool = new QRGeneratorTool();
-
-      const section = makeElement('div', { className: 'qrgen-section' });
-      const label = makeElement('div', { className: 'qrgen-section-label' }, '🔲 QR Code Generator');
-      const desc = makeElement('p', {}, 'Generate a QR code from any URL or text, then download the PNG to test with an online scanner.');
-      const openBtn = makeElement('button', {
-        className: 'qrgen-open-btn',
-        onclick: () => this.qrTool.open(this.env)
-      }, 'Open QR Generator');
-
-      section.appendChild(label);
-      section.appendChild(desc);
-      section.appendChild(openBtn);
-      targetElement.appendChild(section);
-    }
 }

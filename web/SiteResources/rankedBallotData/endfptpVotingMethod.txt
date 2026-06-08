@@ -1,0 +1,33 @@
+A: RCV (IRV)
+B: Score
+C: STAR
+D: Approval
+E: Minimax condorcet
+F: Ranked robin condorcet
+G: Ranked pairs condorcet
+H: BTR condorcet
+I: FPTP
+J: Borda count
+K: Majority judgement
+-------------
+E>G>F>A>D>H>K>C>I>B>J [cpsolver]
+H>G>E>F>B>K>C>D>A>I>J [budapestersalat]
+E=F=G=H>C>A [sidthe]
+C=D>B>E=F=G>H>K>I=A=J [chiron]
+H=G>E>F>C>A>K=D>I>B>J [openmask]
+G>F>E>H>A>D>J>B>C>K>I [deism]
+C>B=E=F=G=H=J=K>A [ukanuk]
+F=G>E=H>C>B>D>J>K>A>I  [cfd]
+D>B>K>C>A>E=G=H=I=J>I   [no eggplant]
+D=C=F>B=K>E=G>H>I>A=J [sass]
+B=C=D [tj rease]
+E>F>G>H>C>D>A>K>B>J  [rob brown]
+H>G>E>F>A>C>D>K>I>B>J [ant arctica]
+D>B>C>E=A=F=G=H>I>K>J [joe savina botero]
+C>D>F>B>A [scott burson]
+G>H>E>A>K>D>F>J>I>B>C [lesbitcoin]
+G>F>A>H>C>D [america repair]
+B>D>C [feujchtnaverjott]
+D>C>G>F>E>B>H>K>A>I>J [Ibozz]
+G>E>F>H>A>C>D>K>B>I>J [recent media]
+ 

@@ -84,6 +84,7 @@
     "src/editor/ui/promptBuilder/OutputTab.js",
     "src/editor/ui/tabs/TabManager.js",
     "src/editor/ui/tools/ClipboardCatcherWidget.js",
+    "src/editor/ui/tools/ClipboardPathScanner.js",
     "src/editor/ui/tools/FileSearchWidget.js",
     "src/editor/ui/tools/GlowDrawer.js",
     "src/editor/ui/tools/ProjectWalkerTool.js",

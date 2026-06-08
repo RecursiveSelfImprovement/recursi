@@ -1,11 +1,10 @@
 
 class RankedChoiceApp {
   constructor() {
-      // Intentionally left empty to overwrite the legacy constructor!
-      // All setup now happens properly in the run(env) -> buildDOM() flow.
+      // Standard standardized constructor
     }
 
-  init() {
+  async init() {
       const params = new URLSearchParams(window.location.search);
       const urlTheme = params.get('theme');
       this.applyTheme(urlTheme);
@@ -14,27 +13,50 @@ class RankedChoiceApp {
       if (urlMethod) {
         const val = urlMethod.toLowerCase().includes('irv') ? 'irv' : 'condorcet';
         const radio = this.tabMethodRadios.find(r => r.value === val);
-        if (radio) radio.checked = true;
+        if (radio) {
+          this.tabMethodRadios.forEach(r => r.checked = (r.value === val));
+        }
       }
 
       const urlBallot = params.get('ballot');
       if (urlBallot) {
-        const normalize = (s) => s.toLowerCase().replace(/[^a-z0-9]/g, '');
-        const target = normalize(urlBallot);
-        const key = Object.keys(this.ballotFiles).find((k) => normalize(k) === target);
-        if (key) this.ballotSelector.value = key;
+        if (urlBallot.startsWith('http://') || urlBallot.startsWith('https://')) {
+          this.ballotSelector.value = 'custom';
+          this.ballotTextArea.value = 'Loading custom ballot data...';
+          this.tabulateButton.disabled = true;
+          try {
+            const raw = await fetch(urlBallot).then(r => r.text());
+            this.ballotTextArea.value = raw.split(/\r?\n/).map(l => l.trim()).join('\n');
+            this.tabulate();
+          } catch (e) {
+            this.widgetContainer.innerHTML = '<p>Error loading custom ballot URL.</p>';
+          }
+        } else {
+          const targetId = urlBallot.toLowerCase().trim();
+          const found = this.electionsList.find(item => item.id.toLowerCase() === targetId);
+          if (found) {
+            this.ballotSelector.value = found.id;
+            await this.loadBallot();
+          } else {
+            await this.loadBallot();
+          }
+        }
+      } else {
+        await this.loadBallot();
       }
-
-      this.loadBallot();
     }
 
   wireUi() {
-      this.ballotSelector.addEventListener('change', () => this.loadBallot());
+      this.ballotSelector.addEventListener('change', () => {
+        this.loadBallot();
+        this.updateUrlParams();
+      });
       this.showInfoButton.addEventListener('click', () => this.showIntroDialog());
       this.ballotTextArea.addEventListener('input', () => {
         this.tabulateButton.disabled = false;
         this.exportButton.disabled = true;
         if (this.ballotSelector.value !== 'custom') this.ballotSelector.value = 'custom';
+        this.updateUrlParams();
       });
       this.tabulateButton.addEventListener('click', () => this.tabulate());
       this.exportButton.addEventListener('click', () => this.exportBallotData());
@@ -43,65 +65,17 @@ class RankedChoiceApp {
       this.themeSelector.addEventListener('change', () => {
         ThemeManager.apply(this.themeSelector.value, this.rootElement);
         localStorage.setItem(this.savedThemeKey, this.themeSelector.value);
+        this.updateUrlParams();
       });
 
-      // Circular Vote Demo
+      // Circular Vote Demo - Regular Button
       if (this.controlsDiv) {
-        applyCss(`
-          .cv-btn-container { position: relative; margin-left: auto; display: inline-block; }
-          .cv-btn {
-            position: relative; z-index: 101; background: linear-gradient(135deg, #e65c00, #F9D423); color: #fff; border: none; padding: 10px 18px; border-radius: 8px; font-weight: bold; cursor: pointer; text-transform: uppercase; letter-spacing: 0.5px; box-shadow: 0 0 15px rgba(230, 92, 0, 0.8), inset 0 0 10px rgba(255,255,255,0.3); transition: all 0.5s ease; text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-          }
-          .cv-btn.active-pulse { animation: cv-pulse-intense 2s infinite alternate ease-in-out; }
-          .cv-btn.settled { animation: cv-pulse-subtle 4s infinite alternate ease-in-out; background: linear-gradient(135deg, #b34700, #cc7a00); box-shadow: 0 0 5px rgba(179, 71, 0, 0.4); }
-          .cv-btn:hover { transform: scale(1.03); }
-          @keyframes cv-pulse-intense { 0% { box-shadow: 0 0 10px rgba(230, 92, 0, 0.6), inset 0 0 5px rgba(255,255,255,0.2); filter: brightness(1); } 100% { box-shadow: 0 0 25px rgba(255, 120, 0, 1), 0 0 10px rgba(255, 50, 0, 0.8), inset 0 0 15px rgba(255,255,255,0.6); filter: brightness(1.15); } }
-          @keyframes cv-pulse-subtle { 0% { box-shadow: 0 0 3px rgba(179, 71, 0, 0.3); } 100% { box-shadow: 0 0 8px rgba(179, 71, 0, 0.6); } }
-        `, 'circularVote-btn-animations');
-
-        const cvContainer = makeElement('div', { className: 'cv-btn-container' });
-        const circBtn = makeElement('button', { className: 'cv-btn active-pulse' }, 'Circular Vote');
+        const cvContainer = makeElement('div', { style: { marginLeft: 'auto' } });
+        const circBtn = makeElement('button', {}, 'Circular Vote');
         cvContainer.appendChild(circBtn);
         this.controlsDiv.appendChild(cvContainer);
 
-        let embersActive = true;
-        const spawnEmber = () => {
-          if (!embersActive) return;
-          const rect = circBtn.getBoundingClientRect();
-          if (rect.width === 0 || rect.height === 0) return;
-
-          const ember = makeElement('div');
-          const size = Math.random() * 3 + 2;
-          const colors = ['#ffcc00', '#ff9900', '#ff6600', '#ffaa33'];
-          const color = colors[Math.floor(Math.random() * colors.length)];
-          const startX = rect.left + Math.random() * rect.width;
-          const startY = rect.top + Math.random() * rect.height;
-
-          Object.assign(ember.style, {
-            position: 'fixed', left: startX + 'px', top: startY + 'px', width: size + 'px', height: size + 'px', backgroundColor: color, borderRadius: '50%', boxShadow: `0 0 ${size * 2.5}px ${color}`, pointerEvents: 'none', zIndex: '999999', transform: 'translate(-50%, -50%)',
-          });
-
-          this.env.container.appendChild(ember);
-
-          const dx = (Math.random() - 0.5) * 40;
-          const dy = -(Math.random() * 60 + 50);
-          const duration = Math.random() * 2000 + 1500;
-
-          ember.animate([
-            { transform: 'translate(-50%, -50%) scale(0.3)', opacity: 0 },
-            { transform: `translate(calc(-50% + ${dx * 0.3}px), calc(-50% + ${dy * 0.3}px)) scale(1.1)`, opacity: 0.8, offset: 0.3 },
-            { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.1)`, opacity: 0 },
-          ], { duration, easing: 'ease-in-out', fill: 'forwards' }).onfinish = () => ember.remove();
-        };
-
-        const emberInterval = setInterval(spawnEmber, 100);
-        this.intervals.push(emberInterval);
-
         circBtn.addEventListener('click', () => {
-          circBtn.classList.remove('active-pulse');
-          circBtn.classList.add('settled');
-          embersActive = false;
-          clearInterval(emberInterval);
           this.openCircularVoteDialog();
         });
       }
@@ -109,29 +83,45 @@ class RankedChoiceApp {
 
   prepareBallotSelector() {
       this.ballotSelector.append(makeElement('option', { value: 'custom' }, 'Custom'));
-      Object.entries(this.ballotFiles).forEach(([k, _]) => {
-        this.ballotSelector.append(makeElement('option', { value: k }, k.replace(/([a-z])([A-Z])/g, '$1 $2')));
+      this.electionsList.forEach((item) => {
+        this.ballotSelector.append(makeElement('option', { value: item.id }, item.name));
       });
-      this.ballotSelector.value = 'Burlington 2009';
+      if (this.electionsList.length > 0) {
+        this.ballotSelector.value = this.electionsList[0].id;
+      } else {
+        this.ballotSelector.value = 'custom';
+      }
     }
 
   async loadBallot() {
       const sel = this.ballotSelector.value;
+      const descText = this.ballotDescriptionText;
       if (sel === 'custom') {
         this.ballotTextArea.value = '';
         this.widgetContainer.innerHTML = '<p>Enter ballot data in the text area.</p>';
+        descText.textContent = '';
+        descText.style.display = 'none';
         this.tabulateButton.disabled = true;
         this.exportButton.disabled = true;
         return;
       }
-      const url = this.ballotFiles[sel];
-      if (!url) return;
+      const election = this.electionsList.find(item => item.id === sel);
+      if (!election) return;
+
+      if (election.description) {
+        descText.textContent = election.description;
+        descText.style.display = 'block';
+      } else {
+        descText.textContent = '';
+        descText.style.display = 'none';
+      }
+
       try {
-        const raw = await fetch(url).then((r) => r.text());
+        const raw = await fetch(election.file).then((r) => r.text());
         this.ballotTextArea.value = raw.split(/\r?\n/).map((l) => l.trim()).join('\n');
         this.tabulate();
       } catch (e) {
-        this.widgetContainer.innerHTML = '<p>Error loading ballot file.</p>';
+        this.widgetContainer.innerHTML = '<p>Error loading ballot file from server.</p>';
       }
     }
 
@@ -161,12 +151,15 @@ class RankedChoiceApp {
         const tabulator = new CondorcetTabulator(this.state.electionData);
         const data = tabulator.run();
         const params = new URLSearchParams(window.location.search);
-        const options = { view: 'both' };
+        const options = { view: 'both', displayMode: 'none' };
         if (params.has('view')) { options.view = params.get('view'); options.useLocalStorage = false; }
         const contentMode = params.get('content') || params.get('display');
         if (contentMode) { options.displayMode = contentMode; options.useLocalStorage = false; }
 
-        this.state.widget = new PairwiseMatrixWidget(data, this.state.electionData.candidates, options, this.env);
+        this.state.widget = new PairwiseMatrixWidget(data, this.state.electionData.candidates, {
+          ...options,
+          onStateChange: () => this.updateUrlParams()
+        }, this.env);
         this.widgetContainer.append(this.state.widget.element);
         this.exportButton.disabled = false;
       } else {
@@ -177,6 +170,7 @@ class RankedChoiceApp {
         this.exportButton.disabled = true;
       }
       this.tabulateButton.disabled = true;
+      this.updateUrlParams();
     }
 
   updateWidget() {
@@ -185,9 +179,13 @@ class RankedChoiceApp {
 
       const tabulator = new CondorcetTabulator(this.state.electionData);
       const data = tabulator.run();
-      this.state.widget = new PairwiseMatrixWidget(data, this.state.electionData.candidates, { view: 'both' }, this.env);
+      this.state.widget = new PairwiseMatrixWidget(data, this.state.electionData.candidates, { 
+        view: 'both',
+        onStateChange: () => this.updateUrlParams()
+      }, this.env);
       this.widgetContainer.innerHTML = '';
       this.widgetContainer.append(this.state.widget.element);
+      this.updateUrlParams();
     }
 
   addVotes(namePrefix, qty) {
@@ -256,100 +254,51 @@ class RankedChoiceApp {
     }
 
   createInfoPanel() {
-    const content = makeElement('div', { className: 'info-content' }, [
-      makeElement(
-        'h2',
-        { style: { textAlign: 'center', marginTop: '0' } },
-        'Welcome to the Ranked Choice Visualizer'
-      ),
-      makeElement(
-        'p',
-        {},
-        'This tool analyzes and visualizes ranked choice voting ballots. You can choose from several pre-loaded, real-world elections or paste your own ballot data to see how different tabulation methods work.'
-      ),
-
-      makeElement('h3', {}, 'Condorcet vs. Instant Runoff (IRV)'),
-      makeElement(
-        'p',
-        {},
-        `This page demonstrates two different ways to count ranked ballots:`
-      ),
-      makeElement('ul', {}, [
-        makeElement('li', {}, [
-          makeElement('strong', {}, 'Instant Runoff (IRV): '),
-          "Also known as Ranked Choice Voting (RCV) in some parts of the US. It works in rounds. In each round, the candidate with the fewest first-place votes is eliminated, and their votes are transferred to the voter's next choice. This continues until one candidate has a majority.",
+      const content = makeElement('div', { className: 'info-content' }, [
+        makeElement('h2', { style: { textAlign: 'center', marginTop: '0' } }, 'Welcome to the Ranked Choice Visualizer'),
+        makeElement('p', {}, 'This tool analyzes and visualizes ranked choice voting ballots. You can choose from several pre-loaded, real-world elections or paste your own ballot data to see how different tabulation methods work.'),
+        makeElement('h3', {}, 'Condorcet vs. Instant Runoff (IRV)'),
+        makeElement('p', {}, `This page demonstrates two different ways to count ranked ballots:`),
+        makeElement('ul', {}, [
+          makeElement('li', {}, [
+            makeElement('strong', {}, 'Instant Runoff (IRV): '),
+            "Also known as Ranked Choice Voting (RCV) in some parts of the US. It works in rounds. In each round, the candidate with the fewest first-place votes is eliminated, and their votes are transferred to the voter's next choice. This continues until one candidate has a majority.",
+          ]),
+          makeElement('li', {}, [
+            makeElement('strong', {}, 'Condorcet (Pairwise): '),
+            'This method simulates a head-to-head election between every pair of candidates. The candidate who wins all of their one-on-one matchups is the Condorcet Winner. This is often preferred, as this candidate is preferred over all others by a majority of voters.',
+          ]),
         ]),
-        makeElement('li', {}, [
-          makeElement('strong', {}, 'Condorcet (Pairwise): '),
-          'This method simulates a head-to-head election between every pair of candidates. The candidate who wins all of their one-on-one matchups is the Condorcet Winner. This is often considered the fairest outcome, as this candidate is preferred over all others by a majority of voters.',
-        ]),
-      ]),
-      makeElement(
-        'p',
-        {},
-        'Sometimes, these methods produce different winners, which can be controversial.'
-      ),
+        makeElement('p', {}, 'Sometimes, these methods produce different winners, which can be controversial.'),
+        makeElement('h3', {}, 'The Condorcet Widget'),
+        makeElement('p', {}, `The Condorcet visualization is particularly sophisticated. It shows the full pairwise matrix of head-to-head results. The most important feature is the bar chart display (select 'Scores' or 'Both' view). Each candidate's score is their worst pairwise performance-the lowest percentage of votes they received against any single opponent. The candidate with the highest "worst-case" score wins. This is known as the Minimax method.`),
+      ]);
 
-      makeElement('h3', {}, 'The Condorcet Widget'),
-      makeElement(
-        'p',
-        {},
-        `The Condorcet visualization is particularly sophisticated. It shows the full pairwise matrix of head-to-head results. The most important feature is the bar chart display (select 'Scores' or 'Both' view). Each candidate's score is their worst pairwise performance—the lowest percentage of votes they received against any single opponent. The candidate with the highest "worst-case" score wins. This is known as the Minimax method.`
-      ),
+      const closeButton = makeElement('button', { className: 'info-close-button', onclick: () => this.toggleInfoPanel(false) }, '×');
+      const panel = makeElement('div', { className: 'info-panel' }, [closeButton, content]);
+      this.infoPanel = makeElement('div', { id: 'infoOverlay' }, [panel]);
 
-      makeElement('h3', {}, 'Example Elections'),
-      makeElement('ul', {}, [
-        makeElement('li', {}, [
-          makeElement('strong', {}, 'Burlington & Alaska Special: '),
-          'These are interesting because in both cases, IRV failed to elect the Condorcet winner. This tool lets you see exactly how that happened.',
-        ]),
-        makeElement('li', {}, [
-          makeElement('strong', {}, 'Reddit "Meta" Election: '),
-          'A poll conducted on Reddit where users voted on their preferred voting methods. A fun, self-referential example.',
-        ]),
-        makeElement('li', {}, [
-          makeElement('strong', {}, 'San Francisco Mayor: '),
-          'Notable for the large number of candidates. The ranked choice system performed well, navigating the complex field to elect a centrist candidate.',
-        ]),
-      ]),
-    ]);
+      this.infoPanel.addEventListener('click', (e) => {
+        if (e.target === this.infoPanel) {
+          this.toggleInfoPanel(false);
+        }
+      });
 
-    const closeButton = makeElement(
-      'button',
-      {
-        className: 'info-close-button',
-        onclick: () => this.toggleInfoPanel(false),
-      },
-      '×'
-    );
-    const panel = makeElement('div', { className: 'info-panel' }, [
-      closeButton,
-      content,
-    ]);
-    this.infoPanel = makeElement('div', { id: 'infoOverlay' }, [panel]);
-
-    // Clicking on the overlay background also closes the panel
-    this.infoPanel.addEventListener('click', (e) => {
-      if (e.target === this.infoPanel) {
-        this.toggleInfoPanel(false);
-      }
-    });
-
-    document.body.append(this.infoPanel);
-  }
+      document.body.append(this.infoPanel);
+    }
 
   toggleInfoPanel(show) {
-    if (!this.infoPanel) {
-      this.createInfoPanel();
-    }
+      if (!this.infoPanel) {
+        this.createInfoPanel();
+      }
 
-    if (show) {
-      this.infoPanel.classList.add('visible');
-      localStorage.setItem('rankedChoiceIntroShown', 'true');
-    } else {
-      this.infoPanel.classList.remove('visible');
+      if (show) {
+        this.infoPanel.classList.add('visible');
+        localStorage.setItem('rankedChoiceIntroShown', 'true');
+      } else {
+        this.infoPanel.classList.remove('visible');
+      }
     }
-  }
 
   applyTheme(override = null) {
       let mode = override || localStorage.getItem(this.savedThemeKey) || 'dark';
@@ -455,34 +404,20 @@ class RankedChoiceApp {
     }
 
   async run(env) {
-      if (this.rootElement) this.destroy();
       this.env = env;
       this.rootElement = env.container;
-
-      if (this.rootElement === document.body) {
-        document.documentElement.style.height = '100%';
-        document.documentElement.style.margin = '0';
-        document.body.style.height = '100%';
-        document.body.style.margin = '0';
-      }
-
       this.rootElement.classList.add('ranked-choice-wrapper');
 
-      this.ballotFiles = {
-        'Burlington 2009': 'https://recursi.dev/rankedBallots/burlington2009.txt',
-        'Alaska 2022': 'https://recursi.dev/rankedBallots/alaskaspecial2022.txt',
-        'endFPTP "Meta"': 'https://recursi.dev/rankedBallots/endfptpVotingMethod.txt',
-        'SF Mayor 2024': 'https://recursi.dev/rankedBallots/sanfrancisco2024.txt',
-      };
-      
+      this.electionsList = [];
       this.savedThemeKey = 'pvTheme';
       this.state = { manualCounts: {}, electionData: null, widget: null, method: 'condorcet' };
       this.infoPanel = null;
       this.intervals = [];
 
       this.injectStyles();
+      await this.fetchBallotsConfig();
       this.buildDOM();
-      this.init();
+      await this.init();
     }
 
   destroy() {
@@ -504,7 +439,6 @@ class RankedChoiceApp {
           height: 100%;
           overflow: auto;
           box-sizing: border-box;
-          background:#f0f0f0;
           padding: 20px;
         }
         .ranked-choice-wrapper .container {max-width: 1200px; margin: 0 auto; background:#fff;border-radius:10px;box-shadow:0 0 20px rgba(0,0,0,.1);padding:30px}
@@ -525,6 +459,14 @@ class RankedChoiceApp {
         .ranked-choice-wrapper button:disabled {background-color:#cccccc}
         .ranked-choice-wrapper button:hover:not(:disabled) {background-color:#2980b9}
         .ranked-choice-wrapper textarea {width:100%;height:200px;font-family:'Roboto',sans-serif;font-size:14px;padding:10px;border-radius:5px;border:1px solid #bdc3c7;resize:vertical}
+        .ranked-choice-wrapper .ballot-description {
+          font-size: 13.5px;
+          opacity: 0.85;
+          font-style: italic;
+          margin-top: -12px;
+          margin-bottom: 20px;
+          line-height: 1.45;
+        }
         @media (min-width:768px){
           .ranked-choice-wrapper .content-area {display:flex;justify-content:space-between}
           .ranked-choice-wrapper .text-container {width:400px}
@@ -571,9 +513,15 @@ class RankedChoiceApp {
       this.exportButton = makeElement('button', { id: 'exportButton', disabled: true }, 'Export Data');
 
       this.controlsDiv = makeElement('div', { className: 'controls' }, this.ballotSelector, this.tabulateButton, this.exportButton);
+      
+      this.ballotDescriptionText = makeElement('div', { 
+        className: 'ballot-description', 
+        style: { display: 'none' } 
+      });
+
       this.ballotTextArea = makeElement('textarea', { id: 'ballotText' });
 
-      const textContainer = makeElement('div', { className: 'text-container' }, this.controlsDiv, this.ballotTextArea);
+      const textContainer = makeElement('div', { className: 'text-container' }, this.controlsDiv, this.ballotDescriptionText, this.ballotTextArea);
       const contentArea = makeElement('div', { className: 'content-area' }, textContainer);
 
       const container = makeElement('div', { className: 'container' }, headerBar, this.widgetContainer, contentArea);
@@ -583,5 +531,79 @@ class RankedChoiceApp {
       this.prepareBallotSelector();
     }
 
+
+  updateUrlParams() {
+      const params = new URLSearchParams(window.location.search);
+
+      if (this.themeSelector) {
+        params.set('theme', this.themeSelector.value);
+      }
+
+      const activeRadio = this.tabMethodRadios.find(r => r.checked);
+      const method = activeRadio ? activeRadio.value : 'condorcet';
+      params.set('method', method);
+
+      const sel = this.ballotSelector.value;
+      if (sel === 'custom') {
+        const queryBallot = new URLSearchParams(window.location.search).get('ballot');
+        if (queryBallot && (queryBallot.startsWith('http://') || queryBallot.startsWith('https://'))) {
+          params.set('ballot', queryBallot);
+        } else {
+          params.set('ballot', 'custom');
+        }
+      } else {
+        params.set('ballot', sel);
+      }
+
+      if (method === 'condorcet' && this.state.widget) {
+        params.set('view', this.state.widget.options.view || 'both');
+        params.set('display', this.state.widget.displayMode || 'none');
+      } else {
+        params.delete('view');
+        params.delete('display');
+      }
+
+      const newSearch = '?' + params.toString();
+      if (window.location.search !== newSearch) {
+        window.history.replaceState(null, '', newSearch);
+      }
+    }
+
+  async fetchBallotsConfig() {
+      try {
+        const res = await fetch('/SiteResources/rankedBallotData/ballots.json');
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        const data = await res.json();
+        this.electionsList = data.elections || [];
+      } catch (e) {
+        console.warn("Could not fetch server-hosted ballots.json, loading safe fallback structure", e);
+        this.electionsList = [
+          {
+            id: "burlington",
+            name: "Burlington 2009",
+            file: "/SiteResources/rankedBallotData/burlington2009.txt",
+            description: "These are ones where the Condorcet winner differed from the Instant Runoff (IRV) winner."
+          },
+          {
+            id: "alaska",
+            name: "Alaska 2022",
+            file: "/SiteResources/rankedBallotData/alaskaspecial2022.txt",
+            description: "These are ones where the Condorcet winner differed from the Instant Runoff (IRV) winner."
+          },
+          {
+            id: "meta",
+            name: "endFPTP 'Meta'",
+            file: "/SiteResources/rankedBallotData/endfptpVotingMethod.txt",
+            description: "We actually voted on voting methods in the end fast first past the post group."
+          },
+          {
+            id: "sf",
+            name: "SF Mayor 2024",
+            file: "/SiteResources/rankedBallotData/sanfrancisco2024.txt",
+            description: "Notable for electing a very popular Centrist."
+          }
+        ];
+      }
+    }
 }
 
