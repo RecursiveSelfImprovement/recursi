@@ -5,6 +5,7 @@ class SliderControl {
       this.options = {
         saveToLocalStorage: true,
         relativeMidi: false,
+        isInfiniteWheel: false, // New infinite scroll wheel option
         ...options,
       };
 
@@ -38,7 +39,7 @@ class SliderControl {
       this.applyStyles();
       this.checkMidiHandlerExistence();
       this.attachEventHandlers();
-      if (options.callback) {
+      if (options.callback && !this.options.isInfiniteWheel) {
         options.callback(this.value);
       }
       SliderControl.allSliders.push(this);
@@ -51,51 +52,94 @@ class SliderControl {
       });
       this.container.style.setProperty('--hue', this.hue);
       this.label = makeElement('label', this.options.label);
-      this.valueDisplay = this.options.showValue
-        ? makeElement(
-            'div',
-            {
-              className: 'value-display',
-            },
-            this.value.toFixed(1)
-          )
-        : null;
-      this.slider = makeElement('input', {
-        type: 'range',
-        min: 0,
-        max: 1000,
-        value: this.convertToSliderValue(this.value),
-      });
-
-      this.midiBox = makeElement('div', {
-        className: 'midi-box',
-      });
-      this.midiEmoji = makeElement(
-        'span',
-        {
-          className: 'midi-emoji',
-        },
-        '🎛️'
-      );
-      this.midiInput = makeElement('input', {
-        type: 'text',
-        placeholder: 'MIDI CC',
-        value: this.midiControl,
-        className: 'midi-input',
-      });
-
-      this.midiBox.appendChild(this.midiEmoji);
-      this.midiBox.appendChild(this.midiInput);
-      this.container.appendChild(this.midiBox);
-
-      // Only display the MIDI assign icon if MIDI controller is connected/selected in localStorage
+      
       const midiEnabled = localStorage.getItem('midi-controller-enabled') === 'true';
-      this.midiBox.style.display = midiEnabled ? 'block' : 'none';
 
-      this.container.appendChild(this.label);
-      if (this.valueDisplay) this.container.appendChild(this.valueDisplay);
-      this.container.appendChild(this.slider);
-      this.slider.SliderControl = this;
+      if (this.options.isInfiniteWheel) {
+        // Render high-contrast 3D rolling sideways wheel with border outline
+        this.wheelCanvas = makeElement('canvas', {
+          className: 'slider-wheel-canvas',
+          style: {
+            width: '100%',
+            height: '16px',
+            display: 'block',
+            cursor: 'ew-resize',
+            borderRadius: '3px',
+            background: 'rgba(20, 20, 25, 0.65)',
+            border: '1px solid rgba(255, 255, 255, 0.05)',
+            marginTop: '6px',
+            boxSizing: 'border-box'
+          }
+        });
+        
+        this.container.appendChild(this.label);
+        this.container.appendChild(this.wheelCanvas);
+
+        this.wheelOffset = 0;
+        this.wheelVelocity = 0;
+        this.wheelInertiaId = null;
+
+        setTimeout(() => {
+          if (this.wheelCanvas) {
+            const rect = this.wheelCanvas.getBoundingClientRect();
+            this.wheelCanvas.width = rect.width || 200;
+            this.wheelCanvas.height = 16;
+            this.drawWheel();
+          }
+        }, 120);
+
+      } else {
+        // Render standard slider
+        const displaySuffix = this.options.label.includes('rotation') ? '°' : '';
+        this.valueDisplay = this.options.showValue
+          ? makeElement(
+              'div',
+              {
+                className: 'value-display'
+              },
+              this.value.toFixed(1) + displaySuffix
+            )
+          : null;
+        if (this.valueDisplay) {
+          this.valueDisplay.style.setProperty('right', midiEnabled ? '32px' : '8px', 'important');
+        }
+
+        this.slider = makeElement('input', {
+          type: 'range',
+          min: 0,
+          max: 1000,
+          value: this.convertToSliderValue(this.value),
+        });
+
+        this.midiBox = makeElement('div', {
+          className: 'midi-box'
+        });
+        this.midiBox.style.setProperty('display', midiEnabled ? 'flex' : 'none', 'important');
+
+        this.midiEmoji = makeElement(
+          'span',
+          {
+            className: 'midi-emoji',
+          },
+          '🎛️'
+        );
+        this.midiInput = makeElement('input', {
+          type: 'text',
+          placeholder: 'MIDI CC',
+          value: this.midiControl,
+          className: 'midi-input',
+          style: { display: 'none' }
+        });
+
+        this.midiBox.appendChild(this.midiEmoji);
+        this.midiBox.appendChild(this.midiInput);
+        this.container.appendChild(this.midiBox);
+
+        this.container.appendChild(this.label);
+        if (this.valueDisplay) this.container.appendChild(this.valueDisplay);
+        this.container.appendChild(this.slider);
+        this.slider.SliderControl = this;
+      }
     }
 
     convertToSliderValue(realValue) {
@@ -184,6 +228,7 @@ class SliderControl {
           box-sizing: border-box;
           backdrop-filter: blur(2px);
           border: 1px solid rgba(255,255,255,0.03);
+          font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         }
 
         .slider-container label {
@@ -242,76 +287,95 @@ class SliderControl {
           position: absolute;
           top: 4px;
           right: 32px;
-          background-color: rgba(10,10,15,0.9);
-          border: 1px solid hsla(var(--hue), 100%, 50%, 0.3);
-          color: hsl(var(--hue), 100%, 75%);
-          padding: 1px 4px;
-          border-radius: 3px;
-          font-size: 10px;
-          font-family: monospace;
-          text-shadow: 0 0 4px hsla(var(--hue), 100%, 50%, 0.5);
+          background-color: rgba(10,10,15,0.9) !important;
+          border: 1px solid hsla(var(--hue), 100%, 50%, 0.3) !important;
+          color: hsl(var(--hue), 100%, 75%) !important;
+          padding: 1px 4px !important;
+          border-radius: 3px !important;
+          font-size: 10px !important;
+          font-family: monospace !important;
+          text-shadow: 0 0 4px hsla(var(--hue), 100%, 50%, 0.5) !important;
+          box-sizing: border-box !important;
         }
 
         .midi-box {
-          position: absolute;
-          top: 4px;
-          right: 8px;
-          height: 20px;
-          cursor: pointer;
-          overflow: visible;
-          z-index: 10;
-          display: flex;
-          align-items: center;
+          position: absolute !important;
+          top: 4px !important;
+          right: 8px !important;
+          height: 12px !important;
+          width: 12px !important; /* Constrain tightly to the corner */
+          cursor: pointer !important;
+          overflow: visible !important;
+          z-index: 10 !important;
+          display: flex; /* Remove !important so P2P inline none toggle works smoothly */
+          align-items: center !important;
+          justify-content: center !important;
+          background: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          margin: 0 !important;
+          padding: 0 !important;
+          box-sizing: border-box !important;
+        }
+
+        .midi-box.expanded {
+          width: auto !important; /* Expand horizontally only when actively mapping */
         }
 
         .midi-emoji {
-          width: 18px;
-          height: 18px;
-          font-size: 11px;
-          line-height: 18px;
-          text-align: center;
-          background: hsla(var(--hue), 100%, 50%, 0.12);
-          color: hsla(var(--hue), 100%, 75%, 0.7);
-          border-radius: 3px;
-          backdrop-filter: blur(2px);
-          transition: all 0.15s ease;
-          border: 1px solid hsla(var(--hue), 100%, 50%, 0.15);
-          display: inline-block;
+          width: 12px !important;
+          height: 12px !important;
+          font-size: 8px !important;
+          line-height: 12px !important;
+          text-align: center !important;
+          background: rgba(255, 255, 255, 0.05) !important; /* Neutral background removes the ugly black box */
+          color: rgba(255, 255, 255, 0.7) !important;
+          border-radius: 3px !important;
+          backdrop-filter: blur(2px) !important;
+          transition: all 0.15s ease !important;
+          border: 1px solid rgba(255, 255, 255, 0.15) !important;
+          display: inline-block !important;
+          box-sizing: border-box !important;
+          margin: 0 !important;
+          padding: 0 !important;
         }
 
         .midi-emoji:hover {
-          background: hsla(var(--hue), 100%, 50%, 0.35);
-          color: hsl(var(--hue), 100%, 80%);
-          text-shadow: 0 0 5px hsla(var(--hue), 100%, 50%, 0.8);
-          border-color: hsla(var(--hue), 100%, 50%, 0.5);
+          background: hsla(var(--hue), 100%, 50%, 0.35) !important;
+          color: hsl(var(--hue), 100%, 80%) !important;
+          text-shadow: 0 0 5px hsla(var(--hue), 100%, 50%, 0.8) !important;
+          border-color: hsla(var(--hue), 100%, 50%, 0.5) !important;
         }
 
         .midi-input {
-          position: absolute;
-          top: 0px;
-          right: 22px;
-          width: 0;
-          height: 18px;
-          padding: 0;
+          display: none !important; /* Entirely strip the input element from layout when collapsed */
+          position: absolute !important;
+          top: 0px !important;
+          right: 22px !important;
+          width: 0px !important;
+          height: 12px !important;
+          padding: 0 !important;
           border: none !important;
-          border-radius: 3px;
-          font-size: 9px;
-          opacity: 0;
-          transition: all 0.25s ease;
-          background: rgba(10,10,15,0.95);
-          color: hsl(var(--hue), 100%, 75%);
-          text-shadow: 0 0 3px hsla(var(--hue), 100%, 50%, 0.5);
-          backdrop-filter: blur(2px);
-          text-align: center;
-          box-sizing: border-box;
-          pointer-events: none;
+          border-radius: 3px !important;
+          font-size: 9px !important;
+          opacity: 0 !important;
+          transition: all 0.25s ease !important;
+          background: rgba(10,10,15,0.95) !important;
+          color: hsl(var(--hue), 100%, 75%) !important;
+          text-shadow: 0 0 3px hsla(var(--hue), 100%, 50%, 0.5) !important;
+          backdrop-filter: blur(2px) !important;
+          text-align: center !important;
+          box-sizing: border-box !important;
+          pointer-events: none !important;
         }
 
         .midi-box.expanded .midi-input {
-          width: 65px;
-          opacity: 1;
-          padding: 0 4px;
+          display: block !important; /* Re-integrate the input block for typing */
+          width: 65px !important;
+          opacity: 1 !important;
+          padding: 0 4px !important;
           border: 1px solid hsla(var(--hue), 100%, 50%, 0.4) !important;
+          pointer-events: auto !important;
         }
         `,
         'sliderControlStyles'
@@ -319,10 +383,56 @@ class SliderControl {
     }
 
     checkMidiHandlerExistence() {
-      this.midiBox.style.display = 'block';
+      if (this.midiBox) {
+        const enabled = localStorage.getItem('midi-controller-enabled') === 'true';
+        this.midiBox.style.setProperty('display', enabled ? 'flex' : 'none', 'important');
+      }
     }
 
     attachEventHandlers() {
+      if (this.options.isInfiniteWheel) {
+        const onDown = (e) => {
+          e.preventDefault();
+          this._stopWheelInertia();
+          let lastX = e.clientX ?? e.touches?.[0]?.clientX;
+          
+          const onMove = (ev) => {
+            const currentX = ev.clientX ?? ev.touches?.[0]?.clientX;
+            if (currentX === undefined) return;
+            const dx = currentX - lastX;
+            lastX = currentX;
+            
+            this.wheelOffset += dx;
+            this.wheelVelocity = this.wheelVelocity * 0.3 + dx * 0.7; // Smooth velocity damping
+            this.drawWheel();
+            
+            if (this.options.callback) {
+              this.options.callback(dx);
+            }
+          };
+          
+          const onUp = () => {
+            window.removeEventListener('mousemove', onMove);
+            window.removeEventListener('mouseup', onUp);
+            window.removeEventListener('touchmove', onMove);
+            window.removeEventListener('touchend', onUp);
+            
+            if (Math.abs(this.wheelVelocity) > 0.5) {
+              this._startWheelInertia();
+            }
+          };
+          
+          window.addEventListener('mousemove', onMove);
+          window.addEventListener('mouseup', onUp);
+          window.addEventListener('touchmove', onMove, { passive: false });
+          window.addEventListener('touchend', onUp);
+        };
+
+        this.wheelCanvas.addEventListener('mousedown', onDown);
+        this.wheelCanvas.addEventListener('touchstart', onDown, { passive: false });
+        return;
+      }
+
       this.slider.addEventListener('input', (e) => {
         this.value = this.convertToRealValue(e.target.value);
         if (this.valueDisplay) {
@@ -335,7 +445,6 @@ class SliderControl {
         }
       });
       this.slider.addEventListener('change', () => {
-        // Enforce always showing the slider value instead of returning to a blank display
         if (this.valueDisplay) {
           this.valueDisplay.style.display = 'block';
         }
@@ -356,7 +465,7 @@ class SliderControl {
         }
       });
       document.addEventListener('click', (e) => {
-        if (!this.midiBox.contains(e.target)) {
+        if (this.midiBox && !this.midiBox.contains(e.target)) {
           this.hideMidiInput();
         }
       });
@@ -421,12 +530,15 @@ class SliderControl {
 
     setValue(newValue) {
       this.value = Number(newValue.toFixed(2));
-      this.slider.value = this.convertToSliderValue(this.value);
+      if (this.slider) {
+        this.slider.value = this.convertToSliderValue(this.value);
+      }
       if (this.valueDisplay) {
-        this.valueDisplay.textContent = this.value.toFixed(1);
+        const displaySuffix = this.options.label.includes('rotation') ? '°' : '';
+        this.valueDisplay.textContent = this.value.toFixed(1) + displaySuffix;
       }
       this.saveValue();
-      if (this.options.callback) {
+      if (this.options.callback && !this.options.isInfiniteWheel) {
         this.options.callback(this.value);
       }
     }
@@ -562,4 +674,83 @@ class SliderControl {
         this.hideMidiInput();
       }, 3000);
     }
-  }
+  
+  static syncAllDisplay() {
+      const enabled = localStorage.getItem('midi-controller-enabled') === 'true';
+      SliderControl.allSliders.forEach(slider => {
+        if (slider.midiBox) {
+          slider.midiBox.style.setProperty('display', enabled ? 'flex' : 'none', 'important');
+        }
+        if (slider.valueDisplay) {
+          slider.valueDisplay.style.setProperty('right', enabled ? '32px' : '8px', 'important');
+        }
+      });
+    }
+
+  drawWheel() {
+      if (!this.wheelCanvas) return;
+      const ctx = this.wheelCanvas.getContext('2d');
+      const W = this.wheelCanvas.width;
+      const H = this.wheelCanvas.height;
+      ctx.clearRect(0, 0, W, H);
+
+      // Draw horizontal track center-guide (brightened for high contrast)
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.22)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.moveTo(12, H / 2);
+      ctx.lineTo(W - 12, H / 2);
+      ctx.stroke();
+
+      // Render rotating vertical ticks with solid contrast
+      const spacing = 16;
+      const offset = (this.wheelOffset % spacing + spacing) % spacing;
+
+      for (let x = offset; x < W; x += spacing) {
+        const distFromCenter = Math.abs(x - W / 2);
+        const pctFromCenter = distFromCenter / (W / 2);
+        // Base minimum opacity of 0.25 guarantees ticks remain visible near the 3D rounded edges
+        const alpha = Math.max(0.25, 1 - pctFromCenter * pctFromCenter); 
+
+        ctx.strokeStyle = `hsla(var(--hue), 100%, 75%, ${alpha})`;
+        ctx.lineWidth = 1.8;
+        
+        ctx.beginPath();
+        ctx.moveTo(x, 4);
+        ctx.lineTo(x, H - 4);
+        ctx.stroke();
+      }
+    }
+
+  _startWheelInertia() {
+      this._stopWheelInertia();
+      const friction = 0.94; // Decelerate smoothly over frames
+
+      const step = () => {
+        this.wheelVelocity *= friction;
+
+        if (Math.abs(this.wheelVelocity) < 0.1) {
+          this.wheelInertiaId = null;
+          return;
+        }
+
+        this.wheelOffset += this.wheelVelocity;
+        this.drawWheel();
+
+        if (this.options.callback) {
+          this.options.callback(this.wheelVelocity);
+        }
+
+        this.wheelInertiaId = requestAnimationFrame(step);
+      };
+
+      this.wheelInertiaId = requestAnimationFrame(step);
+    }
+
+  _stopWheelInertia() {
+      if (this.wheelInertiaId) {
+        cancelAnimationFrame(this.wheelInertiaId);
+        this.wheelInertiaId = null;
+      }
+    }
+}

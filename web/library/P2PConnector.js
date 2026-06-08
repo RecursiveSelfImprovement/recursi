@@ -201,8 +201,27 @@ class P2PConnector {
             this.dispatch('handleRemoteZoom', payload.ratio);
           } else if (payload.type === 'perspective') {
             this.dispatch('handleRemotePerspective', payload.dy);
+          } else if (payload.type === 'accudrawZ') {
+            this.dispatch('handleRemoteAccudrawZ', payload.dy);
           } else if (payload.type === 'modeChange') {
-            this.dispatch('highlightActiveControlBox', payload.mode === 'sliders' ? 'compass' : 'tool');
+            if (payload.mode === 'rotate' || payload.mode === 'pan') {
+              // It is a View Mode Change! Present a subtle on-screen computer HUD notification
+              if (typeof UITools !== 'undefined' && typeof UITools.showHUD === 'function') {
+                const label = payload.mode === 'rotate' ? 'Rotate View' : 'Pan View';
+                const icon = payload.mode === 'rotate' ? '🔄' : '🖐️';
+                UITools.showHUD({
+                  id: 'p2p-mode-hud',
+                  html: `<div style="padding: 10px 20px; background: rgba(20, 20, 25, 0.95); border: 1.5px solid #00e676; border-radius: 30px; color: #fff; font-family: monospace; font-size: 13px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                          <span style="color: #00e676;">${icon}</span> Mode: ${label}
+                         </div>`,
+                  position: 'bottom',
+                  autoClose: 1800
+                });
+              }
+            } else {
+              // It is a Control Panel Change! Translate payload accurately (sliders -> compass, tool -> tool)
+              this.dispatch('highlightActiveControlBox', payload.mode);
+            }
           } else if (payload.type === 'sliderSelect') {
             this.dispatch('selectSliderRelative', payload.change);
           } else if (payload.type === 'sliderDragStart') {
@@ -387,6 +406,34 @@ class P2PConnector {
       roomRow.appendChild(roomInput);
       content.appendChild(roomRow);
 
+      // Check if running on localhost / dev environment
+      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+      // Subtle Dev IP input if running on localhost
+      if (isLocal) {
+        const ipRow = document.createElement('div');
+        ipRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 4px;';
+
+        const ipLabel = document.createElement('span');
+        ipLabel.textContent = 'Dev IP:';
+        ipLabel.style.cssText = 'font-weight: bold; font-size: 11px; color: #888;';
+
+        const ipInput = document.createElement('input');
+        ipInput.type = 'text';
+        ipInput.placeholder = 'e.g. 192.168.1.5';
+        ipInput.value = localStorage.getItem('p2p-dev-ip') || '';
+        ipInput.style.cssText = 'width: 110px; padding: 4px; background: #222; border: 1px solid #555; color: #fff; border-radius: 3px; text-align: center; font-size: 11px;';
+
+        ipInput.oninput = () => {
+          localStorage.setItem('p2p-dev-ip', ipInput.value.trim());
+          updateQRCanvas();
+        };
+
+        ipRow.appendChild(ipLabel);
+        ipRow.appendChild(ipInput);
+        content.appendChild(ipRow);
+      }
+
       // Embedded QR Code White Card Container
       const qrBox = document.createElement('div');
       qrBox.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 8px 0;';
@@ -402,7 +449,15 @@ class P2PConnector {
         const room = roomInput.value.trim();
         if (!room) return;
         
-        const pairURL = `${window.location.origin}/TouchController/index.html?room=${room}`;
+        let hostOrigin = window.location.origin;
+        if (isLocal) {
+          const savedIp = localStorage.getItem('p2p-dev-ip') || '';
+          if (savedIp) {
+            hostOrigin = `${window.location.protocol}//${savedIp}${window.location.port ? ':' + window.location.port : ''}`;
+          }
+        }
+        
+        const pairURL = `${hostOrigin}/TouchController/index.html?room=${room}`;
         const activeEnv = this.receiver.env || this.receiver;
 
         const popup = UITools.makeDialog({
@@ -412,7 +467,6 @@ class P2PConnector {
           position: [window.innerWidth / 2 - 120, window.innerHeight / 2 - 120],
         });
 
-        // Apply strict white-card overrides to bypass dark-theme global resets
         if (popup && popup.element) {
           popup.element.style.setProperty('background-color', '#ffffff', 'important');
           popup.element.style.setProperty('border', '1px solid #cbd5e1', 'important');
@@ -455,8 +509,15 @@ class P2PConnector {
         if (!room) return;
         localStorage.setItem('drawing-app-p2p-room', room);
         
-        // Build direct URL targeting the TouchController
-        const pairURL = `${window.location.origin}/TouchController/index.html?room=${room}`;
+        let hostOrigin = window.location.origin;
+        if (isLocal) {
+          const savedIp = localStorage.getItem('p2p-dev-ip') || '';
+          if (savedIp) {
+            hostOrigin = `${window.location.protocol}//${savedIp}${window.location.port ? ':' + window.location.port : ''}`;
+          }
+        }
+
+        const pairURL = `${hostOrigin}/TouchController/index.html?room=${room}`;
         qrLinkDisplay.textContent = `Pair Link: /?room=${room}`;
         
         if (typeof QRCodeGenerator !== 'undefined') {
@@ -469,7 +530,6 @@ class P2PConnector {
       roomInput.oninput = () => {
         updateQRCanvas();
         if (this.isHostMode) {
-          // Re-host automatically if code is updated
           const room = roomInput.value.trim();
           if (room) this.startWirelessHost(room, this.statusLabel, true);
         }
@@ -517,6 +577,11 @@ class P2PConnector {
           if (this.receiver.midiMapper) {
             this.receiver.midiMapper.deactivate();
           }
+        }
+
+        // Dynamically hide/show MIDI assignment controls on all sliders reactively using centralized syncAllDisplay()
+        if (typeof SliderControl !== 'undefined' && typeof SliderControl.syncAllDisplay === 'function') {
+          SliderControl.syncAllDisplay();
         }
       };
 
@@ -574,6 +639,18 @@ class P2PConnector {
       
       // Paint the QR Canvas on load
       updateQRCanvas();
+
+      // AUTO LAUNCH HOST SYNC ON RENDER (so both accuCad and DrawingApp start listening instantly)
+      if (!this.isHostMode && !this._hostConnecting) {
+        const room = roomInput.value.trim();
+        if (room) {
+          setTimeout(() => {
+            if (!this.isHostMode && !this._hostConnecting) {
+              this.startWirelessHost(room, this.statusLabel);
+            }
+          }, 100);
+        }
+      }
     }
 
     logDiag(text) {

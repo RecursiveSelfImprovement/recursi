@@ -148,19 +148,6 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.opa.container);
 
-      this.sliders.depth = new SliderControl({
-        label: 'depth aware',
-        min: 0,
-        max: 1,
-        initialValue: savedSettings.depth !== undefined ? savedSettings.depth : 1,
-        showValue: true,
-        callback: (val) => {
-          this._applyCompassSetting('depth aware', val >= 0.5);
-          this._saveSetting('depth', val);
-        },
-      });
-      this.compassBox.contentElement.appendChild(this.sliders.depth.container);
-
       this.sliders.sqrcl = new SliderControl({
         label: 'square or circle',
         min: 0,
@@ -175,11 +162,12 @@ class ViewControls {
       });
       this.compassBox.contentElement.appendChild(this.sliders.sqrcl.container);
 
+      // Rotation angles constrained cleanly to -90..90
       ['x', 'y', 'z'].forEach((axis) => {
         this.sliders[`${axis}rot`] = new SliderControl({
           label: `${axis} rotation`,
-          min: -127,
-          max: 127,
+          min: -90,
+          max: 90,
           initialValue: 0,
           saveToLocalStorage: false,
           relativeMidi: true,
@@ -205,6 +193,31 @@ class ViewControls {
         },
       });
       this.compassBox.contentElement.appendChild(this.sliders.bg.container);
+
+      // Dedicated 3D infinite roller wheel to displace the AccuDraw coordinate plane along its active Z-vector infinitely
+      this.sliders.accudrawZ = new SliderControl({
+        label: 'accudraw Z position',
+        isInfiniteWheel: true,
+        saveToLocalStorage: false,
+        callback: (val) => {
+          const currentOrigin = this.baseController.origin;
+          const delta = typeof window.zMoveDelta !== 'undefined' ? window.zMoveDelta : 0.002;
+          const rm = this.baseController.rotationMatrix;
+          const zAxis = rm[2];
+          // val is the relative horizontal displacement increment
+          const displacement = zAxis.map((component) => component * val * delta * 1.5);
+          const newOrigin = [
+            currentOrigin[0] + displacement[0],
+            currentOrigin[1] + displacement[1],
+            currentOrigin[2] + displacement[2],
+          ];
+          this.baseController.setOrigin(newOrigin);
+        }
+      });
+      this.compassBox.contentElement.appendChild(this.sliders.accudrawZ.container);
+
+      // Release initial setup setting lock BEFORE applying settings on start
+      this._isProgrammaticReset = false;
 
       this._applyAllSavedSettings(savedSettings);
 
@@ -289,9 +302,6 @@ class ViewControls {
       };
 
       this.compassBox.contentElement.appendChild(spinnerBtn);
-
-      // Release initial setup setting lock
-      this._isProgrammaticReset = false;
     }
 
   _createSpinnerControls() {
@@ -379,7 +389,8 @@ class ViewControls {
 
   _buildRotationMatrix(x, y, z) {
       const controller = this.baseController;
-      const base = (controller && controller.basePlaneMatrix) ? controller.basePlaneMatrix : [
+      // Start rotation from front view identity as the base absolute anchor
+      const base = [
         [1, 0, 0],
         [0, 1, 0],
         [0, 0, 1]
@@ -538,9 +549,6 @@ class ViewControls {
       if (settings.opa !== undefined) {
         this._applyCompassSetting('transparency', settings.opa);
       }
-      if (settings.depth !== undefined) {
-        this._applyCompassSetting('depth aware', settings.depth >= 0.5);
-      }
       if (settings.sqrcl !== undefined) {
         this._applyCompassSetting('square or circle', settings.sqrcl);
       }
@@ -561,16 +569,23 @@ class ViewControls {
       this.spinnerBox = null;
     }
 
-  resetRotationSliders() {
-      // Set the programmatic flag to block redundant callbacks during plane snaps
+  resetRotationSliders(planeType = 'front') {
       this._isProgrammaticReset = true;
+      
       this.rotations = { x: 0, y: 0, z: 0 };
+      if (planeType === 'top') {
+        this.rotations.x = 90;
+      } else if (planeType === 'side') {
+        this.rotations.y = 90;
+      }
+
       ['x', 'y', 'z'].forEach((axis) => {
         const slider = this.sliders[`${axis}rot`];
         if (slider) {
-          slider.setValue(0);
+          slider.setValue(this.rotations[axis]);
         }
       });
+      
       this._isProgrammaticReset = false;
     }
 
@@ -623,6 +638,29 @@ class ViewControls {
         const slider = item.slider;
         const key = item.key;
         
+        if (key === 'accudrawZ') {
+          // Calculate relative horizontal drag delta on the host
+          if (this._lastP2PRatio === undefined) {
+            this._lastP2PRatio = ratio;
+            return;
+          }
+          const dRatio = ratio - this._lastP2PRatio;
+          this._lastP2PRatio = ratio;
+
+          // Scale relative displacement to rotate the infinite wheel smoothly with high speed
+          const scale = dRatio * 250;
+          slider.wheelOffset += scale;
+          slider.drawWheel();
+
+          // Smoothly accumulate kinetic velocity for release-flick inertia triggers
+          slider.wheelVelocity = slider.wheelVelocity * 0.4 + scale * 0.6;
+          
+          if (typeof slider.options.callback === 'function') {
+            slider.options.callback(scale);
+          }
+          return;
+        }
+
         if (key === 'drawingColor') {
           let newHue = (this.sliderStartValue + ratio * 360) % 360;
           if (newHue < 0) newHue += 360;
@@ -713,6 +751,8 @@ class ViewControls {
     }
 
   startSliderAdjustment() {
+      this._lastP2PRatio = 0; // Initialize ratio anchor on touch start
+
       if (this.hoverIndicatorLine) {
         this.hoverIndicatorLine.style.opacity = '0';
         setTimeout(() => {
@@ -857,8 +897,8 @@ class ViewControls {
         });
       }
 
-      // 3. Other Compass Sliders in exact physical layout order
-      const remainingKeys = ['opa', 'depth', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg'];
+      // 3. Other Compass Sliders (With accudrawZ re-enabled for Touch selection!)
+      const remainingKeys = ['opa', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg', 'accudrawZ'];
       remainingKeys.forEach(key => {
         if (this.sliders[key]) {
           list.push({
@@ -923,17 +963,18 @@ class ViewControls {
       const sidePanel = this.baseController?.sidePanel;
       if (!sidePanel) return;
 
-      const parent = this.p2pControlMode === 'compass' 
+      const sectionObj = this.p2pControlMode === 'compass' 
         ? sidePanel.sections['compass']
         : sidePanel.sections['setup'];
         
+      const parent = sectionObj?.element;
       if (!parent) return;
 
-      // Subtle, faint horizontal gray dashed indicator
+      // Glow neon green dashed indicator
       if (!this.hoverIndicatorLine) {
         this.hoverIndicatorLine = document.createElement('div');
         this.hoverIndicatorLine.id = 'p2p-hover-indicator-line';
-        this.hoverIndicatorLine.style.cssText = 'position: fixed; left: 12px; right: 12px; height: 1px; border-top: 1.2px dashed rgba(255, 255, 255, 0.25); pointer-events: none; z-index: 999999; opacity: 0; transition: opacity 0.15s ease;';
+        this.hoverIndicatorLine.style.cssText = 'position: fixed; left: 12px; right: 12px; height: 1px; border-top: 1.5px dashed #00e676; pointer-events: none; z-index: 999999; opacity: 0; transition: opacity 0.15s ease; filter: drop-shadow(0 0 3px #00e676);';
       }
 
       if (this.hoverIndicatorLine.parentElement !== document.body) {
@@ -960,8 +1001,10 @@ class ViewControls {
       this.dragLocalIndex = localIndex;
 
       // Extract viewport offsets cleanly
-      const firstSlider = this.activeSlidersForDrag[0].slider.container;
-      const lastSlider = this.activeSlidersForDrag[N - 1].slider.container;
+      const firstSlider = this.activeSlidersForDrag[0].slider?.container;
+      const lastSlider = this.activeSlidersForDrag[N - 1].slider?.container;
+
+      if (!firstSlider || !lastSlider) return;
 
       const firstRect = firstSlider.getBoundingClientRect();
       const lastRect = lastSlider.getBoundingClientRect();
@@ -978,18 +1021,17 @@ class ViewControls {
       this.hoverIndicatorLine.style.left = `${parentRect.left + 8}px`;
       this.hoverIndicatorLine.style.width = `${parentRect.width - 16}px`;
 
-      const selectedSlider = this.activeSlidersForDrag[localIndex].slider.container;
-      const selectedRect = selectedSlider.getBoundingClientRect();
+      const selectedSlider = this.activeSlidersForDrag[localIndex].slider?.container;
+      if (selectedSlider) {
+        const selectedRect = selectedSlider.getBoundingClientRect();
+        const centerY = (selectedRect.top + selectedRect.bottom) / 2;
+        this.dragStartCenterY = centerY;
+        this.dragCurrentY = centerY;
 
-      const centerY = (selectedRect.top + selectedRect.bottom) / 2;
-      this.dragStartCenterY = centerY;
-      this.dragCurrentY = centerY;
-
-      this.hoverIndicatorLine.style.top = `${centerY}px`;
-      this.hoverIndicatorLine.style.display = 'block';
-      this.hoverIndicatorLine.style.opacity = '1';
-
-      // (All coordinate capture diagnostic timers and print dumps removed cleanly as requested)
+        this.hoverIndicatorLine.style.top = `${centerY}px`;
+        this.hoverIndicatorLine.style.display = 'block';
+        this.hoverIndicatorLine.style.opacity = '1';
+      }
     }
 
   handleSliderDragMove(dy, phoneHeight) {
@@ -998,7 +1040,6 @@ class ViewControls {
       const N = this.activeSlidersForDrag.length;
       if (N === 0) return;
 
-      // Mathematically map the phone drag range to cover the entire height on host screen comfortably
       const scale = phoneHeight ? (this.dragTotalHeight / (phoneHeight * 0.45)) : 1.8;
       const hostDy = dy * scale;
       
@@ -1007,12 +1048,14 @@ class ViewControls {
 
       this.hoverIndicatorLine.style.top = `${targetY}px`;
 
-      // Find the closest slider based on current smooth indicator line Y position
       let closestIdx = 0;
       let minDistance = Infinity;
 
       this.activeSlidersForDrag.forEach((item, idx) => {
-        const rect = item.slider.container.getBoundingClientRect();
+        const container = item.slider?.container;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        if (rect.width === 0) return; // Ignore hidden elements
         const centerY = (rect.top + rect.bottom) / 2;
         const dist = Math.abs(targetY - centerY);
         if (dist < minDistance) {
@@ -1026,10 +1069,8 @@ class ViewControls {
         const allSliders = this.getNavigatableSliders();
         const targetItem = this.activeSlidersForDrag[closestIdx];
         
-        // Match by stable key identifier instead of referentially unstable object identity
         const targetGlobalIndex = allSliders.findIndex(item => item.key === targetItem.key);
         
-        // Update active index memory for the modes
         if (this.p2pControlMode === 'compass') {
           this.lastCompassSelectedIndex = closestIdx;
         } else {
@@ -1045,10 +1086,12 @@ class ViewControls {
         this.hoverIndicatorLine.style.opacity = '0';
         
         if (this.activeSlidersForDrag && this.activeSlidersForDrag[this.dragLocalIndex]) {
-          const selectedSlider = this.activeSlidersForDrag[this.dragLocalIndex].slider.container;
-          const selectedRect = selectedSlider.getBoundingClientRect();
-          const finalY = (selectedRect.top + selectedRect.bottom) / 2;
-          this.hoverIndicatorLine.style.top = `${finalY}px`;
+          const selectedSlider = this.activeSlidersForDrag[this.dragLocalIndex].slider?.container;
+          if (selectedSlider) {
+            const selectedRect = selectedSlider.getBoundingClientRect();
+            const finalY = (selectedRect.top + selectedRect.bottom) / 2;
+            this.hoverIndicatorLine.style.top = `${finalY}px`;
+          }
         }
         
         setTimeout(() => {
@@ -1057,6 +1100,12 @@ class ViewControls {
           }
         }, 150);
       }
+
+      // If releasing an infinite wheel with sliding velocity, trigger its native, high-performance inertia
+      if (this.sliders.accudrawZ && Math.abs(this.sliders.accudrawZ.wheelVelocity) > 0.5) {
+        this.sliders.accudrawZ._startWheelInertia();
+      }
+      this._lastP2PRatio = undefined;
 
       // Close the ColorPicker popup smoothly on slider adjustment release
       const activePicker = document.querySelector('.smart-picker-surface');
@@ -1100,22 +1149,22 @@ class ViewControls {
         return;
       }
 
-      // Bypass DOM queries by extracting section elements directly from SidePanel reference registry
-      const compassObj = sidePanel.sectionObjects?.['compass'];
-      const compassBox = compassObj?.container;
-      const compassHeader = compassObj?.header;
+      // Extract sections cleanly from SidePanel reference registry
+      const compassObj = sidePanel.sections?.['compass'];
+      const compassBox = compassObj?.element;
+      const compassHeader = compassObj?.element?.querySelector('summary');
 
-      const toolObj = sidePanel.sectionObjects?.['setup'];
-      const toolBox = toolObj?.container;
-      const toolHeader = toolObj?.header;
+      const toolObj = sidePanel.sections?.['setup'];
+      const toolBox = toolObj?.element;
+      const toolHeader = toolObj?.element?.querySelector('summary');
 
       const applyHighlightStyle = (box, header, highlight) => {
         if (!box) return;
 
         if (highlight) {
           box.classList.add('active-p2p-section');
+          box.open = true; // Automatically expand the toggled section
           
-          // Force high-priority inline styles to guarantee it glows visibly
           box.style.setProperty('box-shadow', '0 0 25px rgba(0, 230, 118, 0.45)', 'important');
           box.style.setProperty('border-color', '#00e676', 'important');
           box.style.setProperty('border-width', '1.5px', 'important');
@@ -1130,6 +1179,7 @@ class ViewControls {
           }
         } else {
           box.classList.remove('active-p2p-section');
+          // PRESERVE existing open state of other sections; do not force close them
           
           box.style.removeProperty('box-shadow');
           box.style.removeProperty('border-color');
@@ -1146,7 +1196,6 @@ class ViewControls {
         }
       };
 
-      // Toggle glows and gradients exactly on the active folding card and title summarizer
       if (this.p2pControlMode === 'compass') {
         applyHighlightStyle(compassBox, compassHeader, true);
         applyHighlightStyle(toolBox, toolHeader, false);
@@ -1155,7 +1204,9 @@ class ViewControls {
         applyHighlightStyle(toolBox, toolHeader, true);
       }
 
-      // Auto-snap selection index to the remembered element in that active box ONLY on mode changes
+      // Dispatch layout event to let UI recalculate margins smoothly
+      window.dispatchEvent(new CustomEvent('panel-toggle-complete'));
+
       if (isModeChange) {
         const allSliders = this.getNavigatableSliders();
         const activeSliders = allSliders.filter(item => item.type === this.p2pControlMode);
@@ -1172,8 +1223,20 @@ class ViewControls {
           this._updateSlidersHighlighting();
         }
       } else {
-        // If mode has not changed, simply refresh active slider highlighting to prevent resetting
         this._updateSlidersHighlighting();
+      }
+
+      // Present a clean and elegant computer screen HUD notification
+      if (typeof UITools !== 'undefined' && typeof UITools.showHUD === 'function') {
+        const modeLabel = this.p2pControlMode === 'compass' ? 'Compass Controls' : 'Tool Settings';
+        UITools.showHUD({
+          id: 'p2p-mode-hud',
+          html: `<div style="padding: 10px 20px; background: rgba(20, 20, 25, 0.95); border: 1.5px solid #00e676; border-radius: 30px; color: #fff; font-family: monospace; font-size: 13px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #00e676;">🎛️</span> Mode: ${modeLabel}
+                 </div>`,
+          position: 'bottom',
+          autoClose: 1800
+        });
       }
     }
 
@@ -1255,6 +1318,19 @@ class ViewControls {
         hex = hex.split('').map(c => c + c).join('');
       }
       return parseInt(hex, 16);
+    }
+
+  handleRemoteAccudrawZ(dy) {
+      if (this.sliders.accudrawZ) {
+        // Roll the infinite wheel on computer screen in real-time matching the finger gesture
+        this.sliders.accudrawZ.wheelOffset -= dy * 1.5;
+        this.sliders.accudrawZ.drawWheel();
+
+        // Fire the underlying displacement callback
+        if (typeof this.sliders.accudrawZ.options.callback === 'function') {
+          this.sliders.accudrawZ.options.callback(-dy * 1.5);
+        }
+      }
     }
 }
 

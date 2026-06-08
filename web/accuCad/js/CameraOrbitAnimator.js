@@ -82,56 +82,107 @@ class CameraOrbitAnimator {
   }
 
   static _animate() {
-    if (!this._running || !this._threeDView) return;
-    if (this._isPausedForInteraction) return;
+      if (!this._running || !this._threeDView) return;
+      if (this._isPausedForInteraction) return;
 
-    const settings =
-      window.cameraOscillationSettings || this._cameraOscillationSettings;
-    if (settings && settings.enabled === false) {
-      this.stop();
-      return;
+      const settings =
+        window.cameraOscillationSettings || this._cameraOscillationSettings;
+      if (settings && settings.enabled === false) {
+        this.stop();
+        return;
+      }
+
+      const cam = this._threeDView.camera;
+      const tar = this._threeDView.target;
+
+      const currentTime = performance.now();
+      const elapsed = currentTime - this._startTime;
+
+      const totalDuration =
+        this._params.numCircles === Infinity
+          ? Infinity
+          : this._params.duration * 1000 * this._params.numCircles;
+
+      if (elapsed >= totalDuration) {
+        this.stop();
+        return;
+      }
+
+      // If speed is set to 0, pause rotation but keep loop alive in case of slider updates
+      if (this._params.duration === Infinity) {
+        this._lastSetCamPos = cam.position.clone();
+        this._lastSetTarget = tar.clone();
+        this._requestId = requestAnimationFrame(this._animate.bind(this));
+        return;
+      }
+
+      let angle = (elapsed / (this._params.duration * 1000)) * 2 * Math.PI;
+      if (this._params.quantize && this._params.numSides > 0) {
+        const step = (2 * Math.PI) / this._params.numSides;
+        angle = Math.round(angle / step) * step;
+      }
+
+      const rampUpTime = (settings?.rampUpTime || 1.0) * 1000;
+      const ramp = Math.min(1, elapsed / rampUpTime);
+
+      // Self-healing check: detect if mouse drag or phone P2P swipe drifted the camera
+      if (this._lastSetCamPos && this._lastSetTarget) {
+        const dCam = cam.position.distanceTo(this._lastSetCamPos);
+        const dTar = tar.distanceTo(this._lastSetTarget);
+
+        if (dCam > 0.001 || dTar > 0.001) {
+          const C_actual = cam.position.clone();
+          const T_actual = tar.clone();
+
+          const D_vec = C_actual.clone().sub(T_actual);
+          const D = D_vec.length();
+          const normal = D_vec.clone().normalize();
+
+          const R = D * this._params.radiusFraction * ramp;
+
+          let arbitrary = new THREE.Vector3(0, 1, 0);
+          if (Math.abs(normal.dot(arbitrary)) > 0.99) arbitrary.set(1, 0, 0);
+
+          const U_new = new THREE.Vector3().crossVectors(normal, arbitrary).normalize();
+          const V_new = new THREE.Vector3().crossVectors(normal, U_new).normalize();
+
+          const offset_actual = new THREE.Vector3()
+            .addScaledVector(U_new, Math.cos(angle) * R)
+            .addScaledVector(V_new, Math.sin(angle) * R);
+
+          // Re-anchor the base coordinates to the current actual camera position and target, preserving the exact active phase angle!
+          this._initialCamPos = C_actual.clone().sub(offset_actual);
+          this._initialTarget = T_actual.clone();
+
+          this._distance = D;
+          this._maxRadius = D * this._params.radiusFraction;
+          this._tangent = U_new;
+          this._bitangent = V_new;
+        }
+      }
+
+      const currentRadius = this._maxRadius * ramp;
+
+      const offset = new THREE.Vector3()
+        .addScaledVector(this._tangent, Math.cos(angle) * currentRadius)
+        .addScaledVector(this._bitangent, Math.sin(angle) * currentRadius);
+
+      const newPos = this._initialCamPos.clone().add(offset);
+      cam.position.copy(newPos);
+      cam.lookAt(this._initialTarget);
+
+      // Cache current states
+      this._lastSetCamPos = cam.position.clone();
+      this._lastSetTarget = tar.clone();
+
+      if (
+        window.cameraOscillationSettings?.debugDraw ||
+        window.debugOrbit != null
+      ) {
+        return;
+      }
+      this._requestId = requestAnimationFrame(this._animate.bind(this));
     }
-
-    const currentTime = performance.now();
-    const elapsed = currentTime - this._startTime;
-
-    const totalDuration =
-      this._params.numCircles === Infinity
-        ? Infinity
-        : this._params.duration * 1000 * this._params.numCircles;
-
-    if (elapsed >= totalDuration) {
-      this.stop();
-      return;
-    }
-
-    const rampUpTime = (settings?.rampUpTime || 1.0) * 1000;
-    const ramp = Math.min(1, elapsed / rampUpTime);
-    const currentRadius = this._maxRadius * ramp;
-
-    // Calculate angle
-    let angle = (elapsed / (this._params.duration * 1000)) * 2 * Math.PI;
-    if (this._params.quantize && this._params.numSides > 0) {
-      const step = (2 * Math.PI) / this._params.numSides;
-      angle = Math.round(angle / step) * step;
-    }
-
-    const offset = new THREE.Vector3()
-      .addScaledVector(this._tangent, Math.cos(angle) * currentRadius)
-      .addScaledVector(this._bitangent, Math.sin(angle) * currentRadius);
-
-    const newPos = this._initialCamPos.clone().add(offset);
-    this._threeDView.camera.position.copy(newPos);
-    this._threeDView.camera.lookAt(this._initialTarget);
-
-    if (
-      window.cameraOscillationSettings?.debugDraw ||
-      window.debugOrbit != null
-    ) {
-      return;
-    }
-    this._requestId = requestAnimationFrame(this._animate.bind(this));
-  }
 
   static stop() {
     if (this._running) {
@@ -203,44 +254,56 @@ class CameraOrbitAnimator {
   }
 
   static resumeFromInteraction() {
-    if (this._running && this._isPausedForInteraction) {
-      // Reset start time shift so animation doesn't jump
-      // We want continuity in the phase, or just resume moving from where we are?
-      // For orbit, it's based on 'elapsed'. If we paused, 'elapsed' jumped.
-      // We should probably shift _startTime so 'elapsed' picks up where it left off
-      // OR just accept the time skip. Time skip keeps it synced to wall clock.
-      // Let's just re-init positions based on NEW camera location to avoid snap back.
+      if (this._running && this._isPausedForInteraction) {
+        this._isPausedForInteraction = false;
 
-      this._isPausedForInteraction = false;
+        const cam = this._threeDView.camera;
+        const tar = this._threeDView.target;
 
-      // Re-anchor the oscillation to the NEW camera position established by the user
-      this._initialCamPos = this._threeDView.camera.position.clone();
-      this._initialTarget = this._threeDView.target.clone();
+        const currentTime = performance.now();
+        const elapsed = currentTime - this._startTime;
 
-      // Re-calc basis vectors for new view angle
-      const D = this._initialCamPos.clone().sub(this._initialTarget);
-      this._distance = D.length();
-      this._maxRadius = this._distance * this._params.radiusFraction;
+        let angle = (elapsed / (this._params.duration * 1000)) * 2 * Math.PI;
+        if (this._params.quantize && this._params.numSides > 0) {
+          const step = (2 * Math.PI) / this._params.numSides;
+          angle = Math.round(angle / step) * step;
+        }
 
-      const normal = D.clone().normalize();
-      let arbitrary = new THREE.Vector3(0, 1, 0);
-      if (Math.abs(normal.dot(arbitrary)) > 0.99) arbitrary.set(1, 0, 0);
+        const settings = window.cameraOscillationSettings || this._cameraOscillationSettings;
+        const rampUpTime = (settings?.rampUpTime || 1.0) * 1000;
+        const ramp = Math.min(1, elapsed / rampUpTime);
 
-      this._tangent = new THREE.Vector3()
-        .crossVectors(normal, arbitrary)
-        .normalize();
-      this._bitangent = new THREE.Vector3()
-        .crossVectors(normal, this._tangent)
-        .normalize();
+        const C_actual = cam.position.clone();
+        const T_actual = tar.clone();
 
-      // Reset time to 0 phase to start smooth loop from new center?
-      // Or just keep running. If we keep running, 'elapsed' is large.
-      // Let's reset start time so we start a fresh loop from the new position.
-      this._startTime = performance.now();
+        const D_vec = C_actual.clone().sub(T_actual);
+        const D = D_vec.length();
+        const normal = D_vec.clone().normalize();
 
-      this._animate();
+        const R = D * this._params.radiusFraction * ramp;
+
+        let arbitrary = new THREE.Vector3(0, 1, 0);
+        if (Math.abs(normal.dot(arbitrary)) > 0.99) arbitrary.set(1, 0, 0);
+
+        const U_new = new THREE.Vector3().crossVectors(normal, arbitrary).normalize();
+        const V_new = new THREE.Vector3().crossVectors(normal, U_new).normalize();
+
+        const offset_actual = new THREE.Vector3()
+          .addScaledVector(U_new, Math.cos(angle) * R)
+          .addScaledVector(V_new, Math.sin(angle) * R);
+
+        // Re-anchor the base coordinates to the current actual camera position and target, preserving the exact active phase angle!
+        this._initialCamPos = C_actual.clone().sub(offset_actual);
+        this._initialTarget = T_actual.clone();
+
+        this._distance = D;
+        this._maxRadius = D * this._params.radiusFraction;
+        this._tangent = U_new;
+        this._bitangent = V_new;
+
+        this._animate();
+      }
     }
-  }
 
   static showDialog() {
       if (this._dialog) return;

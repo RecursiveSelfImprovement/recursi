@@ -113,7 +113,8 @@ class BaseController {
       }
 
       if (typeof ViewControlsManager !== 'undefined' && ViewControlsManager.instance) {
-        ViewControlsManager.instance.resetRotationSliders();
+        // Pass planeType directly so sliders update dynamically to match orientation
+        ViewControlsManager.instance.resetRotationSliders(planeType);
       }
 
       this.refreshMousePosition();
@@ -235,6 +236,25 @@ class BaseController {
           }
         })
         .catch((err) => console.error(err));
+    }
+
+  getP2PCapabilities() {
+      return {
+        leftTrackpad: {
+          title: "Navigation",
+          modes: {
+            rotate: { label: "Rotate View", type: "drag" },
+            pan: { label: "Pan View", type: "drag" }
+          }
+        },
+        rightTrackpad: {
+          title: "Controls",
+          modes: {
+            sliders: { label: "Compass Sliders", type: "sliders" },
+            tool: { label: "Tool Sliders", type: "sliders" }
+          }
+        }
+      };
     }
 }
 

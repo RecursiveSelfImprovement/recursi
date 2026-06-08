@@ -72,8 +72,8 @@ class QRCodeGenerator {
           return;
         }
 
-        // Render EXACTLY the clean, borderless standalone image with the white Quiet Zone
-        container.innerHTML = `<img src="${dataURL}" style="display: block; border: 20px solid white !important; background: white !important; box-sizing: border-box; width: 140px; height: 140px; margin: 0 auto;">`;
+        // Render with exactly a 10px quiet zone border for optimal camera alignment
+        container.innerHTML = `<img src="${dataURL}" style="display: block; border: 10px solid white !important; background: white !important; box-sizing: border-box; width: 140px; height: 140px; margin: 0 auto;">`;
 
       } catch (err) {
         console.error("QR SVG generation failed:", err);

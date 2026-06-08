@@ -226,13 +226,41 @@ class DrawingApp {
   injectStyles() {
       applyCss(
         `
+      /* --- Global Sans-Serif Typographical Reset inside Sidebar --- */
+      #drawing-app-layout-wrapper,
+      #drawing-app-layout-wrapper * {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif !important;
+      }
+
+      /* --- Custom Dark scrollbar styles for WebKit --- */
+      #drawing-app-layout-wrapper ::-webkit-scrollbar,
+      .yt-side-panel ::-webkit-scrollbar {
+        width: 8px !important;
+        height: 8px !important;
+      }
+      #drawing-app-layout-wrapper ::-webkit-scrollbar-track,
+      .yt-side-panel ::-webkit-scrollbar-track {
+        background: #141416 !important;
+      }
+      #drawing-app-layout-wrapper ::-webkit-scrollbar-thumb,
+      .yt-side-panel ::-webkit-scrollbar-thumb {
+        background: #2e2e38 !important;
+        border-radius: 4px !important;
+        border: 1px solid #141416 !important;
+      }
+      #drawing-app-layout-wrapper ::-webkit-scrollbar-thumb:hover,
+      .yt-side-panel ::-webkit-scrollbar-thumb:hover {
+        background: #00e676 !important;
+      }
+
       /* --- Dynamic Sidebar CAD Styling (Scoped specifically to DrawingApp - Targeting .yt-side-panel) --- */
       #drawing-app-layout-wrapper .yt-side-panel {
         background: rgba(18, 18, 18, 0.96) !important;
         border-right: 1.5px solid rgba(255, 255, 255, 0.05) !important;
       }
       
-      #drawing-app-layout-wrapper .yt-side-panel div:first-child {
+      /* Target ONLY the top-level direct header div of the panel using child combinator > */
+      #drawing-app-layout-wrapper .yt-side-panel > div:first-child {
         padding: 12px 14px !important;
         background: #141416 !important;
         border-bottom: 1.5px solid rgba(255, 255, 255, 0.06) !important;
@@ -379,14 +407,7 @@ class DrawingApp {
         justify-content: space-between; 
         align-items: center; 
       }
-      .value-display { 
-        font-family: 'Consolas', monospace; 
-        color: #4fc3f7; 
-        font-size: 11px; 
-        background: rgba(0,0,0,0.3); 
-        padding: 2px 6px; 
-        border-radius: 4px; 
-      }
+      
       .drawing-surface { 
         background-color: var(--bg-color, #222); 
         width: 100%; 
@@ -528,7 +549,6 @@ class DrawingApp {
       .mode-toast.highlight { color: #fff; background-color: rgba(0, 120, 215, 0.8); border-color: rgba(100, 200, 255, 0.4); }
       .mode-toast.edit-mode { background-color: rgba(200, 50, 50, 0.8); border-color: #ff8888; }
       .settings-container { padding: 10px; color: #eee; }
-      input[type=range] { width: 100%; background: transparent; margin: 2px 0 0 0; cursor: pointer; accent-color: #007acc; }
       .action-btn { width: 100%; padding: 10px; margin-top: 15px; background: #3a3a3a; border: 1px solid #555; color: #e0e0e0; cursor: pointer; border-radius: 6px; font-weight: 500; transition: all 0.2s; }
       .action-btn:hover { background: #4a4a4a; border-color: #666; color: white; }
       .tool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 20px; }
@@ -2983,13 +3003,13 @@ class DrawingApp {
         this.toolSliders['opacity'] = opacitySlider;
       }
 
-      // Color Swatch: Background Color
+      // Color Swatch: Background Color (Spelled out to Background cleanly)
       const bgContainer = document.createElement('div');
       bgContainer.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 12px; margin-top: 8px;';
 
       const bgLabel = document.createElement('div');
       bgLabel.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-      bgLabel.textContent = 'Bg Color';
+      bgLabel.textContent = 'Background';
 
       const bgSwatch = document.createElement('div');
       bgSwatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
@@ -3281,7 +3301,7 @@ class DrawingApp {
       if (!this.hoverIndicatorLine) {
         this.hoverIndicatorLine = document.createElement('div');
         this.hoverIndicatorLine.id = 'p2p-hover-indicator-line';
-        this.hoverIndicatorLine.style.cssText = 'position: fixed; left: 12px; right: 12px; height: 1px; border-top: 1.2px dashed rgba(255, 255, 255, 0.25); pointer-events: none; z-index: 999999; opacity: 0; transition: opacity 0.15s ease;';
+        this.hoverIndicatorLine.style.cssText = 'position: fixed; left: 12px; right: 12px; height: 1px; border-top: 1.5px dashed #00e676; pointer-events: none; z-index: 999999; opacity: 0; transition: opacity 0.15s ease; filter: drop-shadow(0 0 3px #00e676);';
       }
 
       if (this.hoverIndicatorLine.parentElement !== document.body) {
@@ -3295,8 +3315,10 @@ class DrawingApp {
       const localIndex = this.selectedSliderIndex || 0;
       this.dragLocalIndex = localIndex;
 
-      const firstSlider = allSliders[0].slider.container;
-      const lastSlider = allSliders[N - 1].slider.container;
+      const firstSlider = allSliders[0].slider?.container;
+      const lastSlider = allSliders[N - 1].slider?.container;
+
+      if (!firstSlider || !lastSlider) return;
 
       const firstRect = firstSlider.getBoundingClientRect();
       const lastRect = lastSlider.getBoundingClientRect();
@@ -3308,20 +3330,26 @@ class DrawingApp {
       this.dragMinY = firstCenterY;
       this.dragMaxY = lastCenterY;
 
-      const parentRect = sidePanel.toolSettingsSection.getBoundingClientRect();
+      // Draw properly relative to 'setup' section DOM element
+      const setupObj = sidePanel.sections?.['setup'];
+      const parent = setupObj?.element;
+      if (!parent) return;
+
+      const parentRect = parent.getBoundingClientRect();
       this.hoverIndicatorLine.style.left = `${parentRect.left + 8}px`;
       this.hoverIndicatorLine.style.width = `${parentRect.width - 16}px`;
 
-      const selectedSlider = allSliders[localIndex].slider.container;
-      const selectedRect = selectedSlider.getBoundingClientRect();
+      const selectedSlider = allSliders[localIndex].slider?.container;
+      if (selectedSlider) {
+        const selectedRect = selectedSlider.getBoundingClientRect();
+        const centerY = (selectedRect.top + selectedRect.bottom) / 2;
+        this.dragStartCenterY = centerY;
+        this.dragCurrentY = centerY;
 
-      const centerY = (selectedRect.top + selectedRect.bottom) / 2;
-      this.dragStartCenterY = centerY;
-      this.dragCurrentY = centerY;
-
-      this.hoverIndicatorLine.style.top = `${centerY}px`;
-      this.hoverIndicatorLine.style.display = 'block';
-      this.hoverIndicatorLine.style.opacity = '1';
+        this.hoverIndicatorLine.style.top = `${centerY}px`;
+        this.hoverIndicatorLine.style.display = 'block';
+        this.hoverIndicatorLine.style.opacity = '1';
+      }
     }
 
   handleSliderDragMove(dy, phoneHeight) {
@@ -3341,7 +3369,10 @@ class DrawingApp {
       let minDistance = Infinity;
 
       allSliders.forEach((item, idx) => {
-        const rect = item.slider.container.getBoundingClientRect();
+        const container = item.slider?.container;
+        if (!container) return;
+        const rect = container.getBoundingClientRect();
+        if (rect.width === 0) return;
         const centerY = (rect.top + rect.bottom) / 2;
         const dist = Math.abs(targetY - centerY);
         if (dist < minDistance) {
@@ -3394,14 +3425,16 @@ class DrawingApp {
       const sidePanel = this.sidePanel;
       if (!sidePanel || !sidePanel.toolSettingsSection) return;
 
-      const card = sidePanel.sectionObjects?.['setup']?.container;
-      const header = sidePanel.sectionObjects?.['setup']?.header;
+      const setupObj = sidePanel.sections?.['setup'];
+      const card = setupObj?.element;
+      const header = setupObj?.element?.querySelector('summary');
 
       if (!card) return;
 
       const highlight = (mode === 'tool');
 
       if (highlight) {
+        card.open = true; // Auto-expand when toggling to it
         card.style.setProperty('box-shadow', '0 0 25px rgba(0, 230, 118, 0.45)', 'important');
         card.style.setProperty('border-color', '#00e676', 'important');
         card.style.setProperty('border-width', '1.5px', 'important');
@@ -3416,6 +3449,7 @@ class DrawingApp {
         }
         this._updateSlidersHighlighting();
       } else {
+        // PRESERVE existing open state; do not force close the panel
         card.style.removeProperty('box-shadow');
         card.style.removeProperty('border-color');
         card.style.removeProperty('border-width');
@@ -3429,6 +3463,18 @@ class DrawingApp {
           header.style.removeProperty('text-shadow');
         }
         this._clearSlidersHighlighting();
+      }
+
+      if (typeof UITools !== 'undefined' && typeof UITools.showHUD === 'function') {
+        const modeLabel = highlight ? 'Tool Settings' : 'Canvas Navigation';
+        UITools.showHUD({
+          id: 'p2p-mode-hud',
+          html: `<div style="padding: 10px 20px; background: rgba(20, 20, 25, 0.95); border: 1.5px solid #00e676; border-radius: 30px; color: #fff; font-family: monospace; font-size: 13px; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.4); text-transform: uppercase; letter-spacing: 1px; display: flex; align-items: center; gap: 8px;">
+                  <span style="color: #00e676;">🎛️</span> Mode: ${modeLabel}
+                 </div>`,
+          position: 'bottom',
+          autoClose: 1800
+        });
       }
     }
 

@@ -13,17 +13,21 @@ class TouchController {
       this.viewDragging = false;
       this.viewPinching = false;
       this.viewThreeFingerDragging = false;
+      this.viewFourFingerDragging = false; // 4-finger drag state
       this.viewLastX = 0;
       this.viewLastY = 0;
       this.viewLastPinchDist = 0;
       this.viewLastThreeFingerY = 0;
+      this.viewLastFourFingerY = 0; // 4-finger tracking position
       this.viewLastTapTime = 0;
       this.viewLastTapX = 0;
       this.viewLastTapY = 0;
 
       this.viewVelocityX = 0;
       this.viewVelocityY = 0;
+      this.viewVelocityZ = 0; // 4-finger sliding velocity
       this.viewInertiaFrameId = null;
+      this.viewInertiaZFrameId = null; // 4-finger inertia frame
       
       this.ctrlDragging = false;
       this.ctrlLastX = 0;
@@ -81,11 +85,20 @@ class TouchController {
 
       this._log('TouchController initialized');
 
-      // AUTOMATIC HANDSHAKE TRIGGER IF ROOM PARAMETER EXISTS
+      // AUTOMATIC HANDSHAKE TRIGGER IF ROOM PARAMETER OR SAVED ROOM EXISTS
       const params = new URLSearchParams(window.location.search);
-      const room = params.get('room') || params.get('roomCode');
+      let room = params.get('room') || params.get('roomCode');
+      
+      if (!room) {
+        // Fallback to cached room
+        room = localStorage.getItem('p2p-client-room') || '7777';
+      } else {
+        // Cache URL room code
+        localStorage.setItem('p2p-client-room', room);
+      }
+
       if (room) {
-        this._log(`URL room parameter detected. Auto-connecting to: ${room}`);
+        this._log(`Auto-connecting to room: ${room}`);
         const roomInput = this.rootElement.querySelector('input[placeholder="Code"]');
         if (roomInput) {
           roomInput.value = room;
@@ -999,6 +1012,7 @@ class TouchController {
         } else {
           const code = roomInput.value.trim();
           if (!code) return;
+          localStorage.setItem('p2p-client-room', code); // Cache manually connected code
           this._startWirelessClient(code, statusLabel);
         }
       };
@@ -1037,7 +1051,9 @@ class TouchController {
       
       this.viewVelocityX = 0;
       this.viewVelocityY = 0;
+      this.viewVelocityZ = 0;
       this._stopViewInertia();
+      this._stopViewInertiaZ();
 
       if (e.touches.length === 1) {
         const now = Date.now();
@@ -1085,6 +1101,7 @@ class TouchController {
         
         this.viewPinching = false;
         this.viewThreeFingerDragging = false;
+        this.viewFourFingerDragging = false;
 
         if (this.dataChannel && this.dataChannel.readyState === 'open') {
           this.dataChannel.send(JSON.stringify({
@@ -1096,6 +1113,7 @@ class TouchController {
         this.viewDragging = false;
         this.viewPinching = true;
         this.viewThreeFingerDragging = false;
+        this.viewFourFingerDragging = false;
         this.viewLastPinchDist = Math.hypot(
           e.touches[0].clientX - e.touches[1].clientX,
           e.touches[0].clientY - e.touches[1].clientY
@@ -1104,7 +1122,14 @@ class TouchController {
         this.viewDragging = false;
         this.viewPinching = false;
         this.viewThreeFingerDragging = true;
+        this.viewFourFingerDragging = false;
         this.viewLastThreeFingerY = (e.touches[0].clientY + e.touches[1].clientY + e.touches[2].clientY) / 3;
+      } else if (e.touches.length === 4) {
+        this.viewDragging = false;
+        this.viewPinching = false;
+        this.viewThreeFingerDragging = false;
+        this.viewFourFingerDragging = true;
+        this.viewLastFourFingerY = (e.touches[0].clientY + e.touches[1].clientY + e.touches[2].clientY + e.touches[3].clientY) / 4;
       }
     }
 
@@ -1112,14 +1137,11 @@ class TouchController {
       e.preventDefault();
       if (e.touches.length === 1 && this.viewDragging) {
         const touch = e.touches[0];
-        
-        // Scaled up by 50% (1.5x factor) for faster tracking response
         const dx = (touch.clientX - this.viewLastX) * 1.5;
         const dy = (touch.clientY - this.viewLastY) * 1.5;
         this.viewLastX = touch.clientX;
         this.viewLastY = touch.clientY;
 
-        // Track instantaneous gesture velocity with decay
         const decay = 0.7;
         this.viewVelocityX = this.viewVelocityX * (1 - decay) + dx * decay;
         this.viewVelocityY = this.viewVelocityY * (1 - decay) + dy * decay;
@@ -1158,18 +1180,37 @@ class TouchController {
             dy: dy
           }));
         }
+      } else if (e.touches.length === 4 && this.viewFourFingerDragging) {
+        const currentY = (e.touches[0].clientY + e.touches[1].clientY + e.touches[2].clientY + e.touches[3].clientY) / 4;
+        const dy = currentY - this.viewLastFourFingerY;
+        this.viewLastFourFingerY = currentY;
+
+        const decay = 0.7;
+        this.viewVelocityZ = this.viewVelocityZ * (1 - decay) + dy * decay;
+
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'accudrawZ',
+            dy: dy
+          }));
+        }
       }
     }
 
   _onViewTouchEnd(e) {
       e.preventDefault();
+      
+      const wasFourFinger = this.viewFourFingerDragging;
+
       this.viewDragging = false;
       this.viewPinching = false;
       this.viewThreeFingerDragging = false;
+      this.viewFourFingerDragging = false;
       this.viewLastPinchDist = 0;
 
-      // Trigger decay loop if speed exceeds threshold
-      if (Math.hypot(this.viewVelocityX, this.viewVelocityY) > 0.5) {
+      if (wasFourFinger && Math.abs(this.viewVelocityZ) > 0.5) {
+        this._startViewInertiaZ();
+      } else if (Math.hypot(this.viewVelocityX, this.viewVelocityY) > 0.5) {
         this._startViewInertia();
       } else {
         if (this.dataChannel && this.dataChannel.readyState === 'open') {
@@ -1498,5 +1539,39 @@ class TouchController {
       this.currentMode = this.viewMode;
       this._updateTrackpadLabels();
       this._log('Capabilities schema successfully updated.');
+    }
+
+  _startViewInertiaZ() {
+      this._stopViewInertiaZ();
+
+      const friction = 0.95;
+      let vz = this.viewVelocityZ;
+
+      const step = () => {
+        vz *= friction;
+
+        if (Math.abs(vz) < 0.1) {
+          this.viewInertiaZFrameId = null;
+          return;
+        }
+
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'accudrawZ',
+            dy: vz
+          }));
+        }
+
+        this.viewInertiaZFrameId = requestAnimationFrame(step);
+      };
+
+      this.viewInertiaZFrameId = requestAnimationFrame(step);
+    }
+
+  _stopViewInertiaZ() {
+      if (this.viewInertiaZFrameId) {
+        cancelAnimationFrame(this.viewInertiaZFrameId);
+        this.viewInertiaZFrameId = null;
+      }
     }
 }

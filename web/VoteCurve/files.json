@@ -1,0 +1,13 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "js/VoteCurve.js"
+  ],
+  "local": [
+    "js/VoteCurve.js"
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": []
+}
