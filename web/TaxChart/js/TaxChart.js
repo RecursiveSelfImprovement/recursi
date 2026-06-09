@@ -22,7 +22,8 @@ class TaxChart {
       this.logOffset = 15000; 
       this.isLogarithmic = true; // toggle between log and linear scales
       this.taxRevenuePercent = 30; // 30% of national income
-      this.taxProgressivity = 50; // slider range 0 to 100 (0=Poll, 50=Flat, 100=Equalized)
+      this.taxProgressivity = 50; // slider range 0 to 100 (0=Poll, 30=Flat, 50=Progressive, 100=Equalized)
+      this.showAfterTax = false; // default is unchecked
       this.hoveredIndex = null;
       this.customInputs = {};
 
@@ -355,11 +356,23 @@ class TaxChart {
   renderLayout(parent) {
       this.appContainer = makeElement('div', { className: 'tc-container' });
 
-      // Header row with title & selective dataset load dropdown & log-mode toggle
+      // Header row with title & selective dataset load dropdown, log-mode toggle and show-after-tax toggle
       const header = makeElement('div', { className: 'tc-header' }, [
         makeElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' } }, [
           makeElement('h1', { className: 'tc-title' }, 'Income & Progressive Taxation Simulator'),
-          makeElement('div', { style: { display: 'flex', alignItems: 'center', gap: '16px' } }, [
+          makeElement('div', { style: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' } }, [
+            // Show After-Tax Checkbox Toggle
+            makeElement('label', { className: 'tc-toggle-wrap' }, [
+              this.afterTaxToggleCheckbox = makeElement('input', {
+                type: 'checkbox',
+                checked: this.showAfterTax,
+                onchange: (e) => {
+                  this.showAfterTax = e.target.checked;
+                  this.updateInteractiveElements();
+                }
+              }),
+              makeElement('span', { style: { color: 'var(--tc-success)' } }, 'Show After-Tax Income Curve')
+            ]),
             // Log/Linear Checkbox Toggle
             makeElement('label', { className: 'tc-toggle-wrap' }, [
               this.logToggleCheckbox = makeElement('input', {
@@ -370,7 +383,7 @@ class TaxChart {
                   this.updateInteractiveElements();
                 }
               }),
-              makeElement('span', 'Use Logarithmic Scale (Defaults On)')
+              makeElement('span', 'Use Logarithmic Scale')
             ]),
             makeElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
               makeElement('span', { style: { fontSize: '0.85rem', color: 'var(--tc-muted)', fontWeight: 'bold' } }, 'Dataset:'),
@@ -427,7 +440,7 @@ class TaxChart {
           "name": "Nordic Social Democratic Model",
           "type": "households",
           "totalEntities": 12000000,
-          "currency": "€",
+          "currency": "kr",
           "description": "Compressed income ranges with a high basic floor and low inequality.",
           "data": [
             {"percentile": 2.5, "income": 26000}, {"percentile": 7.5, "income": 31000}, {"percentile": 12.5, "income": 35000},
@@ -447,26 +460,26 @@ class TaxChart {
           "currency": "$",
           "description": "Extreme automation: 75% of citizens have lost wage earning power (pre-tax $0) due to AI integration, while wealth is captured by AI-infrastructure and robotic service providers.",
           "data": [
-            {"percentile": 2.5, "income": 0},
-            {"percentile": 7.5, "income": 0},
-            {"percentile": 12.5, "income": 0},
-            {"percentile": 17.5, "income": 0},
-            {"percentile": 22.5, "income": 0},
-            {"percentile": 27.5, "income": 0},
-            {"percentile": 32.5, "income": 0},
-            {"percentile": 37.5, "income": 0},
-            {"percentile": 42.5, "income": 0},
-            {"percentile": 47.5, "income": 0},
-            {"percentile": 52.5, "income": 0},
-            {"percentile": 57.5, "income": 0},
-            {"percentile": 62.5, "income": 0},
-            {"percentile": 67.5, "income": 0},
-            {"percentile": 72.5, "income": 0},
-            {"percentile": 77.5, "income": 12000},
-            {"percentile": 82.5, "income": 95000},
-            {"percentile": 87.5, "income": 450000},
-            {"percentile": 92.5, "income": 2800000},
-            {"percentile": 97.5, "income": 18500000}
+            { "percentile": 2.5, "income": 0 },
+            { "percentile": 7.5, "income": 0 },
+            { "percentile": 12.5, "income": 0 },
+            { "percentile": 17.5, "income": 0 },
+            { "percentile": 22.5, "income": 0 },
+            { "percentile": 27.5, "income": 0 },
+            { "percentile": 32.5, "income": 0 },
+            { "percentile": 37.5, "income": 0 },
+            { "percentile": 42.5, "income": 0 },
+            { "percentile": 47.5, "income": 0 },
+            { "percentile": 52.5, "income": 0 },
+            { "percentile": 57.5, "income": 0 },
+            { "percentile": 62.5, "income": 0 },
+            { "percentile": 67.5, "income": 0 },
+            { "percentile": 72.5, "income": 0 },
+            { "percentile": 77.5, "income": 12000 },
+            { "percentile": 82.5, "income": 95000 },
+            { "percentile": 87.5, "income": 350000 },
+            { "percentile": 92.5, "income": 1200000 },
+            { "percentile": 97.5, "income": 2200000 }
           ]
         };
       } else {
@@ -477,13 +490,26 @@ class TaxChart {
           "currency": "$",
           "description": "Approximate distribution of US household incomes with a wide range and high upper tail.",
           "data": [
-            {"percentile": 2.5, "income": 7200}, {"percentile": 7.5, "income": 15000}, {"percentile": 12.5, "income": 23000},
-            {"percentile": 17.5, "income": 32000}, {"percentile": 22.5, "income": 41000}, {"percentile": 27.5, "income": 50000},
-            {"percentile": 32.5, "income": 60000}, {"percentile": 37.5, "income": 71000}, {"percentile": 42.5, "income": 83000},
-            {"percentile": 47.5, "income": 96000}, {"percentile": 52.5, "income": 110000}, {"percentile": 57.5, "income": 126000},
-            {"percentile": 62.5, "income": 145000}, {"percentile": 67.5, "income": 170000}, {"percentile": 72.5, "income": 200000},
-            {"percentile": 77.5, "income": 240000}, {"percentile": 82.5, "income": 295000}, {"percentile": 87.5, "income": 390000},
-            {"percentile": 92.5, "income": 580000}, {"percentile": 97.5, "income": 1250000}
+            { "percentile": 2.5, "income": 7200 },
+            { "percentile": 7.5, "income": 15000 },
+            { "percentile": 12.5, "income": 23000 },
+            { "percentile": 17.5, "income": 32000 },
+            { "percentile": 22.5, "income": 41000 },
+            { "percentile": 27.5, "income": 50000 },
+            { "percentile": 32.5, "income": 60000 },
+            { "percentile": 37.5, "income": 71000 },
+            { "percentile": 42.5, "income": 83000 },
+            { "percentile": 47.5, "income": 96000 },
+            { "percentile": 52.5, "income": 110000 },
+            { "percentile": 57.5, "income": 126000 },
+            { "percentile": 62.5, "income": 145000 },
+            { "percentile": 67.5, "income": 170000 },
+            { "percentile": 72.5, "income": 210000 },
+            { "percentile": 77.5, "income": 260000 },
+            { "percentile": 82.5, "income": 330000 },
+            { "percentile": 87.5, "income": 450000 },
+            { "percentile": 92.5, "income": 700000 },
+            { "percentile": 97.5, "income": 2200000 }
           ]
         };
       }
@@ -1095,7 +1121,21 @@ class TaxChart {
       const averageIncome = totalPreTaxIncome / n;
 
       let taxes = new Array(n).fill(0);
-      const p = progressivityPercent / 100;
+
+      // Map progressivity slider S (0 to 100) to internal parameter p (0 to 1)
+      // S = 0 -> p = 0 (Poll tax)
+      // S = 30 -> p = 0.5 (Flat tax)
+      // S = 50 -> p = 0.7 (Reasonable progressive tax)
+      // S = 100 -> p = 1.0 (UBI Equalizer)
+      const S = progressivityPercent;
+      let p = 0.5;
+      if (S <= 30) {
+        p = (S / 30) * 0.5;
+      } else if (S <= 50) {
+        p = 0.5 + ((S - 30) / 20) * 0.20;
+      } else {
+        p = 0.70 + ((S - 50) / 50) * 0.30;
+      }
 
       if (p <= 0.5) {
         const linearU = p * 2;
@@ -1652,16 +1692,22 @@ class TaxChart {
       });
       svgContainer.appendChild(this.svgElement);
 
-      // Legend panel
+      // Legend panel (keep reference to dynamically adjust opacity)
+      this.preTaxLegendItem = makeElement('div', { className: 'tc-legend-item' }, [
+        makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-primary)' } }),
+        makeElement('span', 'Pre-Tax Income')
+      ]);
+      this.postTaxLegendItem = makeElement('div', { 
+        className: 'tc-legend-item',
+        style: { transition: 'opacity 0.2s ease' }
+      }, [
+        makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-success)' } }),
+        makeElement('span', 'After-Tax Disposable Income')
+      ]);
+
       chartPane.appendChild(makeElement('div', { className: 'tc-legend' }, [
-        makeElement('div', { className: 'tc-legend-item' }, [
-          makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-primary)' } }),
-          makeElement('span', 'Pre-Tax Income')
-        ]),
-        makeElement('div', { className: 'tc-legend-item' }, [
-          makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-success)' } }),
-          makeElement('span', 'After-Tax Disposable Income')
-        ]),
+        this.preTaxLegendItem,
+        this.postTaxLegendItem,
         makeElement('div', { className: 'tc-legend-item', style: { fontSize: '0.8rem', color: 'var(--tc-muted)' } }, 
           '● Hover vertical columns to review policy splits.'
         )
@@ -1718,13 +1764,14 @@ class TaxChart {
             }),
             makeElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--tc-muted)' } }, [
               makeElement('span', '0% (Flat Poll Fee)'),
-              makeElement('span', '50% (Flat Rate)'),
+              makeElement('span', '30% (Flat Rate)'),
+              makeElement('span', '50% (Progressive Center)'),
               makeElement('span', '100% (UBI Equalizer)')
             ])
           ]),
           this.progressivityExplanationText = makeElement('p', { 
             style: { fontSize: '0.825rem', color: 'var(--tc-muted)', margin: '4px 0 0 0', lineHeight: '1.4' } 
-          }, 'Determines the distribution design. Above 50%, negative taxes act as basic dividend payouts.')
+          }, 'Determines the distribution design. Above 30%, negative taxes act as basic dividend payouts.')
         ])
       ]);
 
@@ -1763,6 +1810,16 @@ class TaxChart {
       const totalPop = this.currentData.totalEntities;
       const currency = this.currentData.currency || '$';
 
+      // Update state of dynamic inputs
+      if (this.afterTaxToggleCheckbox) {
+        this.showAfterTax = this.afterTaxToggleCheckbox.checked;
+      }
+
+      // Adjust opacity of the post-tax legend block
+      if (this.postTaxLegendItem) {
+        this.postTaxLegendItem.style.opacity = this.showAfterTax ? '1' : '0.35';
+      }
+
       // 1. Label updates
       this.revenueDisplayLabel.textContent = `${this.taxRevenuePercent}%`;
       this.progressivityDisplayLabel.textContent = `${this.taxProgressivity}%`;
@@ -1778,15 +1835,19 @@ class TaxChart {
         this.revenueExplanationText.textContent = `Large Social Welfare State: Capturing ${this.taxRevenuePercent}% of national income provides massive resources to finance a solid universal dividend floor or public goods.`;
       }
 
-      // Column 2 Description update
+      // Column 2 Description update with new 30% Flat Tax and 50% Center Progressive marker
       if (this.taxProgressivity === 0) {
         this.progressivityExplanationText.textContent = `Regressive Poll Tax: Every single bracket pays the exact same absolute dollar fee. Visually flattens lower-income segments to $0.`;
-      } else if (this.taxProgressivity < 50) {
-        this.progressivityExplanationText.textContent = `Partially Proportional: Mix of equal dollar burdens and income percentages. Moderate Gini reduction for lower classes.`;
-      } else if (this.taxProgressivity === 50) {
+      } else if (this.taxProgressivity < 30) {
+        this.progressivityExplanationText.textContent = `Partially Proportional: Mix of equal dollar burdens and income percentages. (Flat Percentage Tax is at 30% on the slider)`;
+      } else if (this.taxProgressivity === 30) {
         this.progressivityExplanationText.textContent = `Flat Percentage Tax: Everyone contributes exactly ${this.taxRevenuePercent}% of their pre-tax income. Gini metrics remain identical pre-tax vs post-tax.`;
+      } else if (this.taxProgressivity < 50) {
+        this.progressivityExplanationText.textContent = `Mildly Progressive: Wealthier percentiles pay larger shares. Lower brackets receive positive net cash dividends or credits.`;
+      } else if (this.taxProgressivity === 50) {
+        this.progressivityExplanationText.textContent = `Reasonable Progressive Tax: Highly balanced model. Low pre-tax earners are supported up to approximately $50,000 post-tax, funded by reasonable upper brackets.`;
       } else if (this.taxProgressivity < 100) {
-        this.progressivityExplanationText.textContent = `Progressive / Negative Tax Credits: Wealthier percentiles fund the state, while lower/jobless tiers receive positive net cash dividends (Universal Basic Income).`;
+        this.progressivityExplanationText.textContent = `Strongly Progressive: Universal Basic Income is highly prioritized. High earners contribute a significant portion of their income to equalize society.`;
       } else {
         this.progressivityExplanationText.textContent = `Complete Equalization: Post-tax incomes are absolutely equalized. Everyone ends up with the exact same disposable income.`;
       }
@@ -1820,13 +1881,12 @@ class TaxChart {
       // 4. Update SVG elements directly
       const width = 1000;
       const height = 440;
-      // Increased left padding to 110 to give right-aligned text up to $100,000,000 plenty of breathing space
       const padding = { top: 30, right: 40, bottom: 50, left: 110 };
       const chartW = width - padding.left - padding.right;
       const chartH = height - padding.top - padding.bottom;
 
       const maxPreTaxVal = Math.max(...preTaxIncomes, 1);
-      const maxPostTaxVal = Math.max(...postTax, 1);
+      const maxPostTaxVal = this.showAfterTax ? Math.max(...postTax, 1) : 1;
       const maxOverallValue = Math.max(maxPreTaxVal, maxPostTaxVal);
 
       const baselineY = padding.top + chartH;
@@ -1915,11 +1975,11 @@ class TaxChart {
       preNodes.push({ x: mapX(100), y: mapY(preOneHundred) });
       postNodes.push({ x: mapX(100), y: mapY(postOneHundred) });
 
-      // Generate smooth tangent bezier segments, passing baselineY to clamp slope flat at 0 to prevent dips
+      // Generate smooth tangent bezier segments
       const preSegments = this.computeBezierSegments(preNodes, baselineY);
       const postSegments = this.computeBezierSegments(postNodes, baselineY);
 
-      // Render backgrounds using paths
+      // Render backgrounds using paths (Pre-Tax)
       let preAreaD = `M ${mapX(0)} ${baselineY}`;
       preSegments.forEach(seg => {
         preAreaD += ` C ${seg.cp1.x.toFixed(1)} ${seg.cp1.y.toFixed(1)}, ${seg.cp2.x.toFixed(1)} ${seg.cp2.y.toFixed(1)}, ${seg.p1.x.toFixed(1)} ${seg.p1.y.toFixed(1)}`;
@@ -1927,14 +1987,17 @@ class TaxChart {
       preAreaD += ` L ${mapX(100)} ${baselineY} Z`;
       svgChildren.push(['svg:path', { d: preAreaD, fill: 'url(#pre-tax-grad)', opacity: 0.12 }]);
 
-      let postAreaD = `M ${mapX(0)} ${baselineY}`;
-      postSegments.forEach(seg => {
-        postAreaD += ` C ${seg.cp1.x.toFixed(1)} ${seg.cp1.y.toFixed(1)}, ${seg.cp2.x.toFixed(1)} ${seg.cp2.y.toFixed(1)}, ${seg.p1.x.toFixed(1)} ${seg.p1.y.toFixed(1)}`;
-      });
-      postAreaD += ` L ${mapX(100)} ${baselineY} Z`;
-      svgChildren.push(['svg:path', { d: postAreaD, fill: 'url(#post-tax-grad)', opacity: 0.12 }]);
+      // Render backgrounds using paths (Post-Tax - Conditional)
+      if (this.showAfterTax) {
+        let postAreaD = `M ${mapX(0)} ${baselineY}`;
+        postSegments.forEach(seg => {
+          postAreaD += ` C ${seg.cp1.x.toFixed(1)} ${seg.cp1.y.toFixed(1)}, ${seg.cp2.x.toFixed(1)} ${seg.cp2.y.toFixed(1)}, ${seg.p1.x.toFixed(1)} ${seg.p1.y.toFixed(1)}`;
+        });
+        postAreaD += ` L ${mapX(100)} ${baselineY} Z`;
+        svgChildren.push(['svg:path', { d: postAreaD, fill: 'url(#post-tax-grad)', opacity: 0.12 }]);
+      }
 
-      // Draw standard background paths
+      // Draw standard pre-tax background paths
       preSegments.forEach((seg, idx) => {
         const isHovered = (this.hoveredIndex === idx);
         svgChildren.push(['svg:path', {
@@ -1948,18 +2011,21 @@ class TaxChart {
         }]);
       });
 
-      postSegments.forEach((seg, idx) => {
-        const isHovered = (this.hoveredIndex === idx);
-        svgChildren.push(['svg:path', {
-          id: `post-seg-path-${idx}`,
-          d: seg.pathD,
-          fill: 'none',
-          stroke: isHovered ? 'var(--tc-success)' : 'rgba(16, 185, 129, 0.55)',
-          'stroke-width': isHovered ? 7.5 : 3.0,
-          'stroke-linecap': 'round',
-          transition: 'stroke 0.1s ease, stroke-width 0.1s ease'
-        }]);
-      });
+      // Draw standard post-tax background paths (Conditional)
+      if (this.showAfterTax) {
+        postSegments.forEach((seg, idx) => {
+          const isHovered = (this.hoveredIndex === idx);
+          svgChildren.push(['svg:path', {
+            id: `post-seg-path-${idx}`,
+            d: seg.pathD,
+            fill: 'none',
+            stroke: isHovered ? 'var(--tc-success)' : 'rgba(16, 185, 129, 0.55)',
+            'stroke-width': isHovered ? 7.5 : 3.0,
+            'stroke-linecap': 'round',
+            transition: 'stroke 0.1s ease, stroke-width 0.1s ease'
+          }]);
+        });
+      }
 
       // Defs
       svgChildren.push(['svg:defs', {}, [
@@ -2017,36 +2083,34 @@ class TaxChart {
             // Bring the active curve segment paths to the top of the Z-order
             const activePrePath = this.svgElement.querySelector(`#pre-seg-path-${idx}`);
             const activePostPath = this.svgElement.querySelector(`#post-seg-path-${idx}`);
-            if (activePrePath && activePostPath) {
+            if (activePrePath) {
               activePrePath.parentNode.appendChild(activePrePath);
+            }
+            if (this.showAfterTax && activePostPath) {
               activePostPath.parentNode.appendChild(activePostPath);
             }
 
-            // Fixed horizontal centering: tooltip aligns perfectly to the cursor column
-            // and slides smoothly without any backward-jumps
-            let tooltipX = xCenter - 140;
-            const minX = padding.left;
-            const maxX = width - padding.right - 280;
-            tooltipX = Math.max(minX, Math.min(maxX, tooltipX));
-            this.tooltipEl.style.left = `${tooltipX}px`;
-            
-            // Intelligent Collision Avoidance Positioning
+            // --- SMART POSITIONING & COLLISION AVOIDANCE ALGORITHM ---
+            // Calculate height of both active curves at the hovered index coordinate
             const cyPre = mapY(idx === 0 ? preZero : (idx === 20 ? preOneHundred : dataPoints[idx - 1].income));
             const cyPost = mapY(idx === 0 ? postZero : (idx === 20 ? postOneHundred : postTax[idx - 1]));
-            const minCurveY = Math.min(cyPre, cyPost);
-            const maxCurveY = Math.max(cyPre, cyPost);
+            
+            // The active height is the highest curve at this location (minimum screen Y-coordinate)
+            const activeCurveY = Math.min(cyPre, this.showAfterTax ? cyPost : cyPre);
 
-            let tooltipY = 0;
-            if (minCurveY > padding.top + chartH / 2) {
-              // Curves are low, position above them
-              tooltipY = minCurveY - 150;
-            } else {
-              // Curves are high, position below them
-              tooltipY = maxCurveY + 20;
-            }
+            // Position horizontal: tend to the left of the hovered point with a 35px safety buffer
+            // Tooltip width is 280px.
+            let targetX = xCenter - 280 - 35;
+            // Clamp so that it never leaves the left chart boundary
+            let tooltipX = Math.max(padding.left, targetX);
 
-            // Clamp vertical position safely inside SVG container card limits
-            tooltipY = Math.max(padding.top + 10, Math.min(padding.top + chartH - 160, tooltipY));
+            // Position vertical: place cleanly above the curves with a 35px safety margin
+            // Estimated tooltip height is around 175px
+            let targetY = activeCurveY - 175 - 35;
+            // Clamp vertical limits to avoid clipping the header area
+            let tooltipY = Math.max(padding.top, targetY);
+
+            this.tooltipEl.style.left = `${tooltipX}px`;
             this.tooltipEl.style.top = `${tooltipY}px`;
 
             this.updateInteractiveElements();
@@ -2058,6 +2122,37 @@ class TaxChart {
           }
         }]);
       }
+
+      // Draw node circles (Pre-Tax always, After-Tax conditionally)
+      dataPoints.forEach((p, idx) => {
+        const cx = mapX(p.percentile);
+        const cyPre = mapY(p.income);
+        const cyPost = mapY(postTax[idx]);
+
+        const isHovered = (this.hoveredIndex === idx);
+
+        // Draw node pre-tax circles
+        svgChildren.push(['svg:circle', {
+          cx: cx,
+          cy: cyPre,
+          r: isHovered ? 6 : 4,
+          fill: 'var(--tc-primary)',
+          stroke: 'var(--tc-bg)',
+          'stroke-width': isHovered ? 2 : 1
+        }]);
+
+        // Draw node after-tax circles (Conditional)
+        if (this.showAfterTax) {
+          svgChildren.push(['svg:circle', {
+            cx: cx,
+            cy: cyPost,
+            r: isHovered ? 7 : 4.5,
+            fill: 'var(--tc-success)',
+            stroke: 'var(--tc-bg)',
+            'stroke-width': isHovered ? 2 : 1
+          }]);
+        }
+      });
 
       // Axis borders
       svgChildren.push(['svg:line', {

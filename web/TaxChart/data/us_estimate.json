@@ -63,27 +63,27 @@
     },
     {
       "percentile": 72.5,
-      "income": 200000
+      "income": 210000
     },
     {
       "percentile": 77.5,
-      "income": 240000
+      "income": 260000
     },
     {
       "percentile": 82.5,
-      "income": 295000
+      "income": 330000
     },
     {
       "percentile": 87.5,
-      "income": 390000
+      "income": 450000
     },
     {
       "percentile": 92.5,
-      "income": 580000
+      "income": 700000
     },
     {
       "percentile": 97.5,
-      "income": 1250000
+      "income": 2200000
     }
   ]
 }
