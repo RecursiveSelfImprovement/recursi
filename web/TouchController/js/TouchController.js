@@ -217,7 +217,9 @@ class TouchController {
     }
 
     async _startWirelessClient(roomCode, statusLabel) {
-      const SIGNAL_BASE = 'https://recursi.dev/TouchController/signal.php';
+      const SIGNAL_BASE = window.location.hostname.includes('recursi.dev') 
+        ? 'https://recursi.dev/TouchController/signal.php' 
+        : (window.location.origin + '/signal');
       this.roomCode = roomCode;
       statusLabel.textContent = 'Searching for host...';
       statusLabel.style.color = '#90a4ae';
@@ -1274,6 +1276,7 @@ class TouchController {
 
         this.ctrlTouchStartX = clientX;
         this.ctrlTouchStartY = clientY;
+        this.ctrlTouchStartTime = now;
         this.ctrlGestureLock = null;
 
         if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
@@ -1367,14 +1370,25 @@ class TouchController {
 
   _onCtrlTouchEnd(e) {
       e.preventDefault();
+      
+      const now = Date.now();
+      const duration = now - (this.ctrlTouchStartTime || 0);
+      const isTap = (this.ctrlGestureLock === null) && (duration < 250);
+
       this.ctrlDragging = false;
       this.ctrlGestureLock = null;
 
       if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
         if (this.dataChannel && this.dataChannel.readyState === 'open') {
-          this.dataChannel.send(JSON.stringify({
-            type: 'sliderDragEnd'
-          }));
+          if (isTap) {
+            this.dataChannel.send(JSON.stringify({
+              type: 'sliderTap'
+            }));
+          } else {
+            this.dataChannel.send(JSON.stringify({
+              type: 'sliderDragEnd'
+            }));
+          }
         }
       } else if (this.controlMode === 'paint') {
         if (this.dataChannel && this.dataChannel.readyState === 'open') {

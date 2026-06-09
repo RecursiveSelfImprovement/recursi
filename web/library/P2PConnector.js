@@ -17,7 +17,9 @@ class P2PConnector {
     }
 
     async startWirelessHost(roomCode, statusLabel, isAutoRestart = false) {
-      const SIGNAL_BASE = 'https://recursi.dev/TouchController/signal.php';
+      const SIGNAL_BASE = window.location.hostname.includes('recursi.dev') 
+        ? 'https://recursi.dev/TouchController/signal.php' 
+        : (window.location.origin + '/signal');
       this.roomCode = roomCode;
       this.statusLabel = statusLabel;
       this.isHostMode = true;
@@ -236,6 +238,8 @@ class P2PConnector {
             this.dispatch('startSliderAdjustment');
           } else if (payload.type === 'sliderAdjust') {
             this.dispatch('adjustSelectedSlider', payload.ratio);
+          } else if (payload.type === 'sliderTap') {
+            this.dispatch('handleSliderTap');
           }
         } catch (err) {
           console.error('Error handling remote message:', err);
