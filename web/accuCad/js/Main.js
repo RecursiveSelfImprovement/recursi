@@ -12,345 +12,352 @@ class Main {
   }
 
   async run(env) {
-    console.log('[accuCad] run() invoked.');
-    if (this.rootElement) this.destroy();
+      console.log('[accuCad] run() invoked.');
+      if (this.rootElement) this.destroy();
 
-    if (!env || !env.container) {
-      throw new Error(
-        '[accuCad] run() requires an environment object with a valid container.'
-      );
-    }
-
-    const parentElement = env.container;
-    this.rootElement = parentElement;
-
-    const resetScroll = () => {
-      if (this.rootElement) {
-        this.rootElement.scrollLeft = 0;
-        this.rootElement.scrollTop = 0;
+      if (!env || !env.container) {
+        throw new Error(
+          '[accuCad] run() requires an environment object with a valid container.'
+        );
       }
-      window.scrollTo(0, 0);
-      document.body.scrollLeft = 0;
-      document.body.scrollTop = 0;
-    };
 
-    this.rootElement.addEventListener('scroll', resetScroll);
-    window.addEventListener('scroll', resetScroll);
-    document.body.addEventListener('scroll', resetScroll);
+      const parentElement = env.container;
+      this.rootElement = parentElement;
 
-    this._scrollResetHandler = resetScroll;
+      const resetScroll = () => {
+        if (this.rootElement) {
+          this.rootElement.scrollLeft = 0;
+          this.rootElement.scrollTop = 0;
+        }
+        window.scrollTo(0, 0);
+        document.body.scrollLeft = 0;
+        document.body.scrollTop = 0;
+      };
 
-    const layoutWrapper = document.createElement('div');
-    layoutWrapper.id = 'accucad-layout-wrapper';
-    layoutWrapper.style.cssText =
-      'display: flex; flex-direction: row; width: 100%; height: 100%; overflow: hidden; position: relative;';
-    parentElement.appendChild(layoutWrapper);
-    this.layoutWrapper = layoutWrapper;
+      this.rootElement.addEventListener('scroll', resetScroll);
+      window.addEventListener('scroll', resetScroll);
+      document.body.addEventListener('scroll', resetScroll);
 
-    const canvasId = 'accucad-canvas-' + Math.random().toString(36).slice(2);
-    const canvasContainer = document.createElement('div');
-    canvasContainer.id = canvasId;
-    canvasContainer.style.cssText =
-      'flex-grow: 1; height: 100%; position: relative; overflow: hidden;';
-    layoutWrapper.appendChild(canvasContainer);
-    this.canvasContainer = canvasContainer;
+      this._scrollResetHandler = resetScroll;
 
-    if (
-      !parentElement._vibesAppResizeObserver &&
-      typeof ResizeObserver !== 'undefined'
-    ) {
-      const ro = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          if (this.app && typeof this.app.resize === 'function') {
-            this.app.resize(entry.contentRect.width, entry.contentRect.height);
+      const layoutWrapper = document.createElement('div');
+      layoutWrapper.id = 'accucad-layout-wrapper';
+      layoutWrapper.style.cssText =
+        'display: flex; flex-direction: row; width: 100%; height: 100%; overflow: hidden; position: relative;';
+      parentElement.appendChild(layoutWrapper);
+      this.layoutWrapper = layoutWrapper;
+
+      const canvasId = 'accucad-canvas-' + Math.random().toString(36).slice(2);
+      const canvasContainer = document.createElement('div');
+      canvasContainer.id = canvasId;
+      canvasContainer.style.cssText =
+        'flex-grow: 1; height: 100%; position: relative; overflow: hidden;';
+      layoutWrapper.appendChild(canvasContainer);
+      this.canvasContainer = canvasContainer;
+
+      if (
+        !parentElement._vibesAppResizeObserver &&
+        typeof ResizeObserver !== 'undefined'
+      ) {
+        const ro = new ResizeObserver((entries) => {
+          for (const entry of entries) {
+            if (this.app && typeof this.app.resize === 'function') {
+              this.app.resize(entry.contentRect.width, entry.contentRect.height);
+            }
           }
-        }
+        });
+        ro.observe(canvasContainer);
+        parentElement._vibesAppResizeObserver = ro;
+      }
+
+      const staticClasses = [
+        'CameraOrbitAnimator',
+        'DebugConfig',
+        'ElementOperations',
+        'ModelLoader',
+        'TentativePointHandler',
+        'ViewControlsManager',
+        'ViewManipulator',
+      ];
+      for (const clsName of staticClasses) {
+        const cls = window[clsName] || globalThis[clsName];
+        if (cls && typeof cls.initStatics === 'function') cls.initStatics();
+      }
+
+      if (typeof PopupBox !== 'undefined' && typeof PopupBox.init === 'function')
+        PopupBox.init();
+
+      this.app = new ThreeJSLoader(canvasId, {
+        cameraPos: { x: 5, y: 5, z: 8 },
+        enableControls: false,
+        useThickLines: true,
+        commonLoaders: true,
+        hdrPath:
+          'https://recursi.dev/thirdparty/three-js-r153/assets/textures/venice_sunset_1k.hdr',
+        onUpdate: () => this._onUpdate(),
       });
-      ro.observe(canvasContainer);
-      parentElement._vibesAppResizeObserver = ro;
-    }
 
-    const staticClasses = [
-      'CameraOrbitAnimator',
-      'DebugConfig',
-      'ElementOperations',
-      'ModelLoader',
-      'TentativePointHandler',
-      'ViewControlsManager',
-      'ViewManipulator',
-    ];
-    for (const clsName of staticClasses) {
-      const cls = window[clsName] || globalThis[clsName];
-      if (cls && typeof cls.initStatics === 'function') cls.initStatics();
-    }
+      await this.app.init(canvasContainer);
 
-    if (typeof PopupBox !== 'undefined' && typeof PopupBox.init === 'function')
-      PopupBox.init();
+      globalThis.Line2 = this.app.modules.Line2;
+      globalThis.LineGeometry = this.app.modules.LineGeometry;
+      globalThis.LineMaterial = this.app.modules.LineMaterial;
+      globalThis.GLTFLoader = this.app.modules.GLTFLoader;
 
-    this.app = new ThreeJSLoader(canvasId, {
-      cameraPos: { x: 5, y: 5, z: 8 },
-      enableControls: false,
-      useThickLines: true,
-      commonLoaders: true,
-      hdrPath:
-        'https://recursi.dev/thirdparty/three-js-r153/assets/textures/venice_sunset_1k.hdr',
-      onUpdate: () => this._onUpdate(),
-    });
+      this.THREE = this.app.THREE;
 
-    await this.app.init(canvasContainer);
-
-    globalThis.Line2 = this.app.modules.Line2;
-    globalThis.LineGeometry = this.app.modules.LineGeometry;
-    globalThis.LineMaterial = this.app.modules.LineMaterial;
-    globalThis.GLTFLoader = this.app.modules.GLTFLoader;
-
-    this.THREE = this.app.THREE;
-
-    if (this.app.scene) {
-      this.app.scene.background = new this.THREE.Color(0xbbbbbb);
-    }
-
-    const ADDONS = 'https://recursi.dev/thirdparty/three-js-r153/examples/jsm';
-    const THREE_URL =
-      'https://recursi.dev/thirdparty/three-js-r153/build/three.module.js';
-
-    const loadExtraAddon = async (path, exportName) => {
-      try {
-        const blobUrl = await this.app._fetchAndRewrite(
-          ADDONS + path,
-          THREE_URL,
-          1
-        );
-        const mod = await import(blobUrl);
-        globalThis[exportName] = mod[exportName];
-      } catch (e) {
-        console.warn(`Failed to load addon ${exportName}`, e);
+      if (this.app.scene) {
+        this.app.scene.background = new this.THREE.Color(0xbbbbbb);
       }
-    };
 
-    await Promise.all([
-      loadExtraAddon('/loaders/DRACOLoader.js', 'DRACOLoader'),
-      loadExtraAddon('/loaders/SVGLoader.js', 'SVGLoader'),
-      loadExtraAddon('/utils/BufferGeometryUtils.js', 'BufferGeometryUtils'),
-    ]);
+      const ADDONS = 'https://recursi.dev/thirdparty/three-js-r153/examples/jsm';
+      const THREE_URL =
+        'https://recursi.dev/thirdparty/three-js-r153/build/three.module.js';
 
-    const target = new this.THREE.Vector3(0, 0.6, 0);
-    this.app.camera.lookAt(target);
+      const loadExtraAddon = async (path, exportName) => {
+        try {
+          const blobUrl = await this.app._fetchAndRewrite(
+            ADDONS + path,
+            THREE_URL,
+            1
+          );
+          const mod = await import(blobUrl);
+          globalThis[exportName] = mod[exportName];
+        } catch (e) {
+          console.warn(`Failed to load addon ${exportName}`, e);
+        }
+      };
 
-    this.threeDView = {
-      scene: this.app.scene,
-      camera: this.app.camera,
-      renderer: this.app.renderer,
-      target: target,
-      envRotation: 0,
-    };
+      await Promise.all([
+        loadExtraAddon('/loaders/DRACOLoader.js', 'DRACOLoader'),
+        loadExtraAddon('/loaders/SVGLoader.js', 'SVGLoader'),
+        loadExtraAddon('/utils/BufferGeometryUtils.js', 'BufferGeometryUtils'),
+      ]);
 
-    this.baseController = new BaseController(
-      this.threeDView,
-      this.app.renderer.domElement
-    );
-    ControllerSetup.initializeController(
-      this.baseController,
-      this.threeDView.scene
-    );
+      const target = new this.THREE.Vector3(0, 0.6, 0);
+      this.app.camera.lookAt(target);
 
-    // Setup SidePanel UI structure using the new, generic constructor
-    if (typeof SidePanel !== 'undefined') {
-      const sidePanelEnv = { container: layoutWrapper };
-      this.sidePanel = new SidePanel('left', 260, sidePanelEnv);
+      this.threeDView = {
+        scene: this.app.scene,
+        camera: this.app.camera,
+        renderer: this.app.renderer,
+        target: target,
+        envRotation: 0,
+      };
 
-      // Populate the specific CAD sections from here
-      this.sidePanel.toolSettingsSection = this.sidePanel.addSection(
-        'setup',
-        'Tool Settings',
-        true
-      );
-      this.sidePanel.compassSection = this.sidePanel.addSection(
-        'compass',
-        'Compass Controls',
-        true
-      );
-      this.sidePanel.p2pSection = this.sidePanel.addSection(
-        'p2p',
-        'Controller',
-        false
-      );
-
-      this.baseController.sidePanel = this.sidePanel;
-
-      layoutWrapper.insertBefore(this.sidePanel.element, canvasContainer);
-      this._setupToolSettingsWatcher();
-
-      // Explicitly open the sidebar on startup for accuCad
-      this.sidePanel.open();
-    }
-
-    // Initialize P2PConnector (pointing to our shared library module)
-    if (typeof P2PConnector !== 'undefined') {
-      this.baseController.p2pConnector = new P2PConnector(this.baseController);
-      if (this.sidePanel) {
-        this.baseController.p2pConnector.renderControls(
-          this.sidePanel.p2pSection
-        );
-      }
-    }
-
-    if (typeof ViewControlsManager !== 'undefined') {
-      const compassContainer = this.sidePanel
-        ? this.sidePanel.compassSection
-        : null;
-      ViewControlsManager.init(
-        this.baseController,
+      this.baseController = new BaseController(
         this.threeDView,
-        compassContainer
+        this.app.renderer.domElement
       );
-    }
+      ControllerSetup.initializeController(
+        this.baseController,
+        this.threeDView.scene
+      );
 
-    if (typeof KeyCommandHandler !== 'undefined') {
-      KeyCommandHandler.init();
-      if (typeof SmartDrawKeys !== 'undefined') {
-        SmartDrawKeys.initializeKeyCommands(
-          KeyCommandHandler,
-          this.baseController
+      // Setup SidePanel UI structure using the new, generic constructor
+      if (typeof SidePanel !== 'undefined') {
+        const sidePanelEnv = { container: layoutWrapper };
+        this.sidePanel = new SidePanel('left', 260, sidePanelEnv);
+
+        // Populate the specific CAD sections from here
+        this.sidePanel.toolSettingsSection = this.sidePanel.addSection(
+          'setup',
+          'Tool Settings',
+          true
+        );
+        this.sidePanel.compassSection = this.sidePanel.addSection(
+          'compass',
+          'Compass Controls',
+          true
+        );
+        this.sidePanel.p2pSection = this.sidePanel.addSection(
+          'p2p',
+          'Controller',
+          false
+        );
+
+        this.baseController.sidePanel = this.sidePanel;
+
+        layoutWrapper.insertBefore(this.sidePanel.element, canvasContainer);
+        this._setupToolSettingsWatcher();
+
+        // Instantiate and load database manager UI inside sidePanel
+        if (typeof CadStorageManager !== 'undefined') {
+          this.storageManager = new CadStorageManager(this.baseController);
+          this.storageManager.renderUI();
+        }
+
+        // Explicitly open the sidebar on startup for accuCad
+        this.sidePanel.open();
+      }
+
+      // Initialize P2PConnector (pointing to our shared library module)
+      if (typeof P2PConnector !== 'undefined') {
+        this.baseController.p2pConnector = new P2PConnector(this.baseController);
+        if (this.sidePanel) {
+          this.baseController.p2pConnector.renderControls(
+            this.sidePanel.p2pSection
+          );
+        }
+      }
+
+      if (typeof ViewControlsManager !== 'undefined') {
+        const compassContainer = this.sidePanel
+          ? this.sidePanel.compassSection
+          : null;
+        ViewControlsManager.init(
+          this.baseController,
+          this.threeDView,
+          compassContainer
         );
       }
-    }
 
-    if (typeof RotaryEncoders !== 'undefined') {
-      RotaryEncoders.initialize(this.baseController);
-    }
-
-    // Prevent automatic requests for MIDI access unless the option has been persistently enabled by the user
-    if (
-      localStorage.getItem('midi-controller-enabled') === 'true' &&
-      typeof MidiInputHandler !== 'undefined' &&
-      typeof MidiInputHandler.init === 'function'
-    ) {
-      MidiInputHandler.init((status) => {});
-    }
-
-    if (typeof CameraOrbitAnimator !== 'undefined') {
-      CameraOrbitAnimator.setDependencies(this.threeDView);
-    }
-
-    if (typeof DebugConfig !== 'undefined') {
-      if (DebugConfig.exposeThreeDView) globalThis.threeDView = this.threeDView;
-      if (DebugConfig.exposeBaseController)
-        globalThis.baseController = this.baseController;
-    }
-
-    if (env && typeof env.requestKeystrokeControl === 'function') {
-      env.requestKeystrokeControl((active) => {
-        if (this.baseController) {
-          this.baseController.isKeystrokeCaptureActive = active;
+      if (typeof KeyCommandHandler !== 'undefined') {
+        KeyCommandHandler.init();
+        if (typeof SmartDrawKeys !== 'undefined') {
+          SmartDrawKeys.initializeKeyCommands(
+            KeyCommandHandler,
+            this.baseController
+          );
         }
-        if (typeof KeyCommandHandler !== 'undefined') {
-          KeyCommandHandler.setPaused(!active);
-        }
-      });
-    } else {
-      if (this.baseController) {
-        this.baseController.isKeystrokeCaptureActive = true;
       }
-    }
 
-    const initialRect = parentElement.getBoundingClientRect();
-    if (initialRect.width > 0 && initialRect.height > 0) {
-      this.app.resize(initialRect.width, initialRect.height);
-    }
+      if (typeof RotaryEncoders !== 'undefined') {
+        RotaryEncoders.initialize(this.baseController);
+      }
 
-    console.log('[accuCad] Application initialized successfully.');
-    return this;
-  }
+      // Prevent automatic requests for MIDI access unless the option has been persistently enabled by the user
+      if (
+        localStorage.getItem('midi-controller-enabled') === 'true' &&
+        typeof MidiInputHandler !== 'undefined' &&
+        typeof MidiInputHandler.init === 'function'
+      ) {
+        MidiInputHandler.init((status) => {});
+      }
+
+      if (typeof CameraOrbitAnimator !== 'undefined') {
+        CameraOrbitAnimator.setDependencies(this.threeDView);
+      }
+
+      if (typeof DebugConfig !== 'undefined') {
+        if (DebugConfig.exposeThreeDView) globalThis.threeDView = this.threeDView;
+        if (DebugConfig.exposeBaseController)
+          globalThis.baseController = this.baseController;
+      }
+
+      if (env && typeof env.requestKeystrokeControl === 'function') {
+        env.requestKeystrokeControl((active) => {
+          if (this.baseController) {
+            this.baseController.isKeystrokeCaptureActive = active;
+          }
+          if (typeof KeyCommandHandler !== 'undefined') {
+            KeyCommandHandler.setPaused(!active);
+          }
+        });
+      } else {
+        if (this.baseController) {
+          this.baseController.isKeystrokeCaptureActive = true;
+        }
+      }
+
+      const initialRect = parentElement.getBoundingClientRect();
+      if (initialRect.width > 0 && initialRect.height > 0) {
+        this.app.resize(initialRect.width, initialRect.height);
+      }
+
+      console.log('[accuCad] Application initialized successfully.');
+      return this;
+    }
 
   destroy() {
-    console.log('[accuCad] destroy() called.');
+      console.log('[accuCad] destroy() called.');
 
-    // Close the P2P connection and dialog
-    if (this.baseController && this.baseController.p2pConnector) {
-      try {
-        this.baseController.p2pConnector.destroy();
-      } catch (e) {}
-    }
-
-    // Surgically close the active keyboard shortcut help dialog if present
-    if (this.baseController && this.baseController._helpDialog) {
-      try {
-        this.baseController._helpDialog.close();
-      } catch (e) {}
-      this.baseController._helpDialog = null;
-    }
-
-    // Surgically close camera oscillation dialog
-    if (typeof CameraOrbitAnimator !== 'undefined') {
-      try {
-        CameraOrbitAnimator.stop();
-      } catch (e) {}
-    }
-
-    if (this.app && typeof this.app.destroy === 'function') {
-      this.app.destroy();
-    }
-
-    if (this.canvasContainer) {
-      this.canvasContainer.remove();
-    }
-
-    if (this.layoutWrapper) {
-      this.layoutWrapper.remove();
-    }
-
-    if (
-      typeof KeyCommandHandler !== 'undefined' &&
-      typeof KeyCommandHandler.destroy === 'function'
-    ) {
-      KeyCommandHandler.destroy();
-    }
-
-    // Surgically clean up View Controls
-    if (typeof ViewControlsManager !== 'undefined') {
-      try {
-        ViewControlsManager.destroy();
-      } catch (e) {}
-    }
-
-    if (this.baseController) {
-      if (
-        this.baseController.accuDrawDiagnostics &&
-        this.baseController.accuDrawDiagnostics.dialog
-      ) {
+      // Close the P2P connection and dialog
+      if (this.baseController && this.baseController.p2pConnector) {
         try {
-          this.baseController.accuDrawDiagnostics.dialog.close();
+          this.baseController.p2pConnector.destroy();
         } catch (e) {}
       }
-      if (
-        this.baseController.accuDrawTestHarness &&
-        typeof this.baseController.accuDrawTestHarness.destroy === 'function'
-      ) {
+
+      // Surgically close the active keyboard shortcut help dialog if present
+      if (this.baseController && this.baseController._helpDialog) {
         try {
-          this.baseController.accuDrawTestHarness.destroy();
+          this.baseController._helpDialog.close();
+        } catch (e) {}
+        this.baseController._helpDialog = null;
+      }
+
+      // Surgically close camera oscillation dialog
+      if (typeof CameraOrbitAnimator !== 'undefined') {
+        try {
+          CameraOrbitAnimator.stop();
         } catch (e) {}
       }
-      if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-        if (typeof this.baseController.accuDraw.ui.destroy === 'function') {
+
+      if (this.app && typeof this.app.destroy === 'function') {
+        this.app.destroy();
+      }
+
+      if (this.canvasContainer) {
+        this.canvasContainer.remove();
+      }
+
+      if (this.layoutWrapper) {
+        this.layoutWrapper.remove();
+      }
+
+      if (
+        typeof KeyCommandHandler !== 'undefined' &&
+        typeof KeyCommandHandler.destroy === 'function'
+      ) {
+        KeyCommandHandler.destroy();
+      }
+
+      // Surgically clean up View Controls
+      if (typeof ViewControlsManager !== 'undefined') {
+        try {
+          ViewControlsManager.destroy();
+        } catch (e) {}
+      }
+
+      if (this.baseController) {
+        if (
+          this.baseController.accuDrawDiagnostics &&
+          this.baseController.accuDrawDiagnostics.dialog
+        ) {
           try {
-            this.baseController.accuDraw.ui.destroy();
-          } catch (e) {}
-        } else {
-          try {
-            this.baseController.accuDraw.ui.hide();
+            this.baseController.accuDrawDiagnostics.dialog.close();
           } catch (e) {}
         }
+        if (
+          this.baseController.accuDrawTestHarness &&
+          typeof this.baseController.accuDrawTestHarness.destroy === 'function'
+        ) {
+          try {
+            this.baseController.accuDrawTestHarness.destroy();
+          } catch (e) {}
+        }
+        if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+          if (typeof this.baseController.accuDraw.ui.destroy === 'function') {
+            try {
+              this.baseController.accuDraw.ui.destroy();
+            } catch (e) {}
+          } else {
+            try {
+              this.baseController.accuDraw.ui.hide();
+            } catch (e) {}
+          }
+        }
       }
-    }
 
-    this.rootElement = null;
-    this.canvasContainer = null;
-    this.layoutWrapper = null;
-    this.app = null;
-    this.baseController = null;
-    this.threeDView = null;
-  }
+      this.storageManager = null;
+      this.rootElement = null;
+      this.canvasContainer = null;
+      this.layoutWrapper = null;
+      this.app = null;
+      this.baseController = null;
+      this.threeDView = null;
+    }
 
   _setupToolSettingsWatcher() {
       this.toolSliders = {};
