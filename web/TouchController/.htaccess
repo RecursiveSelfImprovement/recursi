@@ -1,0 +1,3 @@
+<IfModule mod_headers.c>
+    Header unset Access-Control-Allow-Origin
+</IfModule>

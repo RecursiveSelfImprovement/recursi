@@ -17,7 +17,7 @@ class P2PConnector {
     }
 
     async startWirelessHost(roomCode, statusLabel, isAutoRestart = false) {
-      const SIGNAL_BASE = window.location.origin + '/signal';
+      const SIGNAL_BASE = 'https://recursi.dev/TouchController/signal.php';
       this.roomCode = roomCode;
       this.statusLabel = statusLabel;
       this.isHostMode = true;
@@ -36,9 +36,10 @@ class P2PConnector {
       const hostTopic = `vibes-rotate-${roomCode}-host`;
       const clientTopic = `vibes-rotate-${roomCode}-client`;
 
+      // Added cache-busting timestamps prevent proxy and CDN caching
       try {
-        await fetch(`${SIGNAL_BASE}/${hostTopic}`, { method: 'POST', body: '' });
-        await fetch(`${SIGNAL_BASE}/${clientTopic}`, { method: 'POST', body: '' });
+        await fetch(`${SIGNAL_BASE}/${hostTopic}?_=${Date.now()}`, { method: 'POST', body: '' });
+        await fetch(`${SIGNAL_BASE}/${clientTopic}?_=${Date.now()}`, { method: 'POST', body: '' });
       } catch(e) {
         this.updateStatus('Signaling server offline. Retrying...', '#ff4444');
         this.handleConnectionFailure();
@@ -89,7 +90,8 @@ class P2PConnector {
 
         this.updateStatus('Broadcasting host offer...', '#90a4ae');
 
-        fetch(`${SIGNAL_BASE}/${hostTopic}`, { method: 'POST', body: bakedOffer })
+        // Added cache-busting timestamp
+        fetch(`${SIGNAL_BASE}/${hostTopic}?_=${Date.now()}`, { method: 'POST', body: bakedOffer })
           .catch(e => console.warn('Offer post error:', e));
 
         this.hostBeaconInterval = setInterval(async () => {
@@ -98,7 +100,7 @@ class P2PConnector {
             return;
           }
           try {
-            await fetch(`${SIGNAL_BASE}/${hostTopic}`, { method: 'POST', body: bakedOffer });
+            await fetch(`${SIGNAL_BASE}/${hostTopic}?_=${Date.now()}`, { method: 'POST', body: bakedOffer });
           } catch(err) {}
         }, 2000);
 
@@ -108,7 +110,7 @@ class P2PConnector {
             return;
           }
           try {
-            const res = await fetch(`${SIGNAL_BASE}/${clientTopic}`);
+            const res = await fetch(`${SIGNAL_BASE}/${clientTopic}?_=${Date.now()}`);
             const text = await res.text();
             if (!text || text.trim() === '') return;
             if (!pc.remoteDescription) {
@@ -187,7 +189,10 @@ class P2PConnector {
               this.updateStatus('Connected', '#00e676');
               this.logDiag('Handshake verified!');
               channel.send(JSON.stringify({ type: 'h-verified' }));
+              
+              // Immediately configure the client layout
               this.sendCapabilities();
+              
               this.startHeartbeat(channel);
             }
           } else if (payload.type === 'ping') {
@@ -200,10 +205,9 @@ class P2PConnector {
             this.dispatch('handleRemotePerspective', payload.dy);
           } else if (payload.type === 'accudrawZ') {
             this.dispatch('handleRemoteAccudrawZ', payload.dy);
-          } else if (payload.type === 'sliderTap') {
-            this.dispatch('handleSliderTap');
           } else if (payload.type === 'modeChange') {
             if (payload.mode === 'rotate' || payload.mode === 'pan') {
+              // It is a View Mode Change! Present a subtle on-screen computer HUD notification
               if (typeof UITools !== 'undefined' && typeof UITools.showHUD === 'function') {
                 const label = payload.mode === 'rotate' ? 'Rotate View' : 'Pan View';
                 const icon = payload.mode === 'rotate' ? '🔄' : '🖐️';
@@ -217,6 +221,7 @@ class P2PConnector {
                 });
               }
             } else {
+              // It is a Control Panel Change! Translate payload accurately (sliders -> compass, tool -> tool)
               this.dispatch('highlightActiveControlBox', payload.mode);
             }
           } else if (payload.type === 'sliderSelect') {
@@ -403,34 +408,6 @@ class P2PConnector {
       roomRow.appendChild(roomInput);
       content.appendChild(roomRow);
 
-      // Check if running on localhost / dev environment
-      const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-
-      // Subtle Dev IP input if running on localhost
-      if (isLocal) {
-        const ipRow = document.createElement('div');
-        ipRow.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-top: 4px;';
-
-        const ipLabel = document.createElement('span');
-        ipLabel.textContent = 'Dev IP:';
-        ipLabel.style.cssText = 'font-weight: bold; font-size: 11px; color: #888;';
-
-        const ipInput = document.createElement('input');
-        ipInput.type = 'text';
-        ipInput.placeholder = 'e.g. 192.168.1.5';
-        ipInput.value = localStorage.getItem('p2p-dev-ip') || '';
-        ipInput.style.cssText = 'width: 110px; padding: 4px; background: #222; border: 1px solid #555; color: #fff; border-radius: 3px; text-align: center; font-size: 11px;';
-
-        ipInput.oninput = () => {
-          localStorage.setItem('p2p-dev-ip', ipInput.value.trim());
-          updateQRCanvas();
-        };
-
-        ipRow.appendChild(ipLabel);
-        ipRow.appendChild(ipInput);
-        content.appendChild(ipRow);
-      }
-
       // Embedded QR Code White Card Container
       const qrBox = document.createElement('div');
       qrBox.style.cssText = 'display: flex; flex-direction: column; align-items: center; justify-content: center; background: #ffffff; padding: 15px; border-radius: 8px; border: 1px solid #e2e8f0; margin: 8px 0;';
@@ -446,15 +423,7 @@ class P2PConnector {
         const room = roomInput.value.trim();
         if (!room) return;
         
-        let hostOrigin = window.location.origin;
-        if (isLocal) {
-          const savedIp = localStorage.getItem('p2p-dev-ip') || '';
-          if (savedIp) {
-            hostOrigin = `${window.location.protocol}//${savedIp}${window.location.port ? ':' + window.location.port : ''}`;
-          }
-        }
-        
-        const pairURL = `${hostOrigin}/TouchController/index.html?room=${room}`;
+        const pairURL = `https://recursi.dev/TouchController/index.html?room=${room}`;
         const activeEnv = this.receiver.env || this.receiver;
 
         const popup = UITools.makeDialog({
@@ -506,15 +475,7 @@ class P2PConnector {
         if (!room) return;
         localStorage.setItem('drawing-app-p2p-room', room);
         
-        let hostOrigin = window.location.origin;
-        if (isLocal) {
-          const savedIp = localStorage.getItem('p2p-dev-ip') || '';
-          if (savedIp) {
-            hostOrigin = `${window.location.protocol}//${savedIp}${window.location.port ? ':' + window.location.port : ''}`;
-          }
-        }
-
-        const pairURL = `${hostOrigin}/TouchController/index.html?room=${room}`;
+        const pairURL = `https://recursi.dev/TouchController/index.html?room=${room}`;
         qrLinkDisplay.textContent = `Pair Link: /?room=${room}`;
         
         if (typeof QRCodeGenerator !== 'undefined') {

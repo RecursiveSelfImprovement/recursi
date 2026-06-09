@@ -217,7 +217,7 @@ class TouchController {
     }
 
     async _startWirelessClient(roomCode, statusLabel) {
-      const SIGNAL_BASE = window.location.origin + '/signal';
+      const SIGNAL_BASE = 'https://recursi.dev/TouchController/signal.php';
       this.roomCode = roomCode;
       statusLabel.textContent = 'Searching for host...';
       statusLabel.style.color = '#90a4ae';
@@ -277,7 +277,8 @@ class TouchController {
           this._log(`Poll #${pollCount}...`);
 
           try {
-            const res = await fetch(`${SIGNAL_BASE}/${hostTopic}`);
+            // Added cache-busting timestamp on client GET poll
+            const res = await fetch(`${SIGNAL_BASE}/${hostTopic}?_=${Date.now()}`);
             if (!res.ok) {
               statusLabel.textContent = 'Signaling server unreachable.';
               statusLabel.style.color = '#ff4444';
@@ -309,7 +310,6 @@ class TouchController {
               clearInterval(this.clientPollInterval);
               this._log('Offer accepted! Setting remote description...');
 
-              // Cache host connection token to bind host-client handshakes explicitly
               this.connectionSessionId = envelope.sid || '';
 
               await pc.setRemoteDescription(envelope.sdp);
@@ -329,7 +329,8 @@ class TouchController {
                 sid: this.connectionSessionId
               }));
 
-              fetch(`${SIGNAL_BASE}/${clientTopic}`, { method: 'POST', body: bakedAnswer })
+              // Added cache-busting timestamp on client POST answer
+              fetch(`${SIGNAL_BASE}/${clientTopic}?_=${Date.now()}`, { method: 'POST', body: bakedAnswer })
                 .then(() => this._log('Answer posted'))
                 .catch(e => this._log(`Answer post error: ${e.message}`));
 
@@ -339,7 +340,8 @@ class TouchController {
                   return;
                 }
                 try {
-                  await fetch(`${SIGNAL_BASE}/${clientTopic}`, { method: 'POST', body: bakedAnswer });
+                  // Added cache-busting timestamp on client answer beacon
+                  await fetch(`${SIGNAL_BASE}/${clientTopic}?_=${Date.now()}`, { method: 'POST', body: bakedAnswer });
                   this._log('Answer beacon sent');
                 } catch(err) {
                   this._log(`Answer beacon error: ${err.message}`);
@@ -1365,28 +1367,14 @@ class TouchController {
 
   _onCtrlTouchEnd(e) {
       e.preventDefault();
-      
-      const now = Date.now();
-      const dt = now - this.ctrlLastTapTime;
-      const dx = e.changedTouches[0].clientX - this.ctrlTouchStartX;
-      const dy = e.changedTouches[0].clientY - this.ctrlTouchStartY;
-
       this.ctrlDragging = false;
       this.ctrlGestureLock = null;
 
       if (this.controlMode === 'sliders' || this.controlMode === 'tool') {
-        if (Math.hypot(dx, dy) < 10 && dt < 250) {
-          if (this.dataChannel && this.dataChannel.readyState === 'open') {
-            this.dataChannel.send(JSON.stringify({
-              type: 'sliderTap'
-            }));
-          }
-        } else {
-          if (this.dataChannel && this.dataChannel.readyState === 'open') {
-            this.dataChannel.send(JSON.stringify({
-              type: 'sliderDragEnd'
-            }));
-          }
+        if (this.dataChannel && this.dataChannel.readyState === 'open') {
+          this.dataChannel.send(JSON.stringify({
+            type: 'sliderDragEnd'
+          }));
         }
       } else if (this.controlMode === 'paint') {
         if (this.dataChannel && this.dataChannel.readyState === 'open') {

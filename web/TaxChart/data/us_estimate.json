@@ -1,0 +1,89 @@
+{
+  "name": "United States Estimate (2024)",
+  "type": "households",
+  "totalEntities": 131400000,
+  "currency": "$",
+  "description": "An approximate distribution of household incomes in the United States, showing high inequality and a long upper-tail.",
+  "data": [
+    {
+      "percentile": 2.5,
+      "income": 7200
+    },
+    {
+      "percentile": 7.5,
+      "income": 15000
+    },
+    {
+      "percentile": 12.5,
+      "income": 23000
+    },
+    {
+      "percentile": 17.5,
+      "income": 32000
+    },
+    {
+      "percentile": 22.5,
+      "income": 41000
+    },
+    {
+      "percentile": 27.5,
+      "income": 50000
+    },
+    {
+      "percentile": 32.5,
+      "income": 60000
+    },
+    {
+      "percentile": 37.5,
+      "income": 71000
+    },
+    {
+      "percentile": 42.5,
+      "income": 83000
+    },
+    {
+      "percentile": 47.5,
+      "income": 96000
+    },
+    {
+      "percentile": 52.5,
+      "income": 110000
+    },
+    {
+      "percentile": 57.5,
+      "income": 126000
+    },
+    {
+      "percentile": 62.5,
+      "income": 145000
+    },
+    {
+      "percentile": 67.5,
+      "income": 170000
+    },
+    {
+      "percentile": 72.5,
+      "income": 200000
+    },
+    {
+      "percentile": 77.5,
+      "income": 240000
+    },
+    {
+      "percentile": 82.5,
+      "income": 295000
+    },
+    {
+      "percentile": 87.5,
+      "income": 390000
+    },
+    {
+      "percentile": 92.5,
+      "income": 580000
+    },
+    {
+      "percentile": 97.5,
+      "income": 1250000
+    }
+  ]
+}

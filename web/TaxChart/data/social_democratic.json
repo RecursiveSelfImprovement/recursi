@@ -1,0 +1,89 @@
+{
+  "name": "Nordic Social Democratic Model",
+  "type": "households",
+  "totalEntities": 12000000,
+  "currency": "kr",
+  "description": "A simulation of highly compressed income ranges with elevated basic floors, generous social wage policies, and low Gini indices.",
+  "data": [
+    {
+      "percentile": 2.5,
+      "income": 26000
+    },
+    {
+      "percentile": 7.5,
+      "income": 31000
+    },
+    {
+      "percentile": 12.5,
+      "income": 35000
+    },
+    {
+      "percentile": 17.5,
+      "income": 39000
+    },
+    {
+      "percentile": 22.5,
+      "income": 43000
+    },
+    {
+      "percentile": 27.5,
+      "income": 47000
+    },
+    {
+      "percentile": 32.5,
+      "income": 51000
+    },
+    {
+      "percentile": 37.5,
+      "income": 55000
+    },
+    {
+      "percentile": 42.5,
+      "income": 59000
+    },
+    {
+      "percentile": 47.5,
+      "income": 64000
+    },
+    {
+      "percentile": 52.5,
+      "income": 69000
+    },
+    {
+      "percentile": 57.5,
+      "income": 74000
+    },
+    {
+      "percentile": 62.5,
+      "income": 80000
+    },
+    {
+      "percentile": 67.5,
+      "income": 87000
+    },
+    {
+      "percentile": 72.5,
+      "income": 95000
+    },
+    {
+      "percentile": 77.5,
+      "income": 105000
+    },
+    {
+      "percentile": 82.5,
+      "income": 118000
+    },
+    {
+      "percentile": 87.5,
+      "income": 136000
+    },
+    {
+      "percentile": 92.5,
+      "income": 165000
+    },
+    {
+      "percentile": 97.5,
+      "income": 230000
+    }
+  ]
+}

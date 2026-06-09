@@ -1,0 +1,13 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "js/TaxChart.js"
+  ],
+  "local": [
+  ],
+  "library": [
+    "UITools.js"
+  ],
+  "thirdParty": [
+  ]
+}
