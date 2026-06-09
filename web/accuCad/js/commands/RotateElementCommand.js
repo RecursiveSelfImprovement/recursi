@@ -1,0 +1,584 @@
+class RotateElementCommand {
+    constructor(baseController) {
+      this.base = baseController;
+      this.selectedElement = null;
+      
+      this.pivotPoint = null;        // Point 1 (Pivot)
+      this.startReferencePoint = null; // Point 2 (Reference Start Angle)
+      
+      this.originalState = null;
+      this.previewShape = null;
+      
+      this.state = 1; // 1 = Identify Element, 4 = Define Pivot, 3 = Define Start Reference, 2 = Define End Target (Rotating)
+      this.allowSelfSnap = false;
+      this.hoveredElement = null;
+
+      // Settings toggles
+      this.makeCopy = false;
+      this.useDifferentStartPoint = false;
+    }
+
+    onPoint(data) {
+      if (!data) return;
+      if (data.mode === 'click') {
+        this.onMouseDown(data);
+      } else if (data.mode === 'hover') {
+        this.onMouseMove(data);
+      }
+    }
+
+    onMouseDown(data) {
+      const event = data.event;
+      if (event && event.button !== 0) return; // Only left clicks
+
+      if (this.state === 1) {
+        let target = null;
+        let anchor = null;
+
+        // Capture tentative point if active
+        if (this.base._tentativeOriginalPoint) {
+          target = this.base._highlightedElement;
+          anchor = this.base._tentativeOriginalPoint.slice();
+        } else {
+          target = this.hoveredElement;
+          anchor = data.point ? data.point.slice() : null;
+        }
+
+        if (target && anchor) {
+          this.selectedElement = target;
+          this.originalState = this.backupState(target);
+
+          if (this.useDifferentStartPoint) {
+            // Transition to State 4: User must define an arbitrary center of rotation (Pivot)
+            this.state = 4;
+          } else {
+            // Pivot is automatically the identified snap/click point
+            this.pivotPoint = anchor;
+            this.state = 3; // Wait for reference start point
+
+            // Set AccuDraw origin to Pivot Point
+            this.base.setOrigin(this.pivotPoint.slice());
+          }
+
+          if (typeof TentativePointHandler !== 'undefined') {
+            TentativePointHandler._clearTentativePoint(this.base);
+          }
+        }
+      } else if (this.state === 4) {
+        // Defining custom Pivot Point
+        this.pivotPoint = data.point ? data.point.slice() : null;
+        if (this.pivotPoint) {
+          this.state = 3; // Now define reference start angle
+          this.base.setOrigin(this.pivotPoint.slice());
+        }
+      } else if (this.state === 3) {
+        // Defining reference start angle Point
+        this.startReferencePoint = data.point ? data.point.slice() : null;
+        if (this.startReferencePoint) {
+          this.state = 2; // Begin rotating
+
+          if (!this.makeCopy) {
+            this.ghostOriginal(this.selectedElement);
+          }
+
+          // Set AccuDraw origin to Reference Start Point
+          this.base.setOrigin(this.startReferencePoint.slice());
+        }
+      } else if (this.state === 2) {
+        if (this.selectedElement && this.pivotPoint && this.startReferencePoint && data.point) {
+          const endTargetPoint = data.point.slice();
+
+          if (this.makeCopy) {
+            const clone = this.cloneElementWithRotation(
+              this.selectedElement,
+              this.pivotPoint,
+              this.startReferencePoint,
+              endTargetPoint
+            );
+            if (clone) {
+              clone.id = Math.random().toString(36).substr(2, 9);
+              clone.isTemporary = false;
+              this.base.cadElements.push(clone);
+              this.rebuildPermanentVisual(clone);
+
+              // UPDATE SELECTOR REFERENCE: Subsequent rotations offset from this newly dropped clone
+              this.selectedElement = clone;
+            }
+          } else {
+            // Restore original styles before permanent rotation update
+            this.restoreOriginal(this.selectedElement);
+            
+            // Apply translation vector displacement permanently
+            this.applyRotation(
+              this.selectedElement,
+              this.pivotPoint,
+              this.startReferencePoint,
+              endTargetPoint
+            );
+            this.rebuildPermanentVisual(this.selectedElement);
+          }
+
+          // Set AccuDraw origin to final destination point
+          this.base.setOrigin(endTargetPoint);
+
+          // CONTINUOUS ACCEPTS: Prepare the element for the next rotation step
+          // Last accepted angle becomes the reference start point
+          this.startReferencePoint = endTargetPoint;
+          this.originalState = this.backupState(this.selectedElement);
+
+          if (!this.makeCopy) {
+            this.ghostOriginal(this.selectedElement);
+          }
+        }
+      }
+    }
+
+    onMouseMove(data) {
+      if (this.state === 1 || this.state === 4 || this.state === 3) {
+        this.handleHover(data);
+      } else if (this.state === 2) {
+        if (this.selectedElement && this.pivotPoint && this.startReferencePoint && data.point) {
+          this.updatePreview(data.point.slice());
+        }
+      }
+    }
+
+    ghostOriginal(el) {
+      if (!el || !el.threejsObject) return;
+      el.threejsObject.traverse(child => {
+        if (child.material) {
+          if (!child.userData.originalMaterial) {
+            child.userData.originalMaterial = child.material;
+          }
+          child.material = child.material.clone();
+          child.material.transparent = true;
+          child.material.opacity = 0.25;
+          if (child.material.color) {
+            child.material.color.setHex(0x888888); // Translucent Grey Ghost
+          }
+        }
+      });
+    }
+
+    restoreOriginal(el) {
+      if (!el || !el.threejsObject) return;
+      el.threejsObject.traverse(child => {
+        if (child.userData.originalMaterial) {
+          child.material = child.userData.originalMaterial;
+          delete child.userData.originalMaterial;
+        }
+      });
+      el.threejsObject.visible = true;
+    }
+
+    handleHover(data) {
+      const event = data.event;
+      if (!event) return;
+
+      const canvasRect = this.base.domElement.getBoundingClientRect();
+      if (canvasRect.width <= 0 || canvasRect.height <= 0) return;
+
+      const mouse = new THREE.Vector2(
+        ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1,
+        -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1
+      );
+
+      const camera = this.base.view.camera;
+      const raycaster = new THREE.Raycaster();
+      raycaster.params.Line.threshold = 0.15;
+      raycaster.setFromCamera(mouse, camera);
+
+      const candidates = [];
+      this.base.cadElements.forEach((el) => {
+        if (el.threejsObject && el.threejsObject.visible) {
+          candidates.push(el.threejsObject);
+        }
+      });
+
+      const intersections = raycaster.intersectObjects(candidates, true);
+      let pickedElement = null;
+
+      if (intersections.length > 0) {
+        const hitObj = intersections[0].object;
+        pickedElement = this.base.cadElements.find(el => {
+          let matches = false;
+          if (el.threejsObject) {
+            el.threejsObject.traverse(child => {
+              if (child === hitObj) matches = true;
+            });
+          }
+          return matches;
+        });
+      }
+
+      if (pickedElement !== this.hoveredElement) {
+        if (this.hoveredElement && this.hoveredElement !== this.base._highlightedElement) {
+          HighlightUtilities.removeHighlight(this.hoveredElement);
+        }
+        if (pickedElement && pickedElement !== this.base._highlightedElement) {
+          HighlightUtilities.applyHighlight(pickedElement, 0xffff00); // Yellow hover glow
+        }
+        this.hoveredElement = pickedElement;
+      }
+    }
+
+    backupState(el) {
+      if (el.type === 'path') {
+        return {
+          vertices: el.vertices.map(v => ({ point: [...v.point], radius: v.radius })),
+          closed: el.closed
+        };
+      } else if (el.type === 'capsule') {
+        return {
+          start: [...el.start],
+          end: [...el.end],
+          radius: el.radius
+        };
+      } else if (el.type === 'rectangle') {
+        return {
+          start: [...el.start],
+          end: [...el.end]
+        };
+      } else if (el.type === 'arc') {
+        return {
+          startPt: [...el.startPt],
+          center: [...el.center],
+          endPt: [...el.endPt]
+        };
+      } else if (el.type === 'curve') {
+        return {
+          controlPoints: el.controlPoints.map(p => [...p])
+        };
+      } else if (el.type === 'circle') {
+        return {
+          points: el.points.map(p => [...p])
+        };
+      }
+      return null;
+    }
+
+    applyRotation(el, pivot, start, end) {
+      const rotatePt = (pt) => {
+        return GeometryUtils3D.rotatePointAroundPointByThreePoints(
+          pt,
+          pivot,
+          start,
+          pivot,
+          end
+        );
+      };
+
+      if (el.type === 'path') {
+        el.vertices.forEach(v => {
+          v.point = rotatePt(v.point);
+        });
+        el.points = el.vertices.map(v => [...v.point]);
+        el.updateDimensions();
+      } else if (el.type === 'capsule') {
+        el.start = rotatePt(el.start);
+        el.end = rotatePt(el.end);
+        el.points = [el.start.slice(), el.end.slice()];
+        el.updateDimensions();
+      } else if (el.type === 'rectangle') {
+        el.start = rotatePt(el.start);
+        el.end = rotatePt(el.end);
+        el.updateDimensions();
+      } else if (el.type === 'arc') {
+        el.startPt = rotatePt(el.startPt);
+        el.center = rotatePt(el.center);
+        el.endPt = rotatePt(el.endPt);
+        el.updateDimensions();
+      } else if (el.type === 'curve') {
+        el.controlPoints.forEach((p, idx) => {
+          el.controlPoints[idx] = rotatePt(p);
+        });
+        el.points = el.controlPoints;
+        el.updateDimensions();
+      } else if (el.type === 'circle') {
+        el.points.forEach((p, idx) => {
+          el.points[idx] = rotatePt(p);
+        });
+      }
+    }
+
+    rebuildPermanentVisual(el) {
+      const bc = this.base;
+      if (el.threejsObject) {
+        bc.view.scene.remove(el.threejsObject);
+        el.threejsObject.traverse((child) => {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+            else child.material.dispose();
+          }
+        });
+      }
+
+      if (el.type === 'path') {
+        const cmd = new DrawPathCommand(bc);
+        cmd.tempElement = el;
+        cmd.updatePermanentGeometry();
+      } else if (el.type === 'capsule') {
+        const cmd = new DrawCapsuleCommand(bc);
+        cmd.tempElement = el;
+        cmd.finalizeCapsule();
+      } else if (el.type === 'rectangle') {
+        const cmd = new DrawRectangleCommand(bc);
+        cmd.tempElement = el;
+        cmd.finalizeRectangle();
+      } else if (el.type === 'arc') {
+        this.buildVisualArc(el);
+      } else if (el.type === 'curve') {
+        this.buildVisualCurve(el);
+      } else if (el.type === 'circle') {
+        this.buildVisualCircle(el);
+      }
+    }
+
+    buildVisualArc(el) {
+      const bc = this.base;
+      const cmd = new DrawArcCommand(bc);
+      const arcData = cmd.computeArcData(el.startPt, el.center, el.endPt);
+      if (!arcData) return;
+
+      const arcCurve = new THREE.ArcCurve(
+        0,
+        0,
+        arcData.radius,
+        arcData.startAngle,
+        arcData.endAngle,
+        arcData.clockwise
+      );
+      const points2D = arcCurve.getPoints(50);
+      const points3D = points2D.map((pt) => {
+        const vec = new THREE.Vector3().addVectors(
+          arcData.u.clone().multiplyScalar(pt.x),
+          arcData.v.clone().multiplyScalar(pt.y)
+        );
+        vec.add(new THREE.Vector3(...el.center));
+        return vec;
+      });
+
+      const positions = points3D.flatMap((v) => [v.x, v.y, v.z]);
+      const geometry = new LineGeometry();
+      geometry.setPositions(positions);
+      const material = new LineMaterial({
+        color: el.color ? (typeof el.color === 'string' ? parseInt(el.color.replace('#', ''), 16) : el.color) : 0xff0000,
+        linewidth: el.lineWidth || bc.lineWidth || 4,
+        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+      });
+      const line = new Line2(geometry, material);
+      el.threejsObject = line;
+      bc.view.scene.add(line);
+    }
+
+    buildVisualCurve(el) {
+      const bc = this.base;
+      const [cp0, cp1, cp2, cp3] = el.controlPoints.map(
+        (p) => new THREE.Vector3(...p)
+      );
+      const curve = new THREE.CubicBezierCurve3(cp0, cp1, cp2, cp3);
+      const curvePoints = curve.getPoints(50);
+      const positions = curvePoints.flatMap((p) => [p.x, p.y, p.z]);
+
+      const geometry = new LineGeometry();
+      geometry.setPositions(positions);
+      const material = new LineMaterial({
+        color: el.color ? (typeof el.color === 'string' ? parseInt(el.color.replace('#', ''), 16) : el.color) : 0xff0000,
+        linewidth: el.lineWidth || bc.lineWidth || 4,
+        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+      });
+      const curveLine = new Line2(geometry, material);
+      el.threejsObject = curveLine;
+      bc.view.scene.add(curveLine);
+    }
+
+    buildVisualCircle(el) {
+      const bc = this.base;
+      const cmd = new DrawCircleCommand(bc);
+      const center = el.points[0];
+      const edge = el.points[1] || [center[0] + 1, center[1], center[2]];
+      const line = cmd.createCircleVisual(center, edge, false);
+      if (line) {
+        el.threejsObject = line;
+        bc.view.scene.add(line);
+      }
+    }
+
+    updatePreview(endPoint) {
+      if (this.previewShape) {
+        this.base.view.scene.remove(this.previewShape);
+        this.disposeObject(this.previewShape);
+        this.previewShape = null;
+      }
+
+      const clone = this.cloneElementWithRotation(
+        this.selectedElement,
+        this.pivotPoint,
+        this.startReferencePoint,
+        endPoint
+      );
+      if (!clone) return;
+
+      this.previewShape = this.renderPreviewObject(clone);
+      if (this.previewShape) {
+        this.base.view.scene.add(this.previewShape);
+      }
+    }
+
+    cloneElementWithRotation(el, pivot, start, end) {
+      let cl = null;
+      if (el.type === 'path') {
+        cl = PathElement.fromJSON(el.toJSON());
+      } else if (el.type === 'capsule') {
+        cl = CapsuleElement.fromJSON(el.toJSON());
+      } else if (el.type === 'rectangle') {
+        cl = RectangleElement.fromJSON(el.toJSON());
+      } else if (el.type === 'arc') {
+        cl = ArcElement.fromJSON(el.toJSON());
+      } else if (el.type === 'curve') {
+        cl = CurveElement.fromJSON(el.toJSON());
+      } else if (el.type === 'circle') {
+        cl = {
+          type: 'circle',
+          id: el.id,
+          color: el.color,
+          points: el.points.map(p => [...p])
+        };
+      }
+      if (cl) {
+        this.applyRotation(cl, pivot, start, end);
+      }
+      return cl;
+    }
+
+    renderPreviewObject(el) {
+      const bc = this.base;
+      let obj = null;
+
+      if (el.type === 'path') {
+        const cmd = new DrawPathCommand(bc);
+        cmd.tempElement = el;
+        cmd.updatePermanentGeometry();
+        obj = el.threejsObject;
+        el.threejsObject = null;
+      } else if (el.type === 'capsule') {
+        const cmd = new DrawCapsuleCommand(bc);
+        obj = cmd.renderVisual(el, true);
+      } else if (el.type === 'rectangle') {
+        const cmd = new DrawRectangleCommand(bc);
+        obj = cmd.renderVisual(el, true);
+      } else if (el.type === 'arc') {
+        this.buildVisualArc(el);
+        obj = el.threejsObject;
+        el.threejsObject = null;
+      } else if (el.type === 'curve') {
+        this.buildVisualCurve(el);
+        obj = el.threejsObject;
+        el.threejsObject = null;
+      } else if (el.type === 'circle') {
+        const cmd = new DrawCircleCommand(bc);
+        obj = cmd.createCircleVisual(el.points[0], el.points[1] || [el.points[0][0] + 1, el.points[0][1], el.points[0][2]], true);
+      }
+
+      if (obj) {
+        obj.traverse(child => {
+          if (child.material) {
+            child.material = child.material.clone();
+            child.material.transparent = true;
+            child.material.opacity = 0.45;
+            if (child.material.color) {
+              child.material.color.setHex(0xffff00); // Dynamic Yellow rotation preview
+            }
+          }
+        });
+      }
+
+      return obj;
+    }
+
+    reset() {
+      if (this.selectedElement) {
+        this.restoreOriginal(this.selectedElement);
+      }
+
+      if (this.previewShape) {
+        this.base.view.scene.remove(this.previewShape);
+        this.disposeObject(this.previewShape);
+        this.previewShape = null;
+      }
+
+      if (this.hoveredElement) {
+        HighlightUtilities.removeHighlight(this.hoveredElement);
+        this.hoveredElement = null;
+      }
+
+      this.selectedElement = null;
+      this.pivotPoint = null;
+      this.startReferencePoint = null;
+      this.originalState = null;
+      this.state = 1;
+    }
+
+    dispose() {
+      this.reset();
+    }
+
+    disposeObject(object) {
+      if (!object) return;
+      object.traverse((child) => {
+        if (child.geometry) child.geometry.dispose();
+        if (child.material) {
+          if (Array.isArray(child.material)) {
+            child.material.forEach((mat) => mat.dispose());
+          } else {
+            child.material.dispose();
+          }
+        }
+      });
+    }
+
+    renderToolSettings(container) {
+      container.innerHTML = '';
+
+      const createCheckbox = (labelText, checkedValue, callback) => {
+        const row = document.createElement('div');
+        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
+        
+        const label = document.createElement('div');
+        label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+        label.textContent = labelText;
+
+        const input = document.createElement('input');
+        input.type = 'checkbox';
+        input.checked = checkedValue;
+        input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
+        input.onchange = (e) => callback(e.target.checked);
+
+        row.appendChild(label);
+        row.appendChild(input);
+        return row;
+      };
+
+      const copyCb = createCheckbox('Make Copy', this.makeCopy, (checked) => {
+        const oldCopy = this.makeCopy;
+        this.makeCopy = checked;
+
+        if (this.state === 2 && this.selectedElement) {
+          if (checked && !oldCopy) {
+            this.restoreOriginal(this.selectedElement);
+          } else if (!checked && oldCopy) {
+            this.ghostOriginal(this.selectedElement);
+          }
+        }
+      });
+
+      const anchorCb = createCheckbox('Arbitrary Pivot', this.useDifferentStartPoint, (checked) => {
+        this.useDifferentStartPoint = checked;
+        this.reset(); // Reset command states on mode switches
+      });
+
+      container.appendChild(copyCb);
+      container.appendChild(anchorCb);
+    }
+  }

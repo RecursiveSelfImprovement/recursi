@@ -236,47 +236,56 @@ class SmartDrawKeys {
   }
 
   static registerDrawingCommands(kch, baseController) {
-    kch.addKeyCommand(
-      'command',
-      'rectangle',
-      'CR: Switch to Rectangle',
-      function (type, keys) {
-        if (type === 'command') baseController.setCommandByName('rectangle');
+      kch.addKeyCommand(
+        'command',
+        'rectangle',
+        'CR: Switch to Rectangle',
+        function (type, keys) {
+          if (type === 'command') baseController.setCommandByName('rectangle');
+          if (type === 'queryactive') return true;
+        }
+      );
+
+      kch.addKeyCommand('command', 'circle', '', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('circle');
         if (type === 'queryactive') return true;
-      }
-    );
+      });
 
-    kch.addKeyCommand('command', 'circle', '', function (type, keys) {
-      if (type === 'command') baseController.setCommandByName('circle');
-      if (type === 'queryactive') return true;
-    });
-
-    kch.addKeyCommand('command', 'arc', '', function (type, keys) {
-      if (type === 'command') baseController.setCommandByName('arc');
-      if (type === 'queryactive') return true;
-    });
-
-    kch.addKeyCommand('command', 'linear path', '', function (type, keys) {
-      if (type === 'command') baseController.setCommandByName('path');
-      if (type === 'queryactive') return true;
-    });
-
-    kch.addKeyCommand(
-      'command',
-      'bezier',
-      'CL: Switch to Line',
-      function (type, keys) {
-        if (type === 'command') baseController.setCommandByName('curve');
+      kch.addKeyCommand('command', 'arc', '', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('arc');
         if (type === 'queryactive') return true;
-      }
-    );
+      });
 
-    kch.addKeyCommand('command', 'ca&psule', '', function (type, keys) {
-      if (type === 'command') baseController.setCommandByName('capsule');
-      if (type === 'queryactive') return true;
-    });
+      kch.addKeyCommand('command', 'linear path', '', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('path');
+        if (type === 'queryactive') return true;
+      });
 
-  }
+      kch.addKeyCommand(
+        'command',
+        'bezier',
+        'CL: Switch to Line',
+        function (type, keys) {
+          if (type === 'command') baseController.setCommandByName('curve');
+          if (type === 'queryactive') return true;
+        }
+      );
+
+      kch.addKeyCommand('command', 'ca&psule', '', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('capsule');
+        if (type === 'queryactive') return true;
+      });
+
+      kch.addKeyCommand('command', 'move', 'CM: Switch to Move', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('move');
+        if (type === 'queryactive') return true;
+      });
+
+      kch.addKeyCommand('command', 'ro&tate', 'CT: Switch to Rotate', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('rotate');
+        if (type === 'queryactive') return true;
+      });
+    }
 
   static registerElementCommands(kch, baseController) {
     kch.addKeyCommand('command', 'select', '', function (type, keys) {

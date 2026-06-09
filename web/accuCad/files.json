@@ -37,6 +37,8 @@
     "js/commands/DrawCurveCommand.js",
     "js/commands/DrawPathCommand.js",
     "js/commands/DrawRectangleCommand.js",
+    "js/commands/MoveElementCommand.js",
+    "js/commands/RotateElementCommand.js",
     "js/elements/ArcElement.js",
     "js/elements/CadElement.js",
     "js/elements/CapsuleElement.js",

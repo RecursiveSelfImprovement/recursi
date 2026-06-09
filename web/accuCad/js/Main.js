@@ -384,6 +384,8 @@ class Main {
           DrawCircleCommand: 'Circle Tool',
           DrawCapsuleCommand: 'Capsule Tool',
           ElementPickCommand: 'Selection Tool',
+          MoveElementCommand: 'Move Element Tool',
+          RotateElementCommand: 'Rotate Element Tool',
         };
         const displayName =
           friendlyNames[cmdName] || cmdName.replace('Command', ' Tool');
@@ -479,6 +481,39 @@ class Main {
             controlValueSlider.container
           );
           this.toolSliders['commandControlValue'] = controlValueSlider;
+        }
+
+        // Render custom checkboxes specifically for the Move Element command
+        if (cmdName === 'MoveElementCommand') {
+          const createCheckbox = (labelText, checkedValue, callback) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
+            
+            const label = document.createElement('div');
+            label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+            label.textContent = labelText;
+
+            const input = document.createElement('input');
+            input.type = 'checkbox';
+            input.checked = checkedValue;
+            input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
+            input.onchange = (e) => callback(e.target.checked);
+
+            row.appendChild(label);
+            row.appendChild(input);
+            return row;
+          };
+
+          const copyCb = createCheckbox('Make Copy', activeCmd.makeCopy, (checked) => {
+            activeCmd.makeCopy = checked;
+          });
+          const anchorCb = createCheckbox('Arbitrary Anchor', activeCmd.useDifferentStartPoint, (checked) => {
+            activeCmd.useDifferentStartPoint = checked;
+            activeCmd.reset(); // Reset command states on mode switches
+          });
+
+          this.sidePanel.toolSettingsSection.appendChild(copyCb);
+          this.sidePanel.toolSettingsSection.appendChild(anchorCb);
         }
 
         controller.toolSliders = this.toolSliders;
