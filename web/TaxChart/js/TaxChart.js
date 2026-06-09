@@ -242,16 +242,18 @@ class TaxChart {
 
         .tc-tooltip {
           position: absolute;
-          background: rgba(15, 23, 42, 0.95);
+          background: rgba(15, 23, 42, 0.88);
           border: 2px solid var(--tc-primary);
           border-radius: 8px;
           padding: 12px;
           font-size: 0.85rem;
           pointer-events: none;
-          display: none;
+          opacity: 0;
           z-index: 100;
-          box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
           width: 280px;
+          /* Smooth slide transitions */
+          transition: left 0.18s cubic-bezier(0.25, 1, 0.5, 1), top 0.18s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.15s ease;
         }
 
         .tc-tooltip-header {
@@ -1661,7 +1663,7 @@ class TaxChart {
           makeElement('span', 'After-Tax Disposable Income')
         ]),
         makeElement('div', { className: 'tc-legend-item', style: { fontSize: '0.8rem', color: 'var(--tc-muted)' } }, 
-          '● Hover nodes to review outcomes.'
+          '● Hover vertical columns to review policy splits.'
         )
       ]));
 
@@ -1818,13 +1820,16 @@ class TaxChart {
       // 4. Update SVG elements directly
       const width = 1000;
       const height = 440;
-      const padding = { top: 30, right: 40, bottom: 50, left: 80 };
+      // Increased left padding to 110 to give right-aligned text up to $100,000,000 plenty of breathing space
+      const padding = { top: 30, right: 40, bottom: 50, left: 110 };
       const chartW = width - padding.left - padding.right;
       const chartH = height - padding.top - padding.bottom;
 
       const maxPreTaxVal = Math.max(...preTaxIncomes, 1);
       const maxPostTaxVal = Math.max(...postTax, 1);
       const maxOverallValue = Math.max(maxPreTaxVal, maxPostTaxVal);
+
+      const baselineY = padding.top + chartH;
 
       const scaleLogY = (val) => {
         if (val <= 0) return 0;
@@ -1835,15 +1840,14 @@ class TaxChart {
 
       const mapX = (percentile) => padding.left + (percentile / 100) * chartW;
       const mapY = (val) => {
-        if (val <= 0) return padding.top + chartH;
+        if (val <= 0) return baselineY;
         if (this.isLogarithmic) {
           const scaled = scaleLogY(val);
           const fraction = scaled / maxScaledValue;
-          return padding.top + chartH - (fraction * chartH);
+          return baselineY - (fraction * chartH);
         } else {
-          // Linear mapping
           const fraction = val / maxOverallValue;
-          return padding.top + chartH - (fraction * chartH);
+          return baselineY - (fraction * chartH);
         }
       };
 
@@ -1869,46 +1873,93 @@ class TaxChart {
         }, `${currency}${tickVal.toLocaleString()}`]);
       });
 
-      // X Tickmarks
-      for (let p = 0; p <= 100; p += 10) {
+      // Vertical Grid lines: 10% Major gridlines and even fainter 5% minor gridlines
+      for (let p = 0; p <= 100; p += 5) {
         const xCoord = mapX(p);
+        const isMajor = (p % 10 === 0);
+
         svgChildren.push(['svg:line', {
           x1: xCoord, y1: padding.top,
-          x2: xCoord, y2: padding.top + chartH,
-          stroke: 'rgba(51, 65, 85, 0.4)', 'stroke-width': 1
+          x2: xCoord, y2: baselineY,
+          stroke: isMajor ? 'rgba(51, 65, 85, 0.45)' : 'rgba(51, 65, 85, 0.15)',
+          'stroke-width': isMajor ? 1 : 0.75
         }]);
 
-        svgChildren.push(['svg:text', {
-          x: xCoord, y: padding.top + chartH + 20,
-          'text-anchor': 'middle', fill: 'var(--tc-muted)', 'font-size': '11px'
-        }, `${p}%`]);
+        if (isMajor) {
+          svgChildren.push(['svg:text', {
+            x: xCoord, y: baselineY + 20,
+            'text-anchor': 'middle', fill: 'var(--tc-muted)', 'font-size': '11px'
+          }, `${p}%`]);
+        }
       }
 
-      // Pre-tax Area Under Curve
-      let preTaxArea = `M ${mapX(0)} ${padding.top + chartH}`;
-      dataPoints.forEach(p => { preTaxArea += ` L ${mapX(p.percentile)} ${mapY(p.income)}`; });
-      preTaxArea += ` L ${mapX(100)} ${padding.top + chartH} Z`;
-      svgChildren.push(['svg:path', { d: preTaxArea, fill: 'url(#pre-tax-grad)', opacity: 0.15 }]);
+      // Dynamic Node Extrapolations for smooth end boundaries
+      const preNodes = [];
+      const postNodes = [];
 
-      // Post-tax Area Under Curve
-      let postTaxArea = `M ${mapX(0)} ${padding.top + chartH}`;
-      dataPoints.forEach((p, idx) => { postTaxArea += ` L ${mapX(p.percentile)} ${mapY(postTax[idx])}`; });
-      postTaxArea += ` L ${mapX(100)} ${padding.top + chartH} Z`;
-      svgChildren.push(['svg:path', { d: postTaxArea, fill: 'url(#post-tax-grad)', opacity: 0.15 }]);
+      // Node 0 extrapolation (0%)
+      const preZero = Math.max(0, dataPoints[0].income - (dataPoints[1].income - dataPoints[0].income) * 0.5);
+      const postZero = Math.max(0, postTax[0] - (postTax[1] - postTax[0]) * 0.5);
+      preNodes.push({ x: mapX(0), y: mapY(preZero) });
+      postNodes.push({ x: mapX(0), y: mapY(postZero) });
 
-      // Pre-tax line path
-      let preLine = `M ${mapX(dataPoints[0].percentile)} ${mapY(dataPoints[0].income)}`;
-      for (let i = 1; i < dataPoints.length; i++) {
-        preLine += ` L ${mapX(dataPoints[i].percentile)} ${mapY(dataPoints[i].income)}`;
-      }
-      svgChildren.push(['svg:path', { d: preLine, fill: 'none', stroke: 'var(--tc-primary)', 'stroke-width': 3 }]);
+      // JSON midpoints 2.5% up to 97.5%
+      dataPoints.forEach((p, idx) => {
+        preNodes.push({ x: mapX(p.percentile), y: mapY(p.income) });
+        postNodes.push({ x: mapX(p.percentile), y: mapY(postTax[idx]) });
+      });
 
-      // Post-tax line path
-      let postLine = `M ${mapX(dataPoints[0].percentile)} ${mapY(postTax[0])}`;
-      for (let i = 1; i < dataPoints.length; i++) {
-        postLine += ` L ${mapX(dataPoints[i].percentile)} ${mapY(postTax[i])}`;
-      }
-      svgChildren.push(['svg:path', { d: postLine, fill: 'none', stroke: 'var(--tc-success)', 'stroke-width': 3.5 }]);
+      // Node 21 extrapolation (100%)
+      const preOneHundred = dataPoints[19].income + (dataPoints[19].income - dataPoints[18].income) * 0.5;
+      const postOneHundred = postTax[19] + (postTax[19] - postTax[18]) * 0.5;
+      preNodes.push({ x: mapX(100), y: mapY(preOneHundred) });
+      postNodes.push({ x: mapX(100), y: mapY(postOneHundred) });
+
+      // Generate smooth tangent bezier segments, passing baselineY to clamp slope flat at 0 to prevent dips
+      const preSegments = this.computeBezierSegments(preNodes, baselineY);
+      const postSegments = this.computeBezierSegments(postNodes, baselineY);
+
+      // Render backgrounds using paths
+      let preAreaD = `M ${mapX(0)} ${baselineY}`;
+      preSegments.forEach(seg => {
+        preAreaD += ` C ${seg.cp1.x.toFixed(1)} ${seg.cp1.y.toFixed(1)}, ${seg.cp2.x.toFixed(1)} ${seg.cp2.y.toFixed(1)}, ${seg.p1.x.toFixed(1)} ${seg.p1.y.toFixed(1)}`;
+      });
+      preAreaD += ` L ${mapX(100)} ${baselineY} Z`;
+      svgChildren.push(['svg:path', { d: preAreaD, fill: 'url(#pre-tax-grad)', opacity: 0.12 }]);
+
+      let postAreaD = `M ${mapX(0)} ${baselineY}`;
+      postSegments.forEach(seg => {
+        postAreaD += ` C ${seg.cp1.x.toFixed(1)} ${seg.cp1.y.toFixed(1)}, ${seg.cp2.x.toFixed(1)} ${seg.cp2.y.toFixed(1)}, ${seg.p1.x.toFixed(1)} ${seg.p1.y.toFixed(1)}`;
+      });
+      postAreaD += ` L ${mapX(100)} ${baselineY} Z`;
+      svgChildren.push(['svg:path', { d: postAreaD, fill: 'url(#post-tax-grad)', opacity: 0.12 }]);
+
+      // Draw standard background paths
+      preSegments.forEach((seg, idx) => {
+        const isHovered = (this.hoveredIndex === idx);
+        svgChildren.push(['svg:path', {
+          id: `pre-seg-path-${idx}`,
+          d: seg.pathD,
+          fill: 'none',
+          stroke: isHovered ? 'var(--tc-primary)' : 'rgba(56, 189, 248, 0.45)',
+          'stroke-width': isHovered ? 6.5 : 2.5,
+          'stroke-linecap': 'round',
+          transition: 'stroke 0.1s ease, stroke-width 0.1s ease'
+        }]);
+      });
+
+      postSegments.forEach((seg, idx) => {
+        const isHovered = (this.hoveredIndex === idx);
+        svgChildren.push(['svg:path', {
+          id: `post-seg-path-${idx}`,
+          d: seg.pathD,
+          fill: 'none',
+          stroke: isHovered ? 'var(--tc-success)' : 'rgba(16, 185, 129, 0.55)',
+          'stroke-width': isHovered ? 7.5 : 3.0,
+          'stroke-linecap': 'round',
+          transition: 'stroke 0.1s ease, stroke-width 0.1s ease'
+        }]);
+      });
 
       // Defs
       svgChildren.push(['svg:defs', {}, [
@@ -1922,75 +1973,101 @@ class TaxChart {
         ]]
       ]]);
 
-      // Draw responsive nodes and hover coordinates
-      dataPoints.forEach((p, idx) => {
-        const cx = mapX(p.percentile);
-        const cyPre = mapY(p.income);
-        const cyPost = mapY(postTax[idx]);
+      // Small tick marks at segment boundary dividers (2.5%, 7.5%, etc.)
+      for (let i = 0; i < preNodes.length; i++) {
+        const nodeX = preNodes[i].x;
+        svgChildren.push(['svg:line', {
+          x1: nodeX, y1: baselineY - 4,
+          x2: nodeX, y2: baselineY + 4,
+          stroke: 'rgba(255,255,255,0.3)', 'stroke-width': 1
+        }]);
+      }
 
-        const isHovered = (this.hoveredIndex === idx);
+      // 5. INVISIBLE FULL-COLUMN RECT HITBOXES: Trigger hover effortlessly over the entire column segment!
+      for (let idx = 0; idx <= 20; idx++) {
+        let xStart = 0;
+        let xEnd = 0;
 
-        if (isHovered) {
-          svgChildren.push(['svg:line', {
-            x1: cx, y1: padding.top,
-            x2: cx, y2: padding.top + chartH,
-            stroke: 'rgba(255, 255, 255, 0.25)', 'stroke-width': 1.5, 'stroke-dasharray': '3 3'
-          }]);
+        if (idx === 0) {
+          xStart = mapX(0);
+          xEnd = mapX(2.5);
+        } else if (idx === 20) {
+          xStart = mapX(97.5);
+          xEnd = mapX(100);
+        } else {
+          xStart = mapX(idx * 5 - 2.5);
+          xEnd = mapX(idx * 5 + 2.5);
         }
 
-        // Hitbox rect
+        const colWidth = xEnd - xStart;
+        const xCenter = (xStart + xEnd) / 2;
+
         svgChildren.push(['svg:rect', {
-          x: cx - (chartW / 40),
+          x: xStart,
           y: padding.top,
-          width: chartW / 20,
+          width: colWidth,
           height: chartH,
           fill: 'transparent',
           style: { cursor: 'pointer' },
           onmouseover: (e) => {
             this.hoveredIndex = idx;
-            
-            // Render active tooltip content immediately
             this.updateTooltip(idx);
-            this.tooltipEl.style.display = 'block';
+            this.tooltipEl.style.opacity = '1';
 
-            const isRightSide = (cx > width * 0.6);
-            const offsetWidth = isRightSide ? -300 : 20;
-            this.tooltipEl.style.left = `${cx + offsetWidth}px`;
-            this.tooltipEl.style.top = `${Math.min(cyPre, cyPost) - 30}px`;
+            // Bring the active curve segment paths to the top of the Z-order
+            const activePrePath = this.svgElement.querySelector(`#pre-seg-path-${idx}`);
+            const activePostPath = this.svgElement.querySelector(`#post-seg-path-${idx}`);
+            if (activePrePath && activePostPath) {
+              activePrePath.parentNode.appendChild(activePrePath);
+              activePostPath.parentNode.appendChild(activePostPath);
+            }
+
+            // Fixed horizontal centering: tooltip aligns perfectly to the cursor column
+            // and slides smoothly without any backward-jumps
+            let tooltipX = xCenter - 140;
+            const minX = padding.left;
+            const maxX = width - padding.right - 280;
+            tooltipX = Math.max(minX, Math.min(maxX, tooltipX));
+            this.tooltipEl.style.left = `${tooltipX}px`;
+            
+            // Intelligent Collision Avoidance Positioning
+            const cyPre = mapY(idx === 0 ? preZero : (idx === 20 ? preOneHundred : dataPoints[idx - 1].income));
+            const cyPost = mapY(idx === 0 ? postZero : (idx === 20 ? postOneHundred : postTax[idx - 1]));
+            const minCurveY = Math.min(cyPre, cyPost);
+            const maxCurveY = Math.max(cyPre, cyPost);
+
+            let tooltipY = 0;
+            if (minCurveY > padding.top + chartH / 2) {
+              // Curves are low, position above them
+              tooltipY = minCurveY - 150;
+            } else {
+              // Curves are high, position below them
+              tooltipY = maxCurveY + 20;
+            }
+
+            // Clamp vertical position safely inside SVG container card limits
+            tooltipY = Math.max(padding.top + 10, Math.min(padding.top + chartH - 160, tooltipY));
+            this.tooltipEl.style.top = `${tooltipY}px`;
 
             this.updateInteractiveElements();
           },
           onmouseout: () => {
             this.hoveredIndex = null;
-            this.tooltipEl.style.display = 'none';
+            this.tooltipEl.style.opacity = '0';
             this.updateInteractiveElements();
           }
         }]);
-
-        // Pre circles
-        svgChildren.push(['svg:circle', {
-          cx: cx, cy: cyPre,
-          r: isHovered ? 7 : 4,
-          fill: 'var(--tc-primary)', stroke: 'var(--tc-bg)', 'stroke-width': isHovered ? 2 : 1
-        }]);
-
-        // Post circles
-        svgChildren.push(['svg:circle', {
-          cx: cx, cy: cyPost,
-          r: isHovered ? 8 : 4.5,
-          fill: 'var(--tc-success)', stroke: 'var(--tc-bg)', 'stroke-width': isHovered ? 2 : 1
-        }]);
-      });
+      }
 
       // Axis borders
       svgChildren.push(['svg:line', {
-        x1: padding.left, y1: padding.top + chartH,
-        x2: width - padding.right, y2: padding.top + chartH,
+        x1: padding.left, y1: baselineY,
+        x2: width - padding.right, y2: baselineY,
         stroke: 'var(--tc-border)', 'stroke-width': 1.5
       }]);
       svgChildren.push(['svg:line', {
         x1: padding.left, y1: padding.top,
-        x2: padding.left, y2: padding.top + chartH,
+        x2: padding.left, y2: baselineY,
         stroke: 'var(--tc-border)', 'stroke-width': 1.5
       }]);
 
@@ -2038,14 +2115,12 @@ class TaxChart {
 
   getTicksForDataset(maxVal, isLogarithmic) {
       if (!isLogarithmic) {
-        // Return 6 evenly spaced round linear ticks
         const ticks = [];
         for (let i = 0; i <= 5; i++) {
           ticks.push(Math.round((i / 5) * maxVal));
         }
         return ticks;
       } else {
-        // Logarithmic mode round numbers
         const roundCandidates = [
           0, 2500, 5000, 10000, 25000, 50000, 100000, 250000, 
           500000, 1000000, 2500000, 5000000, 10000000, 25000000, 50000000
@@ -2080,7 +2155,6 @@ class TaxChart {
       const dataPoints = this.currentData.data;
       const totalPop = this.currentData.totalEntities;
       const currency = this.currentData.currency || '$';
-      const p = dataPoints[idx];
 
       const preTaxIncomes = dataPoints.map(item => item.income);
       const preTaxSum = preTaxIncomes.reduce((a, b) => a + b, 0);
@@ -2089,23 +2163,57 @@ class TaxChart {
       const postSum = postTax.reduce((a, b) => a + b, 0);
 
       const bracketPop = totalPop * 0.05;
-      const bracketPreVal = p.income * bracketPop;
-      const bracketPostVal = postTax[idx] * bracketPop;
-      const preShare = preTaxSum > 0 ? (p.income / preTaxSum * 100) : 0;
-      const postShare = postSum > 0 ? (postTax[idx] / postSum * 100) : 0;
-      const taxPaid = p.income - postTax[idx];
-      const taxRate = p.income > 0 ? (taxPaid / p.income * 100) : 0;
+
+      // Segment index corresponds exactly to its clean integer percentile (0%, 5%, ..., 100%)
+      let percentileCenter = idx * 5;
+      
+      // Compute beautiful non-overlapping integer bounds
+      let minVal = Math.ceil(percentileCenter - 2.5);
+      let maxVal = Math.floor(percentileCenter + 2.5);
+
+      if (idx === 0) {
+        minVal = 0;
+        maxVal = 2;
+      } else if (idx === 20) {
+        minVal = 98;
+        maxVal = 100;
+      }
+
+      // Read representational pre/post values
+      let repPreIncome = 0;
+      let repPostIncome = 0;
+      if (idx === 0) {
+        repPreIncome = dataPoints[0].income;
+        repPostIncome = postTax[0];
+      } else if (idx === 20) {
+        repPreIncome = dataPoints[19].income;
+        repPostIncome = postTax[19];
+      } else {
+        repPreIncome = dataPoints[idx - 1].income;
+        repPostIncome = postTax[idx - 1];
+      }
+
+      const bracketPreVal = repPreIncome * bracketPop;
+      const bracketPostVal = repPostIncome * bracketPop;
+      const preShare = preTaxSum > 0 ? (repPreIncome / preTaxSum * 100) : 0;
+      const postShare = postSum > 0 ? (repPostIncome / postSum * 100) : 0;
+      const taxPaid = repPreIncome - repPostIncome;
+      const taxRate = repPreIncome > 0 ? (taxPaid / repPreIncome * 100) : 0;
 
       this.tooltipEl.innerHTML = '';
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-header' }, `Percentile: ${p.percentile - 2.5}% - ${p.percentile + 2.5}%`));
+      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-header' }, `${percentileCenter}th Percentile`));
       
       this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
+        makeElement('span', 'Bracket Range:'),
+        makeElement('span', { className: 'tc-tooltip-val' }, `${minVal}% to ${maxVal}%`)
+      ]));
+      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
         makeElement('span', 'Pre-Tax Income:'),
-        makeElement('span', { className: 'tc-tooltip-val', style: { color: 'var(--tc-primary)' } }, `${currency}${p.income.toLocaleString()}`)
+        makeElement('span', { className: 'tc-tooltip-val', style: { color: 'var(--tc-primary)' } }, `${currency}${Math.round(repPreIncome).toLocaleString()}`)
       ]));
       this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
         makeElement('span', 'Post-Tax Income:'),
-        makeElement('span', { className: 'tc-tooltip-val', style: { color: 'var(--tc-success)' } }, `${currency}${Math.round(postTax[idx]).toLocaleString()}`)
+        makeElement('span', { className: 'tc-tooltip-val', style: { color: 'var(--tc-success)' } }, `${currency}${Math.round(repPostIncome).toLocaleString()}`)
       ]));
       this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
         makeElement('span', 'Effective Tax Paid:'),
@@ -2115,11 +2223,61 @@ class TaxChart {
       ]));
       this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
         makeElement('span', 'Effective Rate:'),
-        makeElement('span', { className: 'tc-tooltip-val' }, `${p.income > 0 ? taxRate.toFixed(1) + '%' : 'N/A'}`)
+        makeElement('span', { className: 'tc-tooltip-val' }, `${repPreIncome > 0 ? taxRate.toFixed(1) + '%' : 'N/A'}`)
       ]));
       this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
         makeElement('span', 'Pre vs Post-Tax Share:'),
         makeElement('span', { className: 'tc-tooltip-val' }, `${preShare.toFixed(1)}% ➔ ${postShare.toFixed(1)}%`)
       ]));
+    }
+
+  computeBezierSegments(nodes, baselineY) {
+      const n = nodes.length;
+      const segments = [];
+      const slopes = new Array(n);
+      
+      for (let i = 0; i < n; i++) {
+        if (nodes[i].y === baselineY) {
+          // Force slope at $0 baseline to be exactly 0. This mathematically guarantees
+          // that the Cubic Bezier spline stays flat and does not dip below zero.
+          slopes[i] = 0;
+        } else if (i === 0) {
+          slopes[i] = (nodes[1].y - nodes[0].y) / (nodes[1].x - nodes[0].x);
+        } else if (i === n - 1) {
+          slopes[i] = (nodes[n-1].y - nodes[n-2].y) / (nodes[n-1].x - nodes[n-2].x);
+        } else {
+          slopes[i] = (nodes[i+1].y - nodes[i-1].y) / (nodes[i+1].x - nodes[i-1].x);
+        }
+
+        // Monotone Spline Safety: clamp slope to zero if there is local extremum to avoid overshoot
+        if (i > 0 && i < n - 1) {
+          const dy1 = nodes[i].y - nodes[i-1].y;
+          const dy2 = nodes[i+1].y - nodes[i].y;
+          if (dy1 * dy2 < 0) {
+            slopes[i] = 0;
+          }
+        }
+      }
+
+      for (let i = 0; i < n - 1; i++) {
+        const p0 = nodes[i];
+        const p1 = nodes[i+1];
+        const dx = p1.x - p0.x;
+        
+        const cp1x = p0.x + dx / 3;
+        const cp1y = p0.y + slopes[i] * (dx / 3);
+        
+        const cp2x = p1.x - dx / 3;
+        const cp2y = p1.y - slopes[i+1] * (dx / 3);
+        
+        segments.push({
+          p0,
+          p1,
+          cp1: { x: cp1x, y: cp1y },
+          cp2: { x: cp2x, y: cp2y },
+          pathD: `M ${p0.x.toFixed(1)} ${p0.y.toFixed(1)} C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p1.x.toFixed(1)} ${p1.y.toFixed(1)}`
+        });
+      }
+      return segments;
     }
 }
