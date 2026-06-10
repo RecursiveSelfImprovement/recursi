@@ -64,7 +64,33 @@ class RotateElementCommand {
             if (this.base.accuDrawLogic) {
               this.base.accuDrawLogic.pushContextState();
               this.hasPushedContextState = true;
-              this.base.accuDrawLogic.setMode('polar');
+
+              // Compute custom stable 3D rotation plane from P1 and P2
+              const P1 = new THREE.Vector3(...this.pivotPoint);
+              const P2 = new THREE.Vector3(...this.startReferencePoint);
+
+              const xAxis = P2.clone().sub(P1).normalize();
+              const currentNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+              let zAxis = new THREE.Vector3().crossVectors(xAxis, currentNormal);
+              if (zAxis.length() < 1e-6) {
+                zAxis = currentNormal.clone();
+              } else {
+                zAxis.normalize();
+              }
+              const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+
+              const localRotationMatrix = [
+                [xAxis.x, xAxis.y, xAxis.z],
+                [yAxis.x, yAxis.y, yAxis.z],
+                [zAxis.x, zAxis.y, zAxis.z]
+              ];
+
+              this.base.accuDrawLogic.setRotation(localRotationMatrix);
+              this.base.accuDrawLogic.setMode('polar', 'angle'); // Direct preferred focus into 'angle' field
+              
+              if (this.base.accuDraw) {
+                this.base.accuDraw.setRotationAnimated(localRotationMatrix, 0.3);
+              }
             }
 
             if (!this.makeCopy) {
@@ -88,7 +114,7 @@ class RotateElementCommand {
           if (this.base.accuDrawLogic) {
             this.base.accuDrawLogic.pushContextState();
             this.hasPushedContextState = true;
-            this.base.accuDrawLogic.setMode('polar');
+            this.base.accuDrawLogic.setMode('polar', 'angle');
           }
 
           this.base.setOrigin(this.pivotPoint.slice());
@@ -103,7 +129,35 @@ class RotateElementCommand {
             ElementOperations.ghostOriginal(this.selectedElement);
           }
 
-          // FIX: Leave AccuDraw compass at the Pivot point, NOT the reference start point!
+          // Compute custom 3D rotation plane from P1 and P2
+          const P1 = new THREE.Vector3(...this.pivotPoint);
+          const P2 = new THREE.Vector3(...this.startReferencePoint);
+
+          const xAxis = P2.clone().sub(P1).normalize();
+          const currentNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+          let zAxis = new THREE.Vector3().crossVectors(xAxis, currentNormal);
+          if (zAxis.length() < 1e-6) {
+            zAxis = currentNormal.clone();
+          } else {
+            zAxis.normalize();
+          }
+          const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+
+          const localRotationMatrix = [
+            [xAxis.x, xAxis.y, xAxis.z],
+            [yAxis.x, yAxis.y, yAxis.z],
+            [zAxis.x, zAxis.y, zAxis.z]
+          ];
+
+          if (this.base.accuDrawLogic) {
+            this.base.accuDrawLogic.setRotation(localRotationMatrix);
+            this.base.accuDrawLogic.setMode('polar', 'angle'); // Direct preferred focus into 'angle' field
+          }
+          if (this.base.accuDraw) {
+            this.base.accuDraw.setRotationAnimated(localRotationMatrix, 0.3);
+          }
+
+          // Leave AccuDraw compass at the Pivot point
           this.base.setOrigin(this.pivotPoint.slice());
         }
       } else if (this.state === 2) {
@@ -190,14 +244,41 @@ class RotateElementCommand {
     
 
     applyRotation(el, pivot, start, end) {
+      const P1 = new THREE.Vector3(...pivot);
+      const P2 = new THREE.Vector3(...start);
+      const P3 = new THREE.Vector3(...end);
+
+      const xAxis = P2.clone().sub(P1).normalize();
+      const currentNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+      let zAxis = new THREE.Vector3().crossVectors(xAxis, currentNormal);
+      if (zAxis.length() < 1e-6) {
+        zAxis = currentNormal.clone();
+      } else {
+        zAxis.normalize();
+      }
+      const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+
+      const v2 = P3.clone().sub(P1);
+      const lx = v2.dot(xAxis);
+      const ly = v2.dot(yAxis);
+      const theta = Math.atan2(ly, lx);
+
       const rotatePt = (pt) => {
-        return GeometryUtils3D.rotatePointAroundPointByThreePoints(
-          pt,
-          pivot,
-          start,
-          pivot,
-          end
-        );
+        const q = new THREE.Vector3(...pt);
+        const offset = q.clone().sub(P1);
+        const dx = offset.dot(xAxis);
+        const dy = offset.dot(yAxis);
+        const dz = offset.dot(zAxis);
+
+        const dx_ = dx * Math.cos(theta) - dy * Math.sin(theta);
+        const dy_ = dx * Math.sin(theta) + dy * Math.cos(theta);
+
+        return new THREE.Vector3()
+          .addScaledVector(xAxis, dx_)
+          .addScaledVector(yAxis, dy_)
+          .addScaledVector(zAxis, dz)
+          .add(P1)
+          .toArray();
       };
 
       if (el.type === 'path') {
@@ -224,13 +305,17 @@ class RotateElementCommand {
         }
         
         const rotateVec = (v) => {
-          return GeometryUtils3D.rotatePointAroundPointByThreePoints(
-            v,
-            [0, 0, 0],
-            start,
-            pivot,
-            end
-          );
+          const vec = new THREE.Vector3(...v);
+          const dx = vec.dot(xAxis);
+          const dy = vec.dot(yAxis);
+          const dz = vec.dot(zAxis);
+          const dx_ = dx * Math.cos(theta) - dy * Math.sin(theta);
+          const dy_ = dx * Math.sin(theta) + dy * Math.cos(theta);
+          return new THREE.Vector3()
+            .addScaledVector(xAxis, dx_)
+            .addScaledVector(yAxis, dy_)
+            .addScaledVector(zAxis, dz)
+            .toArray();
         };
         el.rotationMatrix = el.rotationMatrix.map(row => rotateVec(row));
         
@@ -305,8 +390,14 @@ class RotateElementCommand {
       if (radius > 1e-6) {
         u.normalize();
 
-        const planeNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
-        const v = new THREE.Vector3().crossVectors(planeNormal, u).normalize();
+        const currentNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+        let zAxis = new THREE.Vector3().crossVectors(u, currentNormal);
+        if (zAxis.length() < 1e-6) {
+          zAxis = currentNormal.clone();
+        } else {
+          zAxis.normalize();
+        }
+        const v = new THREE.Vector3().crossVectors(zAxis, u).normalize();
 
         const offsetE = new THREE.Vector3().subVectors(eVec, pVec);
         const localX = offsetE.dot(u);
@@ -385,10 +476,10 @@ class RotateElementCommand {
         const segments = 40;
         for (let i = 0; i <= segments; i++) {
           const t = i / segments;
-          const theta = angle * t;
+          const theta_val = angle * t;
           const pt = pVec.clone()
-            .add(u.clone().multiplyScalar(Math.cos(theta) * radius))
-            .add(v.clone().multiplyScalar(Math.sin(theta) * radius));
+            .add(u.clone().multiplyScalar(Math.cos(theta_val) * radius))
+            .add(v.clone().multiplyScalar(Math.sin(theta_val) * radius));
           arcPoints.push(pt.x, pt.y, pt.z);
         }
 

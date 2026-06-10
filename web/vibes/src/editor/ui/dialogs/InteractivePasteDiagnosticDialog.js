@@ -15,87 +15,79 @@ class InteractivePasteDiagnosticDialog {
   }
 
   initUI() {
-    this.statusBanner = makeElement(
-      'div',
-      {
-        className: 'diagnostic-banner',
-        style: {
-          padding: '12px 16px',
-          fontWeight: '600',
-          borderBottom: '1px solid var(--border-color)',
-          backgroundColor: 'rgba(239, 83, 80, 0.1)',
-          color: '#ffcdd2',
-          fontSize: '14px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          transition: 'background-color 0.3s, color 0.3s',
+      this.statusBanner = makeElement(
+        'div',
+        {
+          className: 'diagnostic-banner',
+          style: {
+            padding: '12px 16px',
+            fontWeight: '600',
+            borderBottom: '1px solid var(--border-color)',
+            backgroundColor: 'rgba(239, 83, 80, 0.1)',
+            color: '#ffcdd2',
+            fontSize: '14px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            transition: 'background-color 0.3s, color 0.3s',
+          },
         },
-      },
-      'Checking syntax...'
-    );
-
-    const editorHost = makeElement('div', {
-      style: {
-        height: '450px',
-        borderBottom: '1px solid var(--border-color)',
-        overflow: 'hidden',
-      },
-    });
-
-    this.retryBtn = makeElement('button', {
-      className: 'primary',
-      textContent: 'Fix Errors to Retry',
-      disabled: true,
-      style: {
-        padding: '8px 16px',
-        fontWeight: 'bold',
-        transition: 'all 0.2s',
-      },
-      onclick: () => this.handleRetry(),
-    });
-
-    const content = makeElement(
-      'div',
-      {
-        style: {
-          display: 'flex',
-          flexDirection: 'column',
-          height: '100%',
-          backgroundColor: 'var(--bg-primary)',
-        },
-      },
-      [this.statusBanner, editorHost]
-    );
-
-    this.dialog = UITools.makeDialog({
-      title: '⚠️ Paste Diagnostic',
-      contentElement: content,
-      width: '800px',
-      noPadding: true,
-      buttons: [
-        this.retryBtn,
-        { label: 'Cancel', onClick: (e, d) => d.close() },
-      ],
-    });
-
-    setTimeout(() => {
-      this.codeMirrorWidget = new CodeMirrorWidget(
-        'diagnostic_editor',
-        this.text,
-        'javascript',
-        () => this.handleCodeChange()
+        'Checking syntax...'
       );
-      editorHost.appendChild(this.codeMirrorWidget.getElement());
 
-      if (this.initialError) {
-        this.setInvalid(this.initialError, true);
-        this._hasValidatedOnce = true;
-      } else {
-        this.validate();
-      }
-    }, 50);
-  }
+      const editorHost = makeElement('div', {
+        style: {
+          height: '450px',
+          borderBottom: '1px solid var(--border-color)',
+          overflow: 'hidden',
+        },
+      });
+
+      const content = makeElement(
+        'div',
+        {
+          style: {
+            display: 'flex',
+            flexDirection: 'column',
+            height: '100%',
+            backgroundColor: 'var(--bg-primary)',
+          },
+        },
+        [this.statusBanner, editorHost]
+      );
+
+      this.dialog = UITools.makeDialog({
+        title: '⚠️ Paste Diagnostic',
+        contentElement: content,
+        width: '800px',
+        noPadding: true,
+        buttons: [
+          {
+            label: 'Fix Errors to Retry',
+            className: 'primary rct-retry-btn',
+            onClick: () => this.handleRetry()
+          },
+          { label: 'Cancel', onClick: (e, d) => d.close() },
+        ],
+      });
+
+      setTimeout(() => {
+        this.codeMirrorWidget = new CodeMirrorWidget(
+          'diagnostic_editor',
+          this.text,
+          'javascript',
+          () => this.handleCodeChange()
+        );
+        editorHost.appendChild(this.codeMirrorWidget.getElement());
+
+        if (this.initialError) {
+          this.setInvalid(this.initialError, true);
+          this._hasValidatedOnce = true;
+        } else {
+          this.validate();
+        }
+      }, 50);
+    }
 
   handleCodeChange() {
     clearTimeout(this.debounceTimer);
@@ -177,37 +169,43 @@ class InteractivePasteDiagnosticDialog {
     }
 
   setValid(message) {
-    this.statusBanner.style.backgroundColor = 'rgba(102, 187, 106, 0.1)';
-    this.statusBanner.style.color = '#81c784';
-    this.statusBanner.innerHTML = `<span>✅</span> ${message}`;
+      this.statusBanner.style.backgroundColor = 'rgba(102, 187, 106, 0.1)';
+      this.statusBanner.style.color = '#81c784';
+      this.statusBanner.innerHTML = `<span>✅</span> ${message}`;
 
-    this.retryBtn.disabled = false;
-    this.retryBtn.textContent = 'Retry';
-    this.retryBtn.style.opacity = '1';
-    this.retryBtn.style.cursor = 'pointer';
-  }
+      const btn = this.getRetryBtn();
+      if (btn) {
+        btn.disabled = false;
+        btn.textContent = 'Retry';
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      }
+    }
 
   setInvalid(err, shouldScroll = false) {
-    let locStr = '';
-    if (err.loc) {
-      locStr = ` (Line ${err.loc.line}, Col ${err.loc.column})`;
-    } else if (err.lineNumber) {
-      locStr = ` (Line ${err.lineNumber})`;
+      let locStr = '';
+      if (err.loc) {
+        locStr = ` (Line ${err.loc.line}, Col ${err.loc.column})`;
+      } else if (err.lineNumber) {
+        locStr = ` (Line ${err.lineNumber})`;
+      }
+
+      this.statusBanner.style.backgroundColor = 'rgba(239, 83, 80, 0.15)';
+      this.statusBanner.style.color = '#ef9a9a';
+      this.statusBanner.innerHTML = `<span>❌</span> <strong>Error:</strong> ${err.message}${locStr}`;
+
+      const btn = this.getRetryBtn();
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Fix Errors to Retry';
+        btn.style.opacity = '0.5';
+        btn.style.cursor = 'not-allowed';
+      }
+
+      if (shouldScroll) {
+        this._scrollToError(err);
+      }
     }
-
-    this.statusBanner.style.backgroundColor = 'rgba(239, 83, 80, 0.15)';
-    this.statusBanner.style.color = '#ef9a9a';
-    this.statusBanner.innerHTML = `<span>❌</span> <strong>Error:</strong> ${err.message}${locStr}`;
-
-    this.retryBtn.disabled = true;
-    this.retryBtn.textContent = 'Fix Errors to Retry';
-    this.retryBtn.style.opacity = '0.5';
-    this.retryBtn.style.cursor = 'not-allowed';
-
-    if (shouldScroll) {
-      this._scrollToError(err);
-    }
-  }
 
   _scrollToError(err) {
     if (!err.loc || !this.codeMirrorWidget || !this.codeMirrorWidget.editor)
@@ -245,4 +243,12 @@ class InteractivePasteDiagnosticDialog {
     }
     this.dialog.close();
   }
+
+  getRetryBtn() {
+      if (this.retryBtn && this.retryBtn.isConnected) return this.retryBtn;
+      if (this.dialog && this.dialog.element) {
+        this.retryBtn = this.dialog.element.querySelector('.rct-retry-btn');
+      }
+      return this.retryBtn;
+    }
 }

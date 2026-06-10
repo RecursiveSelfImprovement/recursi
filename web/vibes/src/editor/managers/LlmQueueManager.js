@@ -232,7 +232,7 @@ class LlmQueueManager {
       this.showErrorDialog(
         text,
         new Error(
-          'Could not detect run(env) function or whole-file paste signature. Please ensure the code is wrapped in triple backticks.'
+          'No valid Unified Protocol action detected. If pasting JavaScript code, please wrap your logic inside an "async function run(env) { ... }" execution context, or use a whole-file replacement comment at the top.'
         )
       );
       return false;

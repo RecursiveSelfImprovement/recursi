@@ -32,145 +32,133 @@ class AccuDrawLogic {
     }
 
   onMotion(mousePoint, tentativePoint, indexedToAxis) {
-    if (!this.active) return;
+      if (!this.active) return;
 
-    const rawInput = tentativePoint || mousePoint;
-    if (!rawInput) return;
+      const rawInput = tentativePoint || mousePoint;
+      if (!rawInput) return;
 
-    const delta = [
-      rawInput[0] - this.origin[0],
-      rawInput[1] - this.origin[1],
-      rawInput[2] - this.origin[2],
-    ];
+      const delta = [
+        rawInput[0] - this.origin[0],
+        rawInput[1] - this.origin[1],
+        rawInput[2] - this.origin[2],
+      ];
 
-    const currentRotation = this.baseController.rotationMatrix || this.rotation;
+      const currentRotation = this.baseController.rotationMatrix || this.rotation;
 
-    const X = currentRotation[0];
-    const Y = currentRotation[1];
-    const Z = currentRotation[2];
+      const X = currentRotation[0];
+      const Y = currentRotation[1];
+      const Z = currentRotation[2];
 
-    const localX = delta[0] * X[0] + delta[1] * X[1] + delta[2] * X[2];
-    const localY = delta[0] * Y[0] + delta[1] * Y[1] + delta[2] * Y[2];
-    const localZ = delta[0] * Z[0] + delta[1] * Z[1] + delta[2] * Z[2];
+      const localX = delta[0] * X[0] + delta[1] * X[1] + delta[2] * X[2];
+      const localY = delta[0] * Y[0] + delta[1] * Y[1] + delta[2] * Y[2];
+      const localZ = delta[0] * Z[0] + delta[1] * Z[1] + delta[2] * Z[2];
 
-    this.lastLocalDelta = { x: localX, y: localY, z: localZ };
-    this.lastIndexedAxis = indexedToAxis;
+      const dist = Math.sqrt(localX * localX + localY * localY);
+      const angleRad = Math.atan2(localY, localX);
+      const angleDeg = (angleRad * 180) / Math.PI;
 
-    const dist = Math.sqrt(localX * localX + localY * localY);
-    const angleRad = Math.atan2(localY, localX);
-    const angleDeg = (angleRad * 180) / Math.PI;
+      this.lastLocalDelta = { x: localX, y: localY, z: localZ, angle: angleDeg, dist: dist };
+      this.lastIndexedAxis = indexedToAxis;
 
-    // === SMART FOCUS LOGIC ===
-    // CRITICAL: If we are actively typing (inputActive), focus is FROZEN.
-    // stickyFocus alone is not enough because confirmInput clears it.
-    // The ONLY way to leave the typing axis is an explicit mouse gesture
-    // that is large enough to indicate intentional axis switching.
-    if (!this.stickyFocus && !this.inputActive) {
-      let newAxis = this.currentAxis;
+      // === SMART FOCUS LOGIC ===
+      if (!this.stickyFocus && !this.inputActive) {
+        let newAxis = this.currentAxis;
 
-      if (this.mode === 'rectangular' || this.mode === 'mixed') {
-        let xAnchor = this.isLocked.x ? this.lockedValues.x : 0;
-        let yAnchor = this.isLocked.y ? this.lockedValues.y : 0;
+        if (this.mode === 'rectangular' || this.mode === 'mixed') {
+          let xAnchor = this.isLocked.x ? this.lockedValues.x : 0;
+          let yAnchor = this.isLocked.y ? this.lockedValues.y : 0;
 
-        let xPull = Math.abs(localX - xAnchor);
-        let yPull = Math.abs(localY - yAnchor);
+          let xPull = Math.abs(localX - xAnchor);
+          let yPull = Math.abs(localY - yAnchor);
 
-        if (xPull >= yPull) {
-          newAxis = 'x';
+          if (xPull >= yPull) {
+            newAxis = 'x';
+          } else {
+            newAxis = 'y';
+          }
+
+          if (newAxis !== this.currentAxis) {
+            this.currentAxis = newAxis;
+            if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+              this.baseController.accuDraw.ui.focusField(newAxis);
+            }
+          }
         } else {
-          newAxis = 'y';
+          if (this.isLocked.dist && !this.isLocked.angle)
+            this.currentAxis = 'angle';
+          else if (!this.isLocked.dist) this.currentAxis = 'dist';
+        }
+      }
+
+      // === GESTURE-BASED COMMIT ===
+      if (this.inputActive && this.typingMouseAnchor) {
+        const typingAxis = this.currentAxis;
+        let otherAxis = null;
+
+        if (this.mode === 'rectangular' || this.mode === 'mixed') {
+          if (typingAxis === 'x') otherAxis = 'y';
+          else if (typingAxis === 'y') otherAxis = 'x';
         }
 
-        if (newAxis !== this.currentAxis) {
-          this.currentAxis = newAxis;
-          if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-            this.baseController.accuDraw.ui.focusField(newAxis);
+        if (otherAxis) {
+          const otherNow = otherAxis === 'x' ? localX : localY;
+          const otherAnchor = this.typingMouseAnchor[otherAxis];
+          const typingNow = typingAxis === 'x' ? localX : localY;
+          const typingAnchor = this.typingMouseAnchor[typingAxis];
+
+          const otherDelta = Math.abs(otherNow - otherAnchor);
+          const typingDelta = Math.abs(typingNow - typingAnchor);
+
+          const markerSize = this.baseController.accuDraw
+            ? this.baseController.accuDraw.options.size
+            : 1;
+          const gestureThreshold = markerSize * 0.3;
+
+          if (otherDelta > gestureThreshold && otherDelta > typingDelta * 1.5) {
+            this.confirmInput();
+            this.currentAxis = otherAxis;
+            if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+              this.baseController.accuDraw.ui.focusField(otherAxis);
+            }
           }
         }
-      } else {
-        if (this.isLocked.dist && !this.isLocked.angle)
-          this.currentAxis = 'angle';
-        else if (!this.isLocked.dist) this.currentAxis = 'dist';
       }
-    }
 
-    // === GESTURE-BASED COMMIT (the "pull away" to confirm typed value) ===
-    // If the user IS typing and moves the mouse decisively in the OTHER axis direction,
-    // THAT is the signal to lock in the typed value and switch focus.
-    if (this.inputActive && this.typingMouseAnchor) {
-      const typingAxis = this.currentAxis;
-      let otherAxis = null;
+      // === PREPARE UI VALUES ===
+      const uiValues = {};
+
+      const getUiVal = (axis, liveVal) => {
+        if (this.inputActive && this.currentAxis === axis) {
+          return this.inputBuffer;
+        }
+        if (this.isLocked[axis]) return this.lockedValues[axis];
+        return liveVal;
+      };
 
       if (this.mode === 'rectangular' || this.mode === 'mixed') {
-        if (typingAxis === 'x') otherAxis = 'y';
-        else if (typingAxis === 'y') otherAxis = 'x';
+        uiValues.x = getUiVal('x', localX);
+        uiValues.y = getUiVal('y', localY);
       }
 
-      if (otherAxis) {
-        const otherNow = otherAxis === 'x' ? localX : localY;
-        const otherAnchor = this.typingMouseAnchor[otherAxis];
-        const typingNow = typingAxis === 'x' ? localX : localY;
-        const typingAnchor = this.typingMouseAnchor[typingAxis];
+      if (this.mode === 'polar' || this.mode === 'mixed') {
+        uiValues.dist = getUiVal('dist', dist);
+        uiValues.angle = getUiVal('angle', angleDeg);
+      }
 
-        const otherDelta = Math.abs(otherNow - otherAnchor);
-        const typingDelta = Math.abs(typingNow - typingAnchor);
+      uiValues.z = getUiVal('z', localZ);
 
-        // Threshold: Must move meaningfully more in the other axis than in the typing axis.
-        // Use the marker size as a reference for "meaningful" distance.
-        const markerSize = this.baseController.accuDraw
-          ? this.baseController.accuDraw.options.size
-          : 1;
-        const gestureThreshold = markerSize * 0.3;
+      // === UPDATE UI ===
+      if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+        this.baseController.accuDraw.ui.updateValues(uiValues);
+        this.baseController.accuDraw.ui.setSmartFocus(this.currentAxis);
 
-        if (otherDelta > gestureThreshold && otherDelta > typingDelta * 1.5) {
-          // Commit the typed value
-          this.confirmInput();
-          // Now switch to the other axis
-          this.currentAxis = otherAxis;
-          if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-            this.baseController.accuDraw.ui.focusField(otherAxis);
-          }
-        }
+        this.baseController.accuDraw.ui.setLocked('x', this.isLocked.x);
+        this.baseController.accuDraw.ui.setLocked('y', this.isLocked.y);
+        this.baseController.accuDraw.ui.setLocked('dist', this.isLocked.dist);
+        this.baseController.accuDraw.ui.setLocked('angle', this.isLocked.angle);
+        this.baseController.accuDraw.ui.setLocked('z', this.isLocked.z);
       }
     }
-
-    // === PREPARE UI VALUES ===
-    const uiValues = {};
-
-    const getUiVal = (axis, liveVal) => {
-      // If we are actively typing in THIS axis, always show the raw buffer.
-      // This prevents "2" from becoming "2.0000" while the user is still typing.
-      if (this.inputActive && this.currentAxis === axis) {
-        return this.inputBuffer;
-      }
-      if (this.isLocked[axis]) return this.lockedValues[axis];
-      return liveVal;
-    };
-
-    if (this.mode === 'rectangular' || this.mode === 'mixed') {
-      uiValues.x = getUiVal('x', localX);
-      uiValues.y = getUiVal('y', localY);
-    }
-
-    if (this.mode === 'polar' || this.mode === 'mixed') {
-      uiValues.dist = getUiVal('dist', dist);
-      uiValues.angle = getUiVal('angle', angleDeg);
-    }
-
-    uiValues.z = getUiVal('z', localZ);
-
-    // === UPDATE UI ===
-    if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-      this.baseController.accuDraw.ui.updateValues(uiValues);
-      this.baseController.accuDraw.ui.setSmartFocus(this.currentAxis);
-
-      this.baseController.accuDraw.ui.setLocked('x', this.isLocked.x);
-      this.baseController.accuDraw.ui.setLocked('y', this.isLocked.y);
-      this.baseController.accuDraw.ui.setLocked('dist', this.isLocked.dist);
-      this.baseController.accuDraw.ui.setLocked('angle', this.isLocked.angle);
-      this.baseController.accuDraw.ui.setLocked('z', this.isLocked.z);
-    }
-  }
 
   getConstrainedPoint(mousePoint, tentativePoint) {
     const rawInput = tentativePoint || mousePoint;
@@ -219,199 +207,139 @@ class AccuDrawLogic {
   }
 
   handleInput(char) {
-    if (!this.active) return false;
-    const diag = this.baseController.accuDrawDiagnostics;
+      if (!this.active) return false;
+      const diag = this.baseController.accuDrawDiagnostics;
 
-    if (char === 'Escape') {
-      const isLocked =
-        this.isLocked.x ||
-        this.isLocked.y ||
-        this.isLocked.dist ||
-        this.isLocked.angle ||
-        this.isLocked.z;
-      const isTyping = this.inputActive;
+      if (char === 'Escape') {
+        const isLocked =
+          this.isLocked.x ||
+          this.isLocked.y ||
+          this.isLocked.dist ||
+          this.isLocked.angle ||
+          this.isLocked.z;
+        const isTyping = this.inputActive;
 
-      if (isLocked || isTyping) {
-        if (diag)
-          diag.logEvent(
-            'escape',
-            'clear all locks' +
-              (isTyping ? ' + cancel typing "' + this.inputBuffer + '"' : '')
-          );
-        this.inputActive = false;
-        this.inputBuffer = '';
-        this.stickyFocus = false;
-        this.typingMouseAnchor = null;
-        this.isLocked.x = false;
-        this.isLocked.y = false;
-        this.isLocked.z = false;
-        this.isLocked.dist = false;
-        this.isLocked.angle = false;
-        this.updateUiLocks();
-        this.baseController.refreshMousePosition();
-        return true;
-      }
-      return false;
-    }
-
-    if (char === 'Tab') {
-      if (this.inputActive) {
-        if (diag)
-          diag.logEvent(
-            'tab',
-            'confirm "' +
-              this.inputBuffer +
-              '" on ' +
-              this.currentAxis +
-              ', then switch'
-          );
-        this.confirmInput();
-      }
-      this.stickyFocus = true;
-      this.typingMouseAnchor = null;
-      const prevAxis = this.currentAxis;
-      if (this.mode === 'rectangular') {
-        this.currentAxis = this.currentAxis === 'x' ? 'y' : 'x';
-      } else if (this.mode === 'polar') {
-        this.currentAxis = this.currentAxis === 'dist' ? 'angle' : 'dist';
-      } else {
-        const order = ['x', 'y', 'dist', 'angle'];
-        const idx = order.indexOf(this.currentAxis);
-        this.currentAxis = order[(idx + 1) % order.length];
-      }
-      if (diag) diag.logEvent('tab', prevAxis + ' → ' + this.currentAxis);
-      this.inputActive = false;
-      this.inputBuffer = '';
-      if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-        this.baseController.accuDraw.ui.focusField(this.currentAxis);
-      }
-      return true;
-    }
-
-    if (/[0-9.\-+]/.test(char)) {
-      if (!this.inputActive) {
-        this.inputBuffer = '';
-        this.inputActive = true;
-        this.stickyFocus = true;
-        this.typingMouseAnchor = { ...this.lastLocalDelta };
-        if (diag)
-          diag.logEvent(
-            'typing:start',
-            'axis=' +
-              this.currentAxis +
-              ' char="' +
-              char +
-              '" anchor=(' +
-              this.lastLocalDelta.x.toFixed(3) +
-              ',' +
-              this.lastLocalDelta.y.toFixed(3) +
-              ')'
-          );
-      }
-
-      this.inputBuffer += char;
-
-      let val = parseFloat(this.inputBuffer);
-      if (!isNaN(val)) {
-        if (this.mode === 'rectangular') {
-          const delta =
-            this.currentAxis === 'x'
-              ? this.lastLocalDelta.x
-              : this.lastLocalDelta.y;
-          if (val > 0 && delta < 0) {
-            val = -val;
-          }
-        }
-        this.lockedValues[this.currentAxis] = val;
-      } else {
-        if (this.inputBuffer !== '-' && this.inputBuffer !== '.') {
-          this.lockedValues[this.currentAxis] = 0;
-        }
-      }
-
-      this.isLocked[this.currentAxis] = true;
-
-      if (diag)
-        diag.logEvent(
-          'typing:char',
-          '"' +
-            this.inputBuffer +
-            '" → lock ' +
-            this.currentAxis +
-            '=' +
-            this.lockedValues[this.currentAxis]
-        );
-
-      if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-        this.baseController.accuDraw.ui.setLocked(this.currentAxis, true);
-        this.baseController.accuDraw.ui.updateValues({
-          [this.currentAxis]: this.inputBuffer,
-        });
-      }
-
-      if (this.baseController.refreshMousePosition) {
-        this.baseController.refreshMousePosition();
-      }
-      return true;
-    }
-
-    if (char === 'Backspace') {
-      if (this.inputActive) {
-        const prev = this.inputBuffer;
-        this.inputBuffer = this.inputBuffer.slice(0, -1);
-
-        if (this.inputBuffer.length === 0) {
+        if (isLocked || isTyping) {
           if (diag)
             diag.logEvent(
-              'typing:clear',
-              'backspaced from "' +
-                prev +
-                '" — cancel typing on ' +
-                this.currentAxis
+              'escape',
+              'clear all locks' +
+                (isTyping ? ' + cancel typing "' + this.inputBuffer + '"' : '')
             );
           this.inputActive = false;
+          this.inputBuffer = '';
           this.stickyFocus = false;
           this.typingMouseAnchor = null;
-          this.isLocked[this.currentAxis] = false;
-          this.lockedValues[this.currentAxis] = 0;
-        } else {
-          let val = parseFloat(this.inputBuffer);
-          if (!isNaN(val)) {
-            if (this.mode === 'rectangular') {
-              const delta =
-                this.currentAxis === 'x'
-                  ? this.lastLocalDelta.x
-                  : this.lastLocalDelta.y;
-              if (val > 0 && delta < 0) {
-                val = -val;
-              }
-            }
-            this.lockedValues[this.currentAxis] = val;
-          } else {
-            this.lockedValues[this.currentAxis] = 0;
-          }
+          this.isLocked.x = false;
+          this.isLocked.y = false;
+          this.isLocked.z = false;
+          this.isLocked.dist = false;
+          this.isLocked.angle = false;
+          this.updateUiLocks();
+          this.baseController.refreshMousePosition();
+          return true;
+        }
+        return false;
+      }
+
+      if (char === 'Tab') {
+        if (this.inputActive) {
           if (diag)
             diag.logEvent(
-              'typing:backspace',
-              '"' +
-                prev +
-                '" → "' +
+              'tab',
+              'confirm "' +
                 this.inputBuffer +
-                '" lock=' +
-                this.lockedValues[this.currentAxis]
+                '" on ' +
+                this.currentAxis +
+                ', then switch'
+            );
+          this.confirmInput();
+        }
+        this.stickyFocus = true;
+        this.typingMouseAnchor = null;
+        const prevAxis = this.currentAxis;
+        if (this.mode === 'rectangular') {
+          this.currentAxis = this.currentAxis === 'x' ? 'y' : 'x';
+        } else if (this.mode === 'polar') {
+          this.currentAxis = this.currentAxis === 'dist' ? 'angle' : 'dist';
+        } else {
+          const order = ['x', 'y', 'dist', 'angle'];
+          const idx = order.indexOf(this.currentAxis);
+          this.currentAxis = order[(idx + 1) % order.length];
+        }
+        if (diag) diag.logEvent('tab', prevAxis + ' → ' + this.currentAxis);
+        this.inputActive = false;
+        this.inputBuffer = '';
+        if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+          this.baseController.accuDraw.ui.focusField(this.currentAxis);
+        }
+        return true;
+      }
+
+      if (/[0-9.\-+]/.test(char)) {
+        if (!this.inputActive) {
+          this.inputBuffer = '';
+          this.inputActive = true;
+          this.stickyFocus = true;
+          this.typingMouseAnchor = { ...this.lastLocalDelta };
+          if (diag)
+            diag.logEvent(
+              'typing:start',
+              'axis=' +
+                this.currentAxis +
+                ' char="' +
+                char +
+                '" anchor=(' +
+                this.lastLocalDelta.x.toFixed(3) +
+                ',' +
+                this.lastLocalDelta.y.toFixed(3) +
+                ')'
             );
         }
 
-        if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
-          this.baseController.accuDraw.ui.updateValues({
-            [this.currentAxis]: this.inputActive
-              ? this.inputBuffer
-              : this.lastLocalDelta[this.currentAxis],
-          });
-          this.baseController.accuDraw.ui.setLocked(
-            this.currentAxis,
-            this.isLocked[this.currentAxis]
+        this.inputBuffer += char;
+
+        let val = parseFloat(this.inputBuffer);
+        if (!isNaN(val)) {
+          if (this.mode === 'rectangular') {
+            const delta =
+              this.currentAxis === 'x'
+                ? this.lastLocalDelta.x
+                : this.lastLocalDelta.y;
+            if (val > 0 && delta < 0) {
+              val = -val;
+            }
+          } else if (this.currentAxis === 'angle') {
+            const delta = this.lastLocalDelta.angle;
+            if (val > 0 && delta < 0) {
+              val = -val;
+            }
+          }
+          this.lockedValues[this.currentAxis] = val;
+        } else {
+          if (this.inputBuffer !== '-' && this.inputBuffer !== '.') {
+            this.lockedValues[this.currentAxis] = 0;
+          }
+        }
+
+        this.isLocked[this.currentAxis] = true;
+
+        if (diag)
+          diag.logEvent(
+            'typing:char',
+            '"' +
+              this.inputBuffer +
+              '" → lock ' +
+              this.currentAxis +
+              '=' +
+              this.lockedValues[this.currentAxis]
           );
+
+        if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+          this.baseController.accuDraw.ui.setLocked(this.currentAxis, true);
+          this.baseController.accuDraw.ui.updateValues({
+            [this.currentAxis]: this.inputBuffer,
+          });
         }
 
         if (this.baseController.refreshMousePosition) {
@@ -419,10 +347,80 @@ class AccuDrawLogic {
         }
         return true;
       }
-    }
 
-    return false;
-  }
+      if (char === 'Backspace') {
+        if (this.inputActive) {
+          const prev = this.inputBuffer;
+          this.inputBuffer = this.inputBuffer.slice(0, -1);
+
+          if (this.inputBuffer.length === 0) {
+            if (diag)
+              diag.logEvent(
+                'typing:clear',
+                'backspaced from "' +
+                  prev +
+                  '" - cancel typing on ' +
+                  this.currentAxis
+              );
+            this.inputActive = false;
+            this.stickyFocus = false;
+            this.typingMouseAnchor = null;
+            this.isLocked[this.currentAxis] = false;
+            this.lockedValues[this.currentAxis] = 0;
+          } else {
+            let val = parseFloat(this.inputBuffer);
+            if (!isNaN(val)) {
+              if (this.mode === 'rectangular') {
+                const delta =
+                  this.currentAxis === 'x'
+                    ? this.lastLocalDelta.x
+                    : this.lastLocalDelta.y;
+                if (val > 0 && delta < 0) {
+                  val = -val;
+                }
+              } else if (this.currentAxis === 'angle') {
+                const delta = this.lastLocalDelta.angle;
+                if (val > 0 && delta < 0) {
+                  val = -val;
+                }
+              }
+              this.lockedValues[this.currentAxis] = val;
+            } else {
+              this.lockedValues[this.currentAxis] = 0;
+            }
+            if (diag)
+              diag.logEvent(
+                'typing:backspace',
+                '"' +
+                  prev +
+                  '" → "' +
+                  this.inputBuffer +
+                  '" lock=' +
+                  this.lockedValues[this.currentAxis]
+              );
+          }
+
+          if (this.baseController.accuDraw && this.baseController.accuDraw.ui) {
+            this.baseController.accuDraw.ui.updateValues({
+              [this.currentAxis]: this.inputActive
+                ? this.inputBuffer
+                : this.lastLocalDelta[this.currentAxis],
+            });
+            this.baseController.accuDraw.ui.setLocked(
+              this.currentAxis,
+              this.isLocked[this.currentAxis]
+            );
+          }
+
+          if (this.baseController.refreshMousePosition) {
+            this.baseController.refreshMousePosition();
+          }
+          return true;
+        }
+      }
+
+      return false;
+    }
 
   confirmInput() {
     const diag = this.baseController.accuDrawDiagnostics;
@@ -644,7 +642,7 @@ class AccuDrawLogic {
   }
 
 
-  setMode(mode) {
+  setMode(mode, preferredAxis) {
       this.mode = mode;
       this.isLocked.x = false;
       this.isLocked.y = false;
@@ -654,9 +652,16 @@ class AccuDrawLogic {
       this.stickyFocus = false;
       this.inputBuffer = '';
 
+      if (preferredAxis) {
+        this.currentAxis = preferredAxis;
+      } else {
+        this.currentAxis = (mode === 'polar') ? 'dist' : 'x';
+      }
+
       if (this.baseController.accuDraw) {
         if (this.baseController.accuDraw.ui) {
           this.baseController.accuDraw.ui.setMode(this.mode);
+          this.baseController.accuDraw.ui.focusField(this.currentAxis);
         }
         let shapeVal = 0.3;
         if (this.mode === 'polar') shapeVal = 1;

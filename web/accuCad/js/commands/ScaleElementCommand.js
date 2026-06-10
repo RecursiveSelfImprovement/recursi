@@ -55,22 +55,43 @@ class ScaleElementCommand {
           if (this.useDifferentStartPoint) {
             this.state = 4; // Define custom Pivot Point
           } else {
-            // Default 1-click Scale: Pivot is center of element, reference is picked point
-            const center = target.center || target.centerPoint || anchor.slice();
-            this.pivotPoint = Array.isArray(center) ? center.slice() : anchor.slice();
+            // CAD Precision Scale: Pivot is exactly the snapped click/selection point (anchor)
+            this.pivotPoint = anchor.slice();
             this.startReferencePoint = anchor.slice();
             this.state = 2; // Begin scaling immediately
 
             if (this.base.accuDrawLogic) {
               this.base.accuDrawLogic.pushContextState();
               this.hasPushedContextState = true;
+
+              // Compute custom stable 3D plane from P1 and P2
+              const P1 = new THREE.Vector3(...this.pivotPoint);
+              const P2 = new THREE.Vector3(...this.startReferencePoint);
+
+              const xAxis = P2.clone().sub(P1).normalize();
+              const currentNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+              let zAxis = new THREE.Vector3().crossVectors(xAxis, currentNormal);
+              if (zAxis.length() < 1e-6) {
+                zAxis = currentNormal.clone();
+              } else {
+                zAxis.normalize();
+              }
+              const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+
+              const localRotationMatrix = [
+                [xAxis.x, xAxis.y, xAxis.z],
+                [yAxis.x, yAxis.y, yAxis.z],
+                [zAxis.x, zAxis.y, zAxis.z]
+              ];
+
+              this.base.accuDrawLogic.setRotation(localRotationMatrix);
+              
+              if (this.base.accuDraw) {
+                this.base.accuDraw.setRotationAnimated(localRotationMatrix, 0.3);
+              }
             }
 
-            if (!this.makeCopy) {
-              ElementOperations.ghostOriginal(this.selectedElement);
-            }
-
-            // Set AccuDraw origin to Pivot Point
+            // Set AccuDraw origin exactly to Pivot Point
             this.base.setOrigin(this.pivotPoint.slice());
           }
 
@@ -97,6 +118,33 @@ class ScaleElementCommand {
 
           if (!this.makeCopy) {
             ElementOperations.ghostOriginal(this.selectedElement);
+          }
+
+          // Compute custom stable 3D plane from P1 and P2
+          const P1 = new THREE.Vector3(...this.pivotPoint);
+          const P2 = new THREE.Vector3(...this.startReferencePoint);
+
+          const xAxis = P2.clone().sub(P1).normalize();
+          const currentNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+          let zAxis = new THREE.Vector3().crossVectors(xAxis, currentNormal);
+          if (zAxis.length() < 1e-6) {
+            zAxis = currentNormal.clone();
+          } else {
+            zAxis.normalize();
+          }
+          const yAxis = new THREE.Vector3().crossVectors(zAxis, xAxis).normalize();
+
+          const localRotationMatrix = [
+            [xAxis.x, xAxis.y, xAxis.z],
+            [yAxis.x, yAxis.y, yAxis.z],
+            [zAxis.x, zAxis.y, zAxis.z]
+          ];
+
+          if (this.base.accuDrawLogic) {
+            this.base.accuDrawLogic.setRotation(localRotationMatrix);
+          }
+          if (this.base.accuDraw) {
+            this.base.accuDraw.setRotationAnimated(localRotationMatrix, 0.3);
           }
 
           // Keep compass at pivotPoint

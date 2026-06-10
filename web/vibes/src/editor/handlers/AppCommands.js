@@ -362,6 +362,13 @@ class AppCommands {
           await this.app.vfs.deleteFile(targetFile, { skipHistory: false });
         }
 
+        // Automatically unregister from files.json dependency manifest
+        try {
+          await this.removeDependency({ path: targetFile });
+        } catch (manifestError) {
+          console.warn('[deleteFile] Failed to automatically remove dependency:', manifestError);
+        }
+
         // Clean up memory store cache
         if (this.app.inMemoryFileStore) {
           this.app.inMemoryFileStore.delete(targetFile);
