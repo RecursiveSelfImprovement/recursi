@@ -12,6 +12,7 @@ class MoveElementCommand {
       // Settings toggles
       this.makeCopy = false;
       this.useDifferentStartPoint = false;
+      this.excludeGlobalSettings = true;
     }
 
     onPoint(data) {
@@ -298,61 +299,45 @@ class MoveElementCommand {
 
     
   
-  renderToolSettings(container) {
-      container.innerHTML = '';
+  
 
-      const createCheckbox = (labelText, checkedValue, callback) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
-        
-        const label = document.createElement('div');
-        label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-        label.textContent = labelText;
+  
 
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = checkedValue;
-        input.setAttribute('tabindex', '-1');
-        input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
-        input.onchange = (e) => callback(e.target.checked);
+  
 
-        // Instantly redirect focus back to main drawing canvas on click/focus
-        input.addEventListener('focus', () => {
-          input.blur();
-          this.base.domElement.focus();
-        });
+  getCommandSettings() {
+      return [
+        {
+          id: 'makeCopy',
+          label: 'Make Copy',
+          type: 'checkbox',
+          value: this.makeCopy,
+          callback: (checked) => {
+            const oldCopy = this.makeCopy;
+            this.makeCopy = checked;
 
-        row.appendChild(label);
-        row.appendChild(input);
-        return row;
-      };
-
-      const copyCb = createCheckbox('Make Copy', this.makeCopy, (checked) => {
-        const oldCopy = this.makeCopy;
-        this.makeCopy = checked;
-
-        // Dynamic visual update mid-command
-        if (this.state === 2 && this.selectedElement) {
-          if (checked && !oldCopy) {
-            // Switched to Copy mode -> restore original visual
-            ElementOperations.restoreOriginal(this.selectedElement);
-          } else if (!checked && oldCopy) {
-            // Switched to Move mode -> ghost original visual
-            ElementOperations.ghostOriginal(this.selectedElement);
+            // Dynamic visual update mid-command
+            if (this.state === 2 && this.selectedElement) {
+              if (checked && !oldCopy) {
+                // Switched to Copy mode -> restore original visual
+                ElementOperations.restoreOriginal(this.selectedElement);
+              } else if (!checked && oldCopy) {
+                // Switched to Move mode -> ghost original visual
+                ElementOperations.ghostOriginal(this.selectedElement);
+              }
+            }
+          }
+        },
+        {
+          id: 'useDifferentStartPoint',
+          label: 'Arbitrary Anchor',
+          type: 'checkbox',
+          value: this.useDifferentStartPoint,
+          callback: (checked) => {
+            this.useDifferentStartPoint = checked;
+            this.reset(); // Reset command states on mode switches
           }
         }
-      });
-
-      const anchorCb = createCheckbox('Arbitrary Anchor', this.useDifferentStartPoint, (checked) => {
-        this.useDifferentStartPoint = checked;
-        this.reset(); // Reset command states on mode switches
-      });
-
-      container.appendChild(copyCb);
-      container.appendChild(anchorCb);
+      ];
     }
-
-  
-
-  
 }

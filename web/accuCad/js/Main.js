@@ -398,54 +398,58 @@ class Main {
           this.sidePanel.sectionObjects['setup'].header.textContent = displayName;
         }
 
-        const colorContainer = document.createElement('div');
-        colorContainer.style.cssText =
-          'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
+        const showGlobalSettings = !activeCmd || !activeCmd.excludeGlobalSettings;
 
-        const colorLabel = document.createElement('div');
-        colorLabel.style.cssText =
-          'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-        colorLabel.textContent = 'Drawing Color';
+        if (showGlobalSettings) {
+          const colorContainer = document.createElement('div');
+          colorContainer.style.cssText =
+            'display: flex; align-items: center; justify-content: space-between; padding: 4px 0; margin-bottom: 8px;';
 
-        const swatch = document.createElement('div');
-        swatch.className = 'drawing-color-swatch-picker';
-        swatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
-          controller.currentColor || '#00ff00'
-        }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+          const colorLabel = document.createElement('div');
+          colorLabel.style.cssText =
+            'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+          colorLabel.textContent = 'Drawing Color';
 
-        controller.colorSwatchPicker = swatch;
+          const swatch = document.createElement('div');
+          swatch.className = 'drawing-color-swatch-picker';
+          swatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${
+            controller.currentColor || '#00ff00'
+          }; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
 
-        swatch.onclick = (e) => {
-          e.stopPropagation();
-          const picker = new ColorPicker();
-          picker.openSmartPicker(
-            swatch,
-            controller.currentColor || '#00ff00',
-            (newColor) => {
-              swatch.style.backgroundColor = newColor;
-              controller.setColor(newColor);
+          controller.colorSwatchPicker = swatch;
+
+          swatch.onclick = (e) => {
+            e.stopPropagation();
+            const picker = new ColorPicker();
+            picker.openSmartPicker(
+              swatch,
+              controller.currentColor || '#00ff00',
+              (newColor) => {
+                swatch.style.backgroundColor = newColor;
+                controller.setColor(newColor);
+                controller.refreshMousePosition();
+              }
+            );
+          };
+
+          colorContainer.appendChild(colorLabel);
+          colorContainer.appendChild(swatch);
+          this.sidePanel.toolSettingsSection.appendChild(colorContainer);
+
+          const widthSlider = new SliderControl({
+            label: 'line thickness',
+            min: 1,
+            max: 20,
+            initialValue: controller.lineWidth || 2,
+            showValue: true,
+            callback: (val) => {
+              controller.setLineWidth(Math.round(val));
               controller.refreshMousePosition();
-            }
-          );
-        };
-
-        colorContainer.appendChild(colorLabel);
-        colorContainer.appendChild(swatch);
-        this.sidePanel.toolSettingsSection.appendChild(colorContainer);
-
-        const widthSlider = new SliderControl({
-          label: 'line thickness',
-          min: 1,
-          max: 20,
-          initialValue: controller.lineWidth || 2,
-          showValue: true,
-          callback: (val) => {
-            controller.setLineWidth(Math.round(val));
-            controller.refreshMousePosition();
-          },
-        });
-        this.sidePanel.toolSettingsSection.appendChild(widthSlider.container);
-        this.toolSliders['lineWidth'] = widthSlider;
+            },
+          });
+          this.sidePanel.toolSettingsSection.appendChild(widthSlider.container);
+          this.toolSliders['lineWidth'] = widthSlider;
+        }
 
         const supportsControlValue = [
           'DrawPathCommand',
@@ -484,43 +488,38 @@ class Main {
           this.toolSliders['commandControlValue'] = controlValueSlider;
         }
 
-        // Render custom checkboxes specifically for the Move Element command
-        if (cmdName === 'MoveElementCommand') {
-          const createCheckbox = (labelText, checkedValue, callback) => {
-            const row = document.createElement('div');
-            row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
-            
-            const label = document.createElement('div');
-            label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-            label.textContent = labelText;
+        // Render any dynamic command custom settings (e.g. checkboxes)
+        if (activeCmd && typeof activeCmd.getCommandSettings === 'function') {
+          const customSettings = activeCmd.getCommandSettings();
+          customSettings.forEach((setting) => {
+            if (setting.type === 'checkbox') {
+              const row = document.createElement('div');
+              row.className = 'tool-setting-checkbox-row';
+              row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
+              
+              const label = document.createElement('div');
+              label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
+              label.textContent = setting.label;
 
-            const input = document.createElement('input');
-            input.type = 'checkbox';
-            input.checked = checkedValue;
-            input.setAttribute('tabindex', '-1');
-            input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
-            input.onchange = (e) => callback(e.target.checked);
+              const input = document.createElement('input');
+              input.type = 'checkbox';
+              input.checked = !!setting.value;
+              input.setAttribute('tabindex', '-1');
+              input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
+              input.onchange = (e) => {
+                setting.callback(e.target.checked);
+              };
 
-            input.addEventListener('focus', () => {
-              input.blur();
-              controller.domElement.focus();
-            });
+              input.addEventListener('focus', () => {
+                input.blur();
+                controller.domElement.focus();
+              });
 
-            row.appendChild(label);
-            row.appendChild(input);
-            return row;
-          };
-
-          const copyCb = createCheckbox('Make Copy', activeCmd.makeCopy, (checked) => {
-            activeCmd.makeCopy = checked;
+              row.appendChild(label);
+              row.appendChild(input);
+              this.sidePanel.toolSettingsSection.appendChild(row);
+            }
           });
-          const anchorCb = createCheckbox('Arbitrary Anchor', activeCmd.useDifferentStartPoint, (checked) => {
-            activeCmd.useDifferentStartPoint = checked;
-            activeCmd.reset(); // Reset command states on mode switches
-          });
-
-          this.sidePanel.toolSettingsSection.appendChild(copyCb);
-          this.sidePanel.toolSettingsSection.appendChild(anchorCb);
         }
 
         controller.toolSliders = this.toolSliders;

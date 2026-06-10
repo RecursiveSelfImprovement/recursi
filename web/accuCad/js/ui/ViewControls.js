@@ -628,6 +628,11 @@ class ViewControls {
         this.selectedSliderIndex = 0;
       }
       const item = list[this.selectedSliderIndex];
+      if (item && item.isCheckbox) {
+        // Do nothing for slide adjustments on checkboxes, tapping toggles them
+        return;
+      }
+
       if (item && this.sliderStartValue !== undefined) {
         const slider = item.slider;
         const key = item.key;
@@ -930,6 +935,29 @@ class ViewControls {
               key: key,
               slider: slider,
               type: 'tool'
+            });
+          }
+        });
+      }
+
+      // Add custom command settings/checkboxes as navigatable tool settings
+      const activeCmd = this.baseController?.activeCommand;
+      if (activeCmd && typeof activeCmd.getCommandSettings === 'function') {
+        const customSettings = activeCmd.getCommandSettings();
+        const rows = document.querySelectorAll('.tool-setting-checkbox-row');
+        customSettings.forEach((setting, idx) => {
+          const row = rows[idx];
+          if (row) {
+            list.push({
+              key: setting.id,
+              type: 'tool',
+              isCheckbox: true,
+              setting: setting,
+              slider: {
+                container: row,
+                value: setting.value ? 1 : 0,
+                setValue: (val) => {}
+              }
             });
           }
         });
@@ -1329,6 +1357,20 @@ class ViewControls {
         this.selectedSliderIndex = 0;
       }
       const item = list[this.selectedSliderIndex];
+
+      if (item && item.isCheckbox) {
+        const input = item.slider.container.querySelector('input[type="checkbox"]');
+        if (input) {
+          const newValue = !input.checked;
+          input.checked = newValue;
+          if (item.setting && typeof item.setting.callback === 'function') {
+            item.setting.callback(newValue);
+          }
+          this.baseController.refreshMousePosition();
+        }
+        return;
+      }
+
       if (item && item.slider && item.slider.options && item.slider.options.directEntry) {
         if (typeof item.slider.showDirectEntryPopup === 'function') {
           item.slider.showDirectEntryPopup();

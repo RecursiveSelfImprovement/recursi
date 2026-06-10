@@ -17,6 +17,9 @@ class ScaleElementCommand {
       // Settings toggles
       this.makeCopy = false;
       this.useDifferentStartPoint = false;
+      this.maintainAspectRatio = false;
+      this.excludeGlobalSettings = true;
+      this.hasPushedContextState = false;
     }
 
     onPoint(data) {
@@ -52,8 +55,22 @@ class ScaleElementCommand {
           if (this.useDifferentStartPoint) {
             this.state = 4; // Define custom Pivot Point
           } else {
-            this.pivotPoint = anchor;
-            this.state = 3; // Wait for reference start point
+            // Default 1-click Scale: Pivot is center of element, reference is picked point
+            const center = target.center || target.centerPoint || anchor.slice();
+            this.pivotPoint = Array.isArray(center) ? center.slice() : anchor.slice();
+            this.startReferencePoint = anchor.slice();
+            this.state = 2; // Begin scaling immediately
+
+            if (this.base.accuDrawLogic) {
+              this.base.accuDrawLogic.pushContextState();
+              this.hasPushedContextState = true;
+            }
+
+            if (!this.makeCopy) {
+              ElementOperations.ghostOriginal(this.selectedElement);
+            }
+
+            // Set AccuDraw origin to Pivot Point
             this.base.setOrigin(this.pivotPoint.slice());
           }
 
@@ -65,6 +82,12 @@ class ScaleElementCommand {
         this.pivotPoint = data.point ? data.point.slice() : null;
         if (this.pivotPoint) {
           this.state = 3; // Now define reference start Point
+
+          if (this.base.accuDrawLogic) {
+            this.base.accuDrawLogic.pushContextState();
+            this.hasPushedContextState = true;
+          }
+
           this.base.setOrigin(this.pivotPoint.slice());
         }
       } else if (this.state === 3) {
@@ -331,24 +354,20 @@ class ScaleElementCommand {
       if (dStart < 1e-6) return;
       const s = dEnd / dStart;
 
-      const localX = new THREE.Vector3(...this.base.rotationMatrix[0]);
-      const localY = new THREE.Vector3(...this.base.rotationMatrix[1]);
-      const localZ = new THREE.Vector3(...this.base.rotationMatrix[2]);
-
       const scalePt = (pt) => {
         const q = new THREE.Vector3(...pt);
-        const offset = q.clone().sub(pVec);
-
-        const px = offset.dot(localX);
-        const py = offset.dot(localY);
-        const pz = offset.dot(localZ);
-
-        const scaledOffset = new THREE.Vector3()
-          .addScaledVector(localX, px * s)
-          .addScaledVector(localY, py * s)
-          .addScaledVector(localZ, pz * s);
-
-        return pVec.clone().add(scaledOffset).toArray();
+        if (this.maintainAspectRatio) {
+          // Uniform Scale
+          const offset = q.clone().sub(pVec);
+          return pVec.clone().add(offset.multiplyScalar(s)).toArray();
+        } else {
+          // Non-uniform Vector Stretch along the start vector direction
+          const u = sVec.clone().sub(pVec).normalize();
+          const offset = q.clone().sub(pVec);
+          const parallelLen = offset.dot(u);
+          const scaledOffset = offset.clone().addScaledVector(u, parallelLen * (s - 1));
+          return pVec.clone().add(scaledOffset).toArray();
+        }
       };
 
       if (el.type === 'path') {
@@ -360,7 +379,9 @@ class ScaleElementCommand {
       } else if (el.type === 'capsule') {
         el.start = scalePt(el.start);
         el.end = scalePt(el.end);
-        el.radius *= s;
+        if (this.maintainAspectRatio) {
+          el.radius *= s;
+        }
         el.points = [el.start.slice(), el.end.slice()];
         el.updateDimensions();
       } else if (el.type === 'rectangle') {
@@ -436,6 +457,11 @@ class ScaleElementCommand {
         this.hoveredElement = null;
       }
 
+      if (this.hasPushedContextState && this.base.accuDrawLogic) {
+        this.base.accuDrawLogic.popContextState();
+        this.hasPushedContextState = false;
+      }
+
       this.selectedElement = null;
       this.pivotPoint = null;
       this.startReferencePoint = null;
@@ -449,54 +475,47 @@ class ScaleElementCommand {
 
     
 
-    renderToolSettings(container) {
-      container.innerHTML = '';
+    
+  
+  getCommandSettings() {
+      return [
+        {
+          id: 'makeCopy',
+          label: 'Make Copy',
+          type: 'checkbox',
+          value: this.makeCopy,
+          callback: (checked) => {
+            const oldCopy = this.makeCopy;
+            this.makeCopy = checked;
 
-      const createCheckbox = (labelText, checkedValue, callback) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
-        
-        const label = document.createElement('div');
-        label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-        label.textContent = labelText;
-
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = checkedValue;
-        input.setAttribute('tabindex', '-1');
-        input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
-        input.onchange = (e) => callback(e.target.checked);
-
-        // Instantly redirect focus back to main drawing canvas on click/focus
-        input.addEventListener('focus', () => {
-          input.blur();
-          this.base.domElement.focus();
-        });
-
-        row.appendChild(label);
-        row.appendChild(input);
-        return row;
-      };
-
-      const copyCb = createCheckbox('Make Copy', this.makeCopy, (checked) => {
-        const oldCopy = this.makeCopy;
-        this.makeCopy = checked;
-
-        if (this.state === 2 && this.selectedElement) {
-          if (checked && !oldCopy) {
-            ElementOperations.restoreOriginal(this.selectedElement);
-          } else if (!checked && oldCopy) {
-            ElementOperations.ghostOriginal(this.selectedElement);
+            if (this.state === 2 && this.selectedElement) {
+              if (checked && !oldCopy) {
+                ElementOperations.restoreOriginal(this.selectedElement);
+              } else if (!checked && oldCopy) {
+                ElementOperations.ghostOriginal(this.selectedElement);
+              }
+            }
+          }
+        },
+        {
+          id: 'useDifferentStartPoint',
+          label: 'Arbitrary Pivot',
+          type: 'checkbox',
+          value: this.useDifferentStartPoint,
+          callback: (checked) => {
+            this.useDifferentStartPoint = checked;
+            this.reset();
+          }
+        },
+        {
+          id: 'maintainAspectRatio',
+          label: 'Maintain Aspect Ratio',
+          type: 'checkbox',
+          value: this.maintainAspectRatio,
+          callback: (checked) => {
+            this.maintainAspectRatio = checked;
           }
         }
-      });
-
-      const anchorCb = createCheckbox('Arbitrary Pivot', this.useDifferentStartPoint, (checked) => {
-        this.useDifferentStartPoint = checked;
-        this.reset();
-      });
-
-      container.appendChild(copyCb);
-      container.appendChild(anchorCb);
+      ];
     }
-  }
+}

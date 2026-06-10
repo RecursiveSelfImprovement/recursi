@@ -3,6 +3,7 @@ class DeleteElementCommand {
       this.base = baseController;
       this.hoveredElement = null;
       this.allowSelfSnap = false;
+      this.excludeGlobalSettings = true;
     }
 
     onPoint(data) {

@@ -1,33 +1,35 @@
 class AccuDrawLogic {
   constructor(baseController) {
-    this.baseController = baseController;
+      this.baseController = baseController;
 
-    this.active = true;
-    this.mode = 'rectangular'; // 'rectangular' | 'polar' | 'mixed'
-    this.origin = [0, 0, 0];
-    this.rotation = [
-      [1, 0, 0],
-      [0, 1, 0],
-      [0, 0, 1],
-    ];
+      this.active = true;
+      this.mode = 'rectangular'; // 'rectangular' | 'polar' | 'mixed'
+      this.origin = [0, 0, 0];
+      this.rotation = [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, 1],
+      ];
 
-    // Axes state
-    this.currentAxis = 'x';
-    this.isLocked = { x: false, y: false, z: false, dist: false, angle: false };
-    this.lockedValues = { x: 0, y: 0, z: 0, dist: 0, angle: 0 };
+      // Axes state
+      this.currentAxis = 'x';
+      this.isLocked = { x: false, y: false, z: false, dist: false, angle: false };
+      this.lockedValues = { x: 0, y: 0, z: 0, dist: 0, angle: 0 };
 
-    // Focus State
-    this.stickyFocus = false; // If true, mouse movement won't change the active axis
-    this.typingMouseAnchor = null; // Anchor for gesture detection during typing
+      // Focus State
+      this.stickyFocus = false; // If true, mouse movement won't change the active axis
+      this.typingMouseAnchor = null; // Anchor for gesture detection during typing
 
-    // Tracking for directional input
-    this.lastLocalDelta = { x: 0, y: 0, z: 0 };
-    this.lastIndexedAxis = null;
+      // Tracking for directional input
+      this.lastLocalDelta = { x: 0, y: 0, z: 0 };
+      this.lastIndexedAxis = null;
 
-    // Input state
-    this.inputBuffer = '';
-    this.inputActive = false;
-  }
+      // Input state
+      this.inputBuffer = '';
+      this.inputActive = false;
+
+      this.contextStack = [];
+    }
 
   onMotion(mousePoint, tentativePoint, indexedToAxis) {
     if (!this.active) return;
@@ -507,28 +509,11 @@ class AccuDrawLogic {
   }
 
   switchMode() {
-    if (this.mode === 'rectangular') this.mode = 'polar';
-    else if (this.mode === 'polar') this.mode = 'mixed';
-    else this.mode = 'rectangular';
-
-    this.isLocked.x = false;
-    this.isLocked.y = false;
-    this.isLocked.dist = false;
-    this.isLocked.angle = false;
-    this.inputActive = false;
-    this.stickyFocus = false;
-    this.inputBuffer = '';
-
-    if (this.baseController.accuDraw) {
-      if (this.baseController.accuDraw.ui) {
-        this.baseController.accuDraw.ui.setMode(this.mode);
-      }
-      let shapeVal = 0;
-      if (this.mode === 'polar') shapeVal = 1;
-      if (this.mode === 'mixed') shapeVal = 0.5;
-      this.baseController.accuDraw.setSquircleAnimated(shapeVal, 0.3);
+      let nextMode = 'rectangular';
+      if (this.mode === 'rectangular') nextMode = 'polar';
+      else if (this.mode === 'polar') nextMode = 'mixed';
+      this.setMode(nextMode);
     }
-  }
 
   handleSmartLock() {
     const diag = this.baseController.accuDrawDiagnostics;
@@ -658,5 +643,57 @@ class AccuDrawLogic {
     return this.inputActive && this.currentAxis === axis;
   }
 
+
+  setMode(mode) {
+      this.mode = mode;
+      this.isLocked.x = false;
+      this.isLocked.y = false;
+      this.isLocked.dist = false;
+      this.isLocked.angle = false;
+      this.inputActive = false;
+      this.stickyFocus = false;
+      this.inputBuffer = '';
+
+      if (this.baseController.accuDraw) {
+        if (this.baseController.accuDraw.ui) {
+          this.baseController.accuDraw.ui.setMode(this.mode);
+        }
+        let shapeVal = 0.3;
+        if (this.mode === 'polar') shapeVal = 1;
+        if (this.mode === 'mixed') shapeVal = 0.5;
+        this.baseController.accuDraw.setSquircleAnimated(shapeVal, 0.3);
+      }
+    }
+
+  pushContextState() {
+      const saved = {
+        mode: this.mode,
+        origin: this.origin.slice(),
+        rotation: this.rotation.map(row => row.slice()),
+        baseControllerRotation: this.baseController.rotationMatrix.map(row => row.slice())
+      };
+      this.contextStack.push(saved);
+    }
+
+  popContextState() {
+      if (this.contextStack.length === 0) return;
+      const restored = this.contextStack.pop();
+
+      this.mode = restored.mode;
+      this.setOrigin(restored.origin);
+      this.setRotation(restored.rotation);
+      this.baseController.rotationMatrix = restored.baseControllerRotation;
+
+      if (this.baseController.accuDraw) {
+        this.baseController.accuDraw.setRotationAnimated(restored.baseControllerRotation, 0.3);
+        if (this.baseController.accuDraw.ui) {
+          this.baseController.accuDraw.ui.setMode(this.mode);
+        }
+        let shapeVal = 0.3;
+        if (this.mode === 'polar') shapeVal = 1;
+        if (this.mode === 'mixed') shapeVal = 0.5;
+        this.baseController.accuDraw.setSquircleAnimated(shapeVal, 0.3);
+      }
+    }
 }
 

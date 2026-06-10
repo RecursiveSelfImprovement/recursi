@@ -78,6 +78,8 @@ class SidePanel {
         });
         this._lifecycleObserver.observe(document.body, { childList: true, subtree: true });
       }
+
+      this._injectStyles();
     }
 
     _injectGenericStyles() {
@@ -566,7 +568,6 @@ class SidePanel {
     }
   
   _injectStyles() {
-      // Renamed to match the constructor call exactly and avoid uncaught reference crashes
       const css = `
         /* Generic Reusable SidePanel Styles */
         .generic-side-panel {
@@ -606,6 +607,27 @@ class SidePanel {
           display: flex;
           flex-direction: column;
           gap: 8px;
+        }
+
+        /* Custom scrollbar for the yt-side-panel and generic-side-panel scrollable containers */
+        .yt-side-panel div::-webkit-scrollbar,
+        .generic-side-panel div::-webkit-scrollbar {
+          width: 5px;
+          height: 5px;
+        }
+        .yt-side-panel div::-webkit-scrollbar-track,
+        .generic-side-panel div::-webkit-scrollbar-track {
+          background: rgba(0,0,0,0.15);
+        }
+        .yt-side-panel div::-webkit-scrollbar-thumb,
+        .generic-side-panel div::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.12);
+          border-radius: 3px;
+          transition: background 0.15s ease;
+        }
+        .yt-side-panel div::-webkit-scrollbar-thumb:hover,
+        .generic-side-panel div::-webkit-scrollbar-thumb:hover {
+          background: #00e676;
         }
       `;
       const style = document.createElement('style');

@@ -17,6 +17,8 @@ class RotateElementCommand {
       // Settings toggles
       this.makeCopy = false;
       this.useDifferentStartPoint = false;
+      this.excludeGlobalSettings = true;
+      this.hasPushedContextState = false;
     }
 
     onPoint(data) {
@@ -53,9 +55,21 @@ class RotateElementCommand {
             // Transition to State 4: User must define an arbitrary center of rotation (Pivot)
             this.state = 4;
           } else {
-            // Pivot is automatically the identified snap/click point
-            this.pivotPoint = anchor;
-            this.state = 3; // Wait for reference start point
+            // Default 1-click Rotate: Pivot is center of element, reference is picked point
+            const center = target.center || target.centerPoint || anchor.slice();
+            this.pivotPoint = Array.isArray(center) ? center.slice() : anchor.slice();
+            this.startReferencePoint = anchor.slice();
+            this.state = 2; // Begin rotating immediately
+
+            if (this.base.accuDrawLogic) {
+              this.base.accuDrawLogic.pushContextState();
+              this.hasPushedContextState = true;
+              this.base.accuDrawLogic.setMode('polar');
+            }
+
+            if (!this.makeCopy) {
+              ElementOperations.ghostOriginal(this.selectedElement);
+            }
 
             // Set AccuDraw origin to Pivot Point
             this.base.setOrigin(this.pivotPoint.slice());
@@ -70,6 +84,13 @@ class RotateElementCommand {
         this.pivotPoint = data.point ? data.point.slice() : null;
         if (this.pivotPoint) {
           this.state = 3; // Now define reference start angle
+
+          if (this.base.accuDrawLogic) {
+            this.base.accuDrawLogic.pushContextState();
+            this.hasPushedContextState = true;
+            this.base.accuDrawLogic.setMode('polar');
+          }
+
           this.base.setOrigin(this.pivotPoint.slice());
         }
       } else if (this.state === 3) {
@@ -102,7 +123,7 @@ class RotateElementCommand {
               this.base.cadElements.push(clone);
               ElementOperations.rebuildPermanentVisual(this.base, clone);
 
-              // UPDATE SELECTOR REFERENCE: Subsequent rotations offset from this newly dropped clone
+              // UPDATE SELECTOR REFERENCE: Subsequent copies/rotations offset from this newly dropped clone
               this.selectedElement = clone;
             }
           } else {
@@ -442,6 +463,11 @@ class RotateElementCommand {
         this.hoveredElement = null;
       }
 
+      if (this.hasPushedContextState && this.base.accuDrawLogic) {
+        this.base.accuDrawLogic.popContextState();
+        this.hasPushedContextState = false;
+      }
+
       this.selectedElement = null;
       this.pivotPoint = null;
       this.startReferencePoint = null;
@@ -455,56 +481,7 @@ class RotateElementCommand {
 
     
 
-    renderToolSettings(container) {
-      container.innerHTML = '';
-
-      const createCheckbox = (labelText, checkedValue, callback) => {
-        const row = document.createElement('div');
-        row.style.cssText = 'display: flex; align-items: center; justify-content: space-between; padding: 6px 0; margin-bottom: 4px;';
-        
-        const label = document.createElement('div');
-        label.style.cssText = 'font-size: 11px; color: #aaa; text-transform: uppercase; font-weight: bold;';
-        label.textContent = labelText;
-
-        const input = document.createElement('input');
-        input.type = 'checkbox';
-        input.checked = checkedValue;
-        input.setAttribute('tabindex', '-1');
-        input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
-        input.onchange = (e) => callback(e.target.checked);
-
-        // Instantly redirect focus back to main drawing canvas on click/focus
-        input.addEventListener('focus', () => {
-          input.blur();
-          this.base.domElement.focus();
-        });
-
-        row.appendChild(label);
-        row.appendChild(input);
-        return row;
-      };
-
-      const copyCb = createCheckbox('Make Copy', this.makeCopy, (checked) => {
-        const oldCopy = this.makeCopy;
-        this.makeCopy = checked;
-
-        if (this.state === 2 && this.selectedElement) {
-          if (checked && !oldCopy) {
-            ElementOperations.restoreOriginal(this.selectedElement);
-          } else if (!checked && oldCopy) {
-            ElementOperations.ghostOriginal(this.selectedElement);
-          }
-        }
-      });
-
-      const anchorCb = createCheckbox('Arbitrary Pivot', this.useDifferentStartPoint, (checked) => {
-        this.useDifferentStartPoint = checked;
-        this.reset(); // Reset command states on mode switches
-      });
-
-      container.appendChild(copyCb);
-      container.appendChild(anchorCb);
-    }
+    
   
   updateState3Guides(mousePoint) {
       if (this.rotationGuidesGroup) {
@@ -558,5 +535,38 @@ class RotateElementCommand {
       guides.add(endMesh);
 
       this.base.view.scene.add(guides);
+    }
+
+  getCommandSettings() {
+      return [
+        {
+          id: 'makeCopy',
+          label: 'Make Copy',
+          type: 'checkbox',
+          value: this.makeCopy,
+          callback: (checked) => {
+            const oldCopy = this.makeCopy;
+            this.makeCopy = checked;
+
+            if (this.state === 2 && this.selectedElement) {
+              if (checked && !oldCopy) {
+                ElementOperations.restoreOriginal(this.selectedElement);
+              } else if (!checked && oldCopy) {
+                ElementOperations.ghostOriginal(this.selectedElement);
+              }
+            }
+          }
+        },
+        {
+          id: 'useDifferentStartPoint',
+          label: 'Arbitrary Pivot',
+          type: 'checkbox',
+          value: this.useDifferentStartPoint,
+          callback: (checked) => {
+            this.useDifferentStartPoint = checked;
+            this.reset(); // Reset command states on mode switches
+          }
+        }
+      ];
     }
 }
