@@ -31,8 +31,8 @@ class ControllerSetup {
         new ScaleElementCommand(baseController)
       );
       baseController.registerCommand(
-        'select',
-        new ElementPickCommand(baseController)
+        'delete',
+        new DeleteElementCommand(baseController)
       );
 
       baseController.setCommandByName('rectangle');

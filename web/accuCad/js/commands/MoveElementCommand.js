@@ -43,7 +43,7 @@ class MoveElementCommand {
 
         if (target) {
           this.selectedElement = target;
-          this.originalState = this.backupState(target);
+          this.originalState = ElementOperations.backupState(target);
 
           if (this.useDifferentStartPoint) {
             // Transition to State 3: Wait for user to define custom anchor
@@ -54,7 +54,7 @@ class MoveElementCommand {
             this.state = 2;
 
             if (!this.makeCopy) {
-              this.ghostOriginal(this.selectedElement);
+              ElementOperations.ghostOriginal(this.selectedElement);
             }
 
             // IMMEDIATELY update AccuDraw origin to start point
@@ -75,7 +75,7 @@ class MoveElementCommand {
           this.state = 2; // Transition to moving
 
           if (!this.makeCopy) {
-            this.ghostOriginal(this.selectedElement);
+            ElementOperations.ghostOriginal(this.selectedElement);
           }
 
           // IMMEDIATELY update AccuDraw origin to custom start point
@@ -95,18 +95,18 @@ class MoveElementCommand {
               clone.id = Math.random().toString(36).substr(2, 9);
               clone.isTemporary = false;
               this.base.cadElements.push(clone);
-              this.rebuildPermanentVisual(clone);
+              ElementOperations.rebuildPermanentVisual(this.base, clone);
 
               // UPDATE SELECTOR REFERENCE: Subsequent copies/moves offset from this newly dropped copy
               this.selectedElement = clone;
             }
           } else {
             // Restore original styles before permanent translation update
-            this.restoreOriginal(this.selectedElement);
+            ElementOperations.restoreOriginal(this.selectedElement);
             
             // Apply vector displacement permanently
             this.applyTranslation(this.selectedElement, offset);
-            this.rebuildPermanentVisual(this.selectedElement);
+            ElementOperations.rebuildPermanentVisual(this.base, this.selectedElement);
           }
 
           // Set AccuDraw origin to final destination point
@@ -114,10 +114,10 @@ class MoveElementCommand {
 
           // CONTINUOUS ACCEPTS: Prepare the element for the next move relative to this new point
           this.anchorPoint = data.point.slice();
-          this.originalState = this.backupState(this.selectedElement);
+          this.originalState = ElementOperations.backupState(this.selectedElement);
 
           if (!this.makeCopy) {
-            this.ghostOriginal(this.selectedElement);
+            ElementOperations.ghostOriginal(this.selectedElement);
           }
         }
       }
@@ -142,45 +142,7 @@ class MoveElementCommand {
     }
 
     handleHover(data) {
-      const event = data.event;
-      if (!event) return;
-
-      const canvasRect = this.base.domElement.getBoundingClientRect();
-      if (canvasRect.width <= 0 || canvasRect.height <= 0) return;
-
-      const mouse = new THREE.Vector2(
-        ((event.clientX - canvasRect.left) / canvasRect.width) * 2 - 1,
-        -((event.clientY - canvasRect.top) / canvasRect.height) * 2 + 1
-      );
-
-      const camera = this.base.view.camera;
-      const raycaster = new THREE.Raycaster();
-      raycaster.params.Line.threshold = 0.15;
-      raycaster.setFromCamera(mouse, camera);
-
-      const candidates = [];
-      this.base.cadElements.forEach((el) => {
-        if (el.threejsObject && el.threejsObject.visible) {
-          candidates.push(el.threejsObject);
-        }
-      });
-
-      const intersections = raycaster.intersectObjects(candidates, true);
-      let pickedElement = null;
-
-      if (intersections.length > 0) {
-        const hitObj = intersections[0].object;
-        pickedElement = this.base.cadElements.find(el => {
-          let matches = false;
-          if (el.threejsObject) {
-            el.threejsObject.traverse(child => {
-              if (child === hitObj) matches = true;
-            });
-          }
-          return matches;
-        });
-      }
-
+      const pickedElement = ElementOperations.handleHover(this.base, data);
       if (pickedElement !== this.hoveredElement) {
         if (this.hoveredElement && this.hoveredElement !== this.base._highlightedElement) {
           HighlightUtilities.removeHighlight(this.hoveredElement);
@@ -192,40 +154,7 @@ class MoveElementCommand {
       }
     }
 
-    backupState(el) {
-      if (el.type === 'path') {
-        return {
-          vertices: el.vertices.map(v => ({ point: [...v.point], radius: v.radius })),
-          closed: el.closed
-        };
-      } else if (el.type === 'capsule') {
-        return {
-          start: [...el.start],
-          end: [...el.end],
-          radius: el.radius
-        };
-      } else if (el.type === 'rectangle') {
-        return {
-          start: [...el.start],
-          end: [...el.end]
-        };
-      } else if (el.type === 'arc') {
-        return {
-          startPt: [...el.startPt],
-          center: [...el.center],
-          endPt: [...el.endPt]
-        };
-      } else if (el.type === 'curve') {
-        return {
-          controlPoints: el.controlPoints.map(p => [...p])
-        };
-      } else if (el.type === 'circle') {
-        return {
-          points: el.points.map(p => [...p])
-        };
-      }
-      return null;
-    }
+    
 
     applyTranslation(el, offset) {
       if (el.type === 'path') {
@@ -281,121 +210,25 @@ class MoveElementCommand {
       }
     }
 
-    rebuildPermanentVisual(el) {
-      const bc = this.base;
-      if (el.threejsObject) {
-        bc.view.scene.remove(el.threejsObject);
-        el.threejsObject.traverse((child) => {
-          if (child.geometry) child.geometry.dispose();
-          if (child.material) {
-            if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
-            else child.material.dispose();
-          }
-        });
-      }
+    
 
-      if (el.type === 'path') {
-        const cmd = new DrawPathCommand(bc);
-        cmd.tempElement = el;
-        cmd.updatePermanentGeometry();
-      } else if (el.type === 'capsule') {
-        const cmd = new DrawCapsuleCommand(bc);
-        cmd.tempElement = el;
-        cmd.finalizeCapsule();
-      } else if (el.type === 'rectangle') {
-        const cmd = new DrawRectangleCommand(bc);
-        cmd.tempElement = el;
-        cmd.finalizeRectangle();
-      } else if (el.type === 'arc') {
-        this.buildVisualArc(el);
-      } else if (el.type === 'curve') {
-        this.buildVisualCurve(el);
-      } else if (el.type === 'circle') {
-        this.buildVisualCircle(el);
-      }
-    }
+    
 
-    buildVisualArc(el) {
-      const bc = this.base;
-      const cmd = new DrawArcCommand(bc);
-      const arcData = cmd.computeArcData(el.startPt, el.center, el.endPt);
-      if (!arcData) return;
+    
 
-      const arcCurve = new THREE.ArcCurve(
-        0,
-        0,
-        arcData.radius,
-        arcData.startAngle,
-        arcData.endAngle,
-        arcData.clockwise
-      );
-      const points2D = arcCurve.getPoints(50);
-      const points3D = points2D.map((pt) => {
-        const vec = new THREE.Vector3().addVectors(
-          arcData.u.clone().multiplyScalar(pt.x),
-          arcData.v.clone().multiplyScalar(pt.y)
-        );
-        vec.add(new THREE.Vector3(...el.center));
-        return vec;
-      });
-
-      const positions = points3D.flatMap((v) => [v.x, v.y, v.z]);
-      const geometry = new LineGeometry();
-      geometry.setPositions(positions);
-      const material = new LineMaterial({
-        color: el.color ? (typeof el.color === 'string' ? parseInt(el.color.replace('#', ''), 16) : el.color) : 0xff0000,
-        linewidth: el.lineWidth || bc.lineWidth || 4,
-        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
-      });
-      const line = new Line2(geometry, material);
-      el.threejsObject = line;
-      bc.view.scene.add(line);
-    }
-
-    buildVisualCurve(el) {
-      const bc = this.base;
-      const [cp0, cp1, cp2, cp3] = el.controlPoints.map(
-        (p) => new THREE.Vector3(...p)
-      );
-      const curve = new THREE.CubicBezierCurve3(cp0, cp1, cp2, cp3);
-      const curvePoints = curve.getPoints(50);
-      const positions = curvePoints.flatMap((p) => [p.x, p.y, p.z]);
-
-      const geometry = new LineGeometry();
-      geometry.setPositions(positions);
-      const material = new LineMaterial({
-        color: el.color ? (typeof el.color === 'string' ? parseInt(el.color.replace('#', ''), 16) : el.color) : 0xff0000,
-        linewidth: el.lineWidth || bc.lineWidth || 4,
-        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
-      });
-      const curveLine = new Line2(geometry, material);
-      el.threejsObject = curveLine;
-      bc.view.scene.add(curveLine);
-    }
-
-    buildVisualCircle(el) {
-      const bc = this.base;
-      const cmd = new DrawCircleCommand(bc);
-      const center = el.points[0];
-      const edge = el.points[1] || [center[0] + 1, center[1], center[2]];
-      const line = cmd.createCircleVisual(center, edge, false);
-      if (line) {
-        el.threejsObject = line;
-        bc.view.scene.add(line);
-      }
-    }
+    
 
     updatePreview(offset) {
       if (this.previewShape) {
         this.base.view.scene.remove(this.previewShape);
-        this.disposeObject(this.previewShape);
+        ElementOperations.disposeObject(this.previewShape);
         this.previewShape = null;
       }
 
       const clone = this.cloneElementWithOffset(this.selectedElement, offset);
       if (!clone) return;
 
-      this.previewShape = this.renderPreviewObject(clone);
+      this.previewShape = ElementOperations.renderPreviewObject(this.base, clone);
       if (this.previewShape) {
         this.base.view.scene.add(this.previewShape);
       }
@@ -435,59 +268,16 @@ class MoveElementCommand {
       return null;
     }
 
-    renderPreviewObject(el) {
-      const bc = this.base;
-      let obj = null;
-
-      if (el.type === 'path') {
-        const cmd = new DrawPathCommand(bc);
-        cmd.tempElement = el;
-        cmd.updatePermanentGeometry();
-        obj = el.threejsObject;
-        el.threejsObject = null;
-      } else if (el.type === 'capsule') {
-        const cmd = new DrawCapsuleCommand(bc);
-        obj = cmd.renderVisual(el, true);
-      } else if (el.type === 'rectangle') {
-        const cmd = new DrawRectangleCommand(bc);
-        obj = cmd.renderVisual(el, true);
-      } else if (el.type === 'arc') {
-        this.buildVisualArc(el);
-        obj = el.threejsObject;
-        el.threejsObject = null;
-      } else if (el.type === 'curve') {
-        this.buildVisualCurve(el);
-        obj = el.threejsObject;
-        el.threejsObject = null;
-      } else if (el.type === 'circle') {
-        const cmd = new DrawCircleCommand(bc);
-        obj = cmd.createCircleVisual(el.points[0], el.points[1] || [el.points[0][0] + 1, el.points[0][1], el.points[0][2]], true);
-      }
-
-      if (obj) {
-        obj.traverse(child => {
-          if (child.material) {
-            child.material = child.material.clone();
-            child.material.transparent = true;
-            child.material.opacity = 0.45;
-            if (child.material.color) {
-              child.material.color.setHex(0xffff00); // Dynamic Yellow move preview
-            }
-          }
-        });
-      }
-
-      return obj;
-    }
+    
 
     reset() {
       if (this.selectedElement) {
-        this.restoreOriginal(this.selectedElement);
+        ElementOperations.restoreOriginal(this.selectedElement);
       }
 
       if (this.previewShape) {
         this.base.view.scene.remove(this.previewShape);
-        this.disposeObject(this.previewShape);
+        ElementOperations.disposeObject(this.previewShape);
         this.previewShape = null;
       }
 
@@ -506,19 +296,7 @@ class MoveElementCommand {
       this.reset();
     }
 
-    disposeObject(object) {
-      if (!object) return;
-      object.traverse((child) => {
-        if (child.geometry) child.geometry.dispose();
-        if (child.material) {
-          if (Array.isArray(child.material)) {
-            child.material.forEach((mat) => mat.dispose());
-          } else {
-            child.material.dispose();
-          }
-        }
-      });
-    }
+    
   
   renderToolSettings(container) {
       container.innerHTML = '';
@@ -534,8 +312,15 @@ class MoveElementCommand {
         const input = document.createElement('input');
         input.type = 'checkbox';
         input.checked = checkedValue;
+        input.setAttribute('tabindex', '-1');
         input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
         input.onchange = (e) => callback(e.target.checked);
+
+        // Instantly redirect focus back to main drawing canvas on click/focus
+        input.addEventListener('focus', () => {
+          input.blur();
+          this.base.domElement.focus();
+        });
 
         row.appendChild(label);
         row.appendChild(input);
@@ -550,10 +335,10 @@ class MoveElementCommand {
         if (this.state === 2 && this.selectedElement) {
           if (checked && !oldCopy) {
             // Switched to Copy mode -> restore original visual
-            this.restoreOriginal(this.selectedElement);
+            ElementOperations.restoreOriginal(this.selectedElement);
           } else if (!checked && oldCopy) {
             // Switched to Move mode -> ghost original visual
-            this.ghostOriginal(this.selectedElement);
+            ElementOperations.ghostOriginal(this.selectedElement);
           }
         }
       });
@@ -567,31 +352,7 @@ class MoveElementCommand {
       container.appendChild(anchorCb);
     }
 
-  ghostOriginal(el) {
-      if (!el || !el.threejsObject) return;
-      el.threejsObject.traverse(child => {
-        if (child.material) {
-          if (!child.userData.originalMaterial) {
-            child.userData.originalMaterial = child.material;
-          }
-          child.material = child.material.clone();
-          child.material.transparent = true;
-          child.material.opacity = 0.25;
-          if (child.material.color) {
-            child.material.color.setHex(0x888888); // Translucent Grey Ghost
-          }
-        }
-      });
-    }
+  
 
-  restoreOriginal(el) {
-      if (!el || !el.threejsObject) return;
-      el.threejsObject.traverse(child => {
-        if (child.userData.originalMaterial) {
-          child.material = child.userData.originalMaterial;
-          delete child.userData.originalMaterial;
-        }
-      });
-      el.threejsObject.visible = true;
-    }
+  
 }

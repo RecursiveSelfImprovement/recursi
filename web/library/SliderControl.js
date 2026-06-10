@@ -500,6 +500,18 @@ class SliderControl {
         return;
       }
 
+      // Standard slider focus prevention
+      if (this.slider) {
+        this.slider.setAttribute('tabindex', '-1');
+        this.slider.addEventListener('focus', () => {
+          this.slider.blur();
+          const bc = window.baseController;
+          if (bc && bc.domElement) {
+            bc.domElement.focus();
+          }
+        });
+      }
+
       this.slider.addEventListener('input', (e) => {
         this.value = this.convertToRealValue(e.target.value);
         if (this.valueDisplay) {

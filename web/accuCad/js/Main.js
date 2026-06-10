@@ -383,9 +383,10 @@ class Main {
           DrawCurveCommand: 'Bezier Curve Tool',
           DrawCircleCommand: 'Circle Tool',
           DrawCapsuleCommand: 'Capsule Tool',
-          ElementPickCommand: 'Selection Tool',
+          DeleteElementCommand: 'Delete Tool',
           MoveElementCommand: 'Move Element Tool',
           RotateElementCommand: 'Rotate Element Tool',
+          ScaleElementCommand: 'Scale Element Tool'
         };
         const displayName =
           friendlyNames[cmdName] || cmdName.replace('Command', ' Tool');
@@ -496,8 +497,14 @@ class Main {
             const input = document.createElement('input');
             input.type = 'checkbox';
             input.checked = checkedValue;
+            input.setAttribute('tabindex', '-1');
             input.style.cssText = 'cursor: pointer; width: 16px; height: 16px; accent-color: #00e676;';
             input.onchange = (e) => callback(e.target.checked);
+
+            input.addEventListener('focus', () => {
+              input.blur();
+              controller.domElement.focus();
+            });
 
             row.appendChild(label);
             row.appendChild(input);
