@@ -5,46 +5,50 @@ class DrawRectangleCommand {
   }
 
   onMouseDown(data) {
-    const {point} = data;
-    if (!point) return;
+      const {point} = data;
+      if (!point) return;
 
-    if (this.base.floatingOrigin) {
-      this.base.setOrigin(point);
-    }
-
-    if (this.currentPoints.length === 0) {
-      this.currentPoints.push(point);
-      this.tempElement = new RectangleElement(point, point);
-      this.tempElement.isTemporary = true;
-      this.tempElement.color = this.base.currentColor || '#ff0000';
-      if (!this.tempElement.renderOptions) {
-        this.tempElement.renderOptions = {
-          fillOpacity: 0.6,
-          lineThickness: this.base.lineWidth || 4,
-          darkenBorder: 0.3,
-          borderColor: null,
-          fillColor: this.tempElement.color,
-        };
+      if (this.base.floatingOrigin) {
+        this.base.setOrigin(point);
       }
-      this.base.cadElements.push(this.tempElement);
-    } else if (this.currentPoints.length === 1) {
-      this.currentPoints.push(point);
-      this.tempElement.end = point.slice();
-      this.tempElement.updateDimensions();
-      this.tempElement.isFlat = this.isFlatElement(this.tempElement);
-      this.finalizeRectangle();
-      this.reset();
+
+      if (this.currentPoints.length === 0) {
+        this.currentPoints.push(point);
+        this.tempElement = new RectangleElement(point, point, this.base.rotationMatrix);
+        this.tempElement.isTemporary = true;
+        this.tempElement.color = this.base.currentColor || '#ff0000';
+        if (!this.tempElement.renderOptions) {
+          this.tempElement.renderOptions = {
+            fillOpacity: 0.6,
+            lineThickness: this.base.lineWidth || 4,
+            darkenBorder: 0.3,
+            borderColor: null,
+            fillColor: this.tempElement.color,
+          };
+        }
+        this.base.cadElements.push(this.tempElement);
+      } else if (this.currentPoints.length === 1) {
+        this.currentPoints.push(point);
+        this.tempElement.end = point.slice();
+        // Dynamically update the final block matrix on click
+        this.tempElement.rotationMatrix = this.base.rotationMatrix.map(row => [...row]);
+        this.tempElement.updateDimensions();
+        this.tempElement.isFlat = this.isFlatElement(this.tempElement);
+        this.finalizeRectangle();
+        this.reset();
+      }
     }
-  }
 
   onMouseMove(data) {
-    const {point} = data;
-    if (!point) return;
+      const {point} = data;
+      if (!point) return;
 
-    if (this.currentPoints.length === 1 && this.tempElement) {
-      this.updatePreview(point);
+      if (this.currentPoints.length === 1 && this.tempElement) {
+        // Dynamically update the rotation matrix to follow the live AccuDraw plane during dynamics
+        this.tempElement.rotationMatrix = this.base.rotationMatrix.map(row => [...row]);
+        this.updatePreview(point);
+      }
     }
-  }
 
   onRightClick() {
     this.reset();
@@ -128,54 +132,51 @@ class DrawRectangleCommand {
   }
 
   static computeGeometry(element) {
-    var epsilon = 0.0001;
-    var min, max;
-    if (element.min && element.max) {
-      min = new THREE.Vector3().fromArray(element.min);
-      max = new THREE.Vector3().fromArray(element.max);
-    } else {
-      var start = element.start,
-        end = element.end;
-      min = new THREE.Vector3()
-        .fromArray(start)
-        .min(new THREE.Vector3().fromArray(end));
-      max = new THREE.Vector3()
-        .fromArray(start)
-        .max(new THREE.Vector3().fromArray(end));
-      element.min = [min.x, min.y, min.z];
-      element.max = [max.x, max.y, max.z];
-    }
-
-    var sizeVec = new THREE.Vector3().subVectors(max, min);
-    if (!element.size) {
-      element.size = [sizeVec.x, sizeVec.y, sizeVec.z];
-    }
-
-    var geometry,
-      rotation = new THREE.Euler(0, 0, 0);
-
-    if (sizeVec.x < epsilon || sizeVec.y < epsilon || sizeVec.z < epsilon) {
-      if (sizeVec.x < epsilon) {
-        geometry = new THREE.PlaneGeometry(sizeVec.z, sizeVec.y);
-        rotation.set(0, Math.PI / 2, 0);
-      } else if (sizeVec.y < epsilon) {
-        geometry = new THREE.PlaneGeometry(sizeVec.x, sizeVec.z);
-        rotation.set(-Math.PI / 2, 0, 0);
-      } else {
-        geometry = new THREE.PlaneGeometry(sizeVec.x, sizeVec.y);
+      var epsilon = 0.0001;
+      
+      if (!element.rotationMatrix) {
+        element.rotationMatrix = [
+          [1, 0, 0],
+          [0, 1, 0],
+          [0, 0, 1]
+        ];
       }
-    } else {
-      geometry = new THREE.BoxGeometry(sizeVec.x, sizeVec.y, sizeVec.z);
-    }
 
-    var position = new THREE.Vector3().addVectors(min, max).multiplyScalar(0.5);
-    return {
-      geometry: geometry,
-      position: position,
-      rotation: rotation,
-      isFlat: sizeVec.x < epsilon || sizeVec.y < epsilon || sizeVec.z < epsilon,
-    };
-  }
+      if (!element.size || !element.center) {
+        element.updateDimensions();
+      }
+
+      var size = element.size;
+      var geometry;
+
+      if (size[0] < epsilon || size[1] < epsilon || size[2] < epsilon) {
+        if (size[0] < epsilon) {
+          geometry = new THREE.PlaneGeometry(size[2], size[1]);
+          geometry.rotateY(Math.PI / 2);
+        } else if (size[1] < epsilon) {
+          geometry = new THREE.PlaneGeometry(size[0], size[2]);
+          geometry.rotateX(-Math.PI / 2);
+        } else {
+          geometry = new THREE.PlaneGeometry(size[0], size[1]);
+        }
+      } else {
+        geometry = new THREE.BoxGeometry(size[0], size[1], size[2]);
+      }
+
+      const xAxis = new THREE.Vector3(...element.rotationMatrix[0]);
+      const yAxis = new THREE.Vector3(...element.rotationMatrix[1]);
+      const zAxis = new THREE.Vector3(...element.rotationMatrix[2]);
+      const matrix = new THREE.Matrix4().makeBasis(xAxis, yAxis, zAxis);
+      const rotation = new THREE.Euler().setFromRotationMatrix(matrix);
+      const position = new THREE.Vector3(...element.center);
+
+      return {
+        geometry: geometry,
+        position: position,
+        rotation: rotation,
+        isFlat: size[0] < epsilon || size[1] < epsilon || size[2] < epsilon,
+      };
+    }
 
   fallbackCreateRectangle(element, isPreview) {
     var geoData = DrawRectangleCommand.computeGeometry(element);

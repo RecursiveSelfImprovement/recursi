@@ -285,6 +285,11 @@ class SmartDrawKeys {
         if (type === 'command') baseController.setCommandByName('rotate');
         if (type === 'queryactive') return true;
       });
+
+      kch.addKeyCommand('command', 'scale', 'CS: Switch to Scale', function (type, keys) {
+        if (type === 'command') baseController.setCommandByName('scale');
+        if (type === 'queryactive') return true;
+      });
     }
 
   static registerElementCommands(kch, baseController) {

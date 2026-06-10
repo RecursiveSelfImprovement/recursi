@@ -108,8 +108,8 @@ class ViewControls {
       const compassSwatch = document.createElement('div');
       compassSwatch.className = 'compass-color-swatch-picker';
       const initialCompassColor = savedSettings.hexColor || '#88ccff';
-      this._compassColorHex = initialCompassColor;
-      compassSwatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${initialCompassColor}; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
+      this._compassColorHex = this._colorToHexStr(initialCompassColor);
+      compassSwatch.style.cssText = `width: 42px; height: 20px; border-radius: 4px; background-color: ${this._compassColorHex}; border: 1px solid #555; cursor: pointer; box-shadow: 0 1px 3px rgba(0,0,0,0.5);`;
       this.compassSwatch = compassSwatch;
 
       compassSwatch.onclick = (e) => {
@@ -117,13 +117,13 @@ class ViewControls {
         const picker = new ColorPicker();
         picker.openSmartPicker(compassSwatch, this._compassColorHex || '#88ccff', (newColor) => {
           compassSwatch.style.backgroundColor = newColor;
-          this._compassColorHex = newColor;
+          this._compassColorHex = this._colorToHexStr(newColor);
           
-          const rgbNum = this._hexToRgbNum(newColor);
+          const rgbNum = this._colorToRgbNum(newColor);
           if (this.baseController.accuDraw?.update) {
             this.baseController.accuDraw.update({ color: rgbNum });
           }
-          this._saveSetting('hexColor', newColor);
+          this._saveSetting('hexColor', this._compassColorHex);
         });
       };
       
@@ -532,12 +532,12 @@ class ViewControls {
         this._applyCompassSetting('size', settings.size);
       }
       if (settings.hexColor !== undefined) {
-        this._compassColorHex = settings.hexColor;
+        this._compassColorHex = this._colorToHexStr(settings.hexColor);
         if (this.compassSwatch) {
-          this.compassSwatch.style.backgroundColor = settings.hexColor;
+          this.compassSwatch.style.backgroundColor = this._compassColorHex;
         }
         if (this.baseController.accuDraw?.update) {
-          this.baseController.accuDraw.update({ color: this._hexToRgbNum(settings.hexColor) });
+          this.baseController.accuDraw.update({ color: this._colorToRgbNum(settings.hexColor) });
         }
       }
       if (settings.opa !== undefined) {
@@ -633,7 +633,6 @@ class ViewControls {
         const key = item.key;
         
         if (key === 'accudrawZ') {
-          // Calculate relative horizontal drag delta on the host
           if (this._lastP2PRatio === undefined) {
             this._lastP2PRatio = ratio;
             return;
@@ -641,12 +640,10 @@ class ViewControls {
           const dRatio = ratio - this._lastP2PRatio;
           this._lastP2PRatio = ratio;
 
-          // Scale relative displacement to rotate the infinite wheel smoothly with high speed
           const scale = dRatio * 250;
           slider.wheelOffset += scale;
           slider.drawWheel();
 
-          // Smoothly accumulate kinetic velocity for release-flick inertia triggers
           slider.wheelVelocity = slider.wheelVelocity * 0.4 + scale * 0.6;
           
           if (typeof slider.options.callback === 'function') {
@@ -687,7 +684,7 @@ class ViewControls {
             this.compassSwatch.style.backgroundColor = newHex;
           }
           if (this.baseController.accuDraw?.update) {
-            this.baseController.accuDraw.update({ color: this._hexToRgbNum(newHex) });
+            this.baseController.accuDraw.update({ color: this._colorToRgbNum(newHex) });
           }
           this._saveSetting('hexColor', newHex);
 
@@ -747,7 +744,7 @@ class ViewControls {
     }
 
   startSliderAdjustment() {
-      this._lastP2PRatio = 0; // Initialize ratio anchor on touch start
+      this._lastP2PRatio = 0;
 
       if (this.hoverIndicatorLine) {
         this.hoverIndicatorLine.style.opacity = '0';
@@ -864,12 +861,10 @@ class ViewControls {
   getNavigatableSliders() {
       const list = [];
       
-      // 1. Size Slider (First visually in Compass)
       if (this.sliders.size) {
         list.push({ key: 'size', slider: this.sliders.size, type: 'compass' });
       }
       
-      // 2. Compass Color Swatch (Second visually in Compass!)
       if (this.compassSwatch) {
         list.push({
           key: 'compassColor',
@@ -884,7 +879,7 @@ class ViewControls {
                 this.compassSwatch.style.backgroundColor = newHex;
               }
               if (this.baseController.accuDraw?.update) {
-                this.baseController.accuDraw.update({ color: this._hexToRgbNum(newHex) });
+                this.baseController.accuDraw.update({ color: this._colorToRgbNum(newHex) });
               }
               this._saveSetting('hexColor', newHex);
             }
@@ -893,7 +888,6 @@ class ViewControls {
         });
       }
 
-      // 3. Other Compass Sliders (With accudrawZ re-enabled for Touch selection!)
       const remainingKeys = ['opa', 'sqrcl', 'xrot', 'yrot', 'zrot', 'bg', 'accudrawZ'];
       remainingKeys.forEach(key => {
         if (this.sliders[key]) {
@@ -905,7 +899,6 @@ class ViewControls {
         }
       });
 
-      // 4. Drawing Color Swatch (First visually in Tool Settings)
       const swatchPicker = this.baseController?.colorSwatchPicker;
       if (swatchPicker) {
         const hsv = this._hexToHsv(this.baseController.currentColor || '#00ff00');
@@ -928,7 +921,6 @@ class ViewControls {
         });
       }
 
-      // 5. Remaining Tool Sliders
       const sidePanel = this.baseController?.sidePanel;
       const toolSliders = this.baseController?.toolSliders || sidePanel?.toolSliders;
       if (toolSliders) {
@@ -1342,6 +1334,32 @@ class ViewControls {
           item.slider.showDirectEntryPopup();
         }
       }
+    }
+
+  _colorToRgbNum(colorInput) {
+      if (!colorInput) return 0x88ccff;
+      let colorStr = String(colorInput).trim();
+      if (colorStr.startsWith('#')) {
+        let hex = colorStr.replace('#', '');
+        if (hex.length === 3) {
+          hex = hex.split('').map(c => c + c).join('');
+        }
+        return parseInt(hex, 16);
+      }
+      const rgbMatch = colorStr.match(/rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/i);
+      if (rgbMatch) {
+        const r = parseInt(rgbMatch[1]);
+        const g = parseInt(rgbMatch[2]);
+        const b = parseInt(rgbMatch[3]);
+        return (r << 16) | (g << 8) | b;
+      }
+      const c = new THREE.Color(colorStr);
+      return c.getHex();
+    }
+
+  _colorToHexStr(colorInput) {
+      const num = this._colorToRgbNum(colorInput);
+      return '#' + num.toString(16).padStart(6, '0');
     }
 }
 

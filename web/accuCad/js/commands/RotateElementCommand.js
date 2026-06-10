@@ -8,6 +8,7 @@ class RotateElementCommand {
       
       this.originalState = null;
       this.previewShape = null;
+      this.rotationGuidesGroup = null;
       
       this.state = 1; // 1 = Identify Element, 4 = Define Pivot, 3 = Define Start Reference, 2 = Define End Target (Rotating)
       this.allowSelfSnap = false;
@@ -81,8 +82,8 @@ class RotateElementCommand {
             this.ghostOriginal(this.selectedElement);
           }
 
-          // Set AccuDraw origin to Reference Start Point
-          this.base.setOrigin(this.startReferencePoint.slice());
+          // FIX: Leave AccuDraw compass at the Pivot point, NOT the reference start point!
+          this.base.setOrigin(this.pivotPoint.slice());
         }
       } else if (this.state === 2) {
         if (this.selectedElement && this.pivotPoint && this.startReferencePoint && data.point) {
@@ -118,8 +119,8 @@ class RotateElementCommand {
             this.rebuildPermanentVisual(this.selectedElement);
           }
 
-          // Set AccuDraw origin to final destination point
-          this.base.setOrigin(endTargetPoint);
+          // Set AccuDraw origin back to the pivot point
+          this.base.setOrigin(this.pivotPoint.slice());
 
           // CONTINUOUS ACCEPTS: Prepare the element for the next rotation step
           // Last accepted angle becomes the reference start point
@@ -134,8 +135,13 @@ class RotateElementCommand {
     }
 
     onMouseMove(data) {
-      if (this.state === 1 || this.state === 4 || this.state === 3) {
+      if (this.state === 1 || this.state === 4) {
         this.handleHover(data);
+      } else if (this.state === 3) {
+        this.handleHover(data);
+        if (this.pivotPoint && data.point) {
+          this.updateState3Guides(data.point);
+        }
       } else if (this.state === 2) {
         if (this.selectedElement && this.pivotPoint && this.startReferencePoint && data.point) {
           this.updatePreview(data.point.slice());
@@ -282,6 +288,26 @@ class RotateElementCommand {
       } else if (el.type === 'rectangle') {
         el.start = rotatePt(el.start);
         el.end = rotatePt(el.end);
+        
+        if (!el.rotationMatrix) {
+          el.rotationMatrix = [
+            [1, 0, 0],
+            [0, 1, 0],
+            [0, 0, 1]
+          ];
+        }
+        
+        const rotateVec = (v) => {
+          return GeometryUtils3D.rotatePointAroundPointByThreePoints(
+            v,
+            [0, 0, 0],
+            start,
+            pivot,
+            end
+          );
+        };
+        el.rotationMatrix = el.rotationMatrix.map(row => rotateVec(row));
+        
         el.updateDimensions();
       } else if (el.type === 'arc') {
         el.startPt = rotatePt(el.startPt);
@@ -412,6 +438,12 @@ class RotateElementCommand {
         this.previewShape = null;
       }
 
+      if (this.rotationGuidesGroup) {
+        this.base.view.scene.remove(this.rotationGuidesGroup);
+        this.disposeObject(this.rotationGuidesGroup);
+        this.rotationGuidesGroup = null;
+      }
+
       const clone = this.cloneElementWithRotation(
         this.selectedElement,
         this.pivotPoint,
@@ -424,6 +456,131 @@ class RotateElementCommand {
       if (this.previewShape) {
         this.base.view.scene.add(this.previewShape);
       }
+
+      // Draw active rotation guides
+      const guides = new THREE.Group();
+      guides.userData.isPickable = false;
+      this.rotationGuidesGroup = guides;
+
+      const compassSize = this.base.accuDraw?.options?.size || 1.0;
+      const ballRadius = compassSize * 0.05;
+
+      const pVec = new THREE.Vector3(...this.pivotPoint);
+      const sVec = new THREE.Vector3(...this.startReferencePoint);
+      const eVec = new THREE.Vector3(...endPoint);
+
+      const u = new THREE.Vector3().subVectors(sVec, pVec);
+      const radius = u.length();
+
+      if (radius > 1e-6) {
+        u.normalize();
+
+        const planeNormal = new THREE.Vector3(...this.base.rotationMatrix[2]);
+        const v = new THREE.Vector3().crossVectors(planeNormal, u).normalize();
+
+        const offsetE = new THREE.Vector3().subVectors(eVec, pVec);
+        const localX = offsetE.dot(u);
+        const localY = offsetE.dot(v);
+
+        const angle = Math.atan2(localY, localX);
+
+        const projectedEnd = pVec.clone()
+          .add(u.clone().multiplyScalar(Math.cos(angle) * radius))
+          .add(v.clone().multiplyScalar(Math.sin(angle) * radius));
+
+        // Pivot Ball (Blue)
+        const pivotGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+        const pivotMat = new THREE.MeshBasicMaterial({ color: 0x0088ff, depthTest: false });
+        const pivotMesh = new THREE.Mesh(pivotGeo, pivotMat);
+        pivotMesh.position.copy(pVec);
+        pivotMesh.renderOrder = 99999;
+        guides.add(pivotMesh);
+
+        // Start reference ball (Green)
+        const startGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+        const startMat = new THREE.MeshBasicMaterial({ color: 0x00ff66, depthTest: false });
+        const startMesh = new THREE.Mesh(startGeo, startMat);
+        startMesh.position.copy(sVec);
+        startMesh.renderOrder = 99999;
+        guides.add(startMesh);
+
+        // Rotation target ball (Yellow)
+        const endGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+        const endMat = new THREE.MeshBasicMaterial({ color: 0xffff00, depthTest: false });
+        const endMesh = new THREE.Mesh(endGeo, endMat);
+        endMesh.position.copy(projectedEnd);
+        endMesh.renderOrder = 99999;
+        guides.add(endMesh);
+
+        // Radial Line 1: Pivot to Start reference
+        const r1Points = [pVec.x, pVec.y, pVec.z, sVec.x, sVec.y, sVec.z];
+        const r1Geometry = new LineGeometry();
+        r1Geometry.setPositions(r1Points);
+        const r1Material = new LineMaterial({
+          color: 0x00ff66,
+          linewidth: 2,
+          dashed: true,
+          dashScale: 5,
+          dashSize: 0.1,
+          gapSize: 0.08,
+          resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+          depthTest: false
+        });
+        const r1Line = new Line2(r1Geometry, r1Material);
+        r1Line.computeLineDistances();
+        r1Line.renderOrder = 99999;
+        guides.add(r1Line);
+
+        // Radial Line 2: Pivot to Projected end point
+        const r2Points = [pVec.x, pVec.y, pVec.z, projectedEnd.x, projectedEnd.y, projectedEnd.z];
+        const r2Geometry = new LineGeometry();
+        r2Geometry.setPositions(r2Points);
+        const r2Material = new LineMaterial({
+          color: 0xffff00,
+          linewidth: 2,
+          dashed: true,
+          dashScale: 5,
+          dashSize: 0.1,
+          gapSize: 0.08,
+          resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+          depthTest: false
+        });
+        const r2Line = new Line2(r2Geometry, r2Material);
+        r2Line.computeLineDistances();
+        r2Line.renderOrder = 99999;
+        guides.add(r2Line);
+
+        // Dashed Arc: Path of rotation
+        const arcPoints = [];
+        const segments = 40;
+        for (let i = 0; i <= segments; i++) {
+          const t = i / segments;
+          const theta = angle * t;
+          const pt = pVec.clone()
+            .add(u.clone().multiplyScalar(Math.cos(theta) * radius))
+            .add(v.clone().multiplyScalar(Math.sin(theta) * radius));
+          arcPoints.push(pt.x, pt.y, pt.z);
+        }
+
+        const arcGeometry = new LineGeometry();
+        arcGeometry.setPositions(arcPoints);
+        const arcMaterial = new LineMaterial({
+          color: 0xffff00,
+          linewidth: 3,
+          dashed: true,
+          dashScale: 5,
+          dashSize: 0.12,
+          gapSize: 0.08,
+          resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+          depthTest: false
+        });
+        const arcLine = new Line2(arcGeometry, arcMaterial);
+        arcLine.computeLineDistances();
+        arcLine.renderOrder = 99999;
+        guides.add(arcLine);
+      }
+
+      this.base.view.scene.add(guides);
     }
 
     cloneElementWithRotation(el, pivot, start, end) {
@@ -508,6 +665,12 @@ class RotateElementCommand {
         this.previewShape = null;
       }
 
+      if (this.rotationGuidesGroup) {
+        this.base.view.scene.remove(this.rotationGuidesGroup);
+        this.disposeObject(this.rotationGuidesGroup);
+        this.rotationGuidesGroup = null;
+      }
+
       if (this.hoveredElement) {
         HighlightUtilities.removeHighlight(this.hoveredElement);
         this.hoveredElement = null;
@@ -581,4 +744,58 @@ class RotateElementCommand {
       container.appendChild(copyCb);
       container.appendChild(anchorCb);
     }
-  }
+  
+  updateState3Guides(mousePoint) {
+      if (this.rotationGuidesGroup) {
+        this.base.view.scene.remove(this.rotationGuidesGroup);
+        this.disposeObject(this.rotationGuidesGroup);
+        this.rotationGuidesGroup = null;
+      }
+
+      const guides = new THREE.Group();
+      guides.userData.isPickable = false;
+      this.rotationGuidesGroup = guides;
+
+      const compassSize = this.base.accuDraw?.options?.size || 1.0;
+      const ballRadius = compassSize * 0.05;
+
+      // Pivot Ball (Blue)
+      const pivotGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+      const pivotMat = new THREE.MeshBasicMaterial({ color: 0x0088ff, depthTest: false, transparent: true, opacity: 0.85 });
+      const pivotMesh = new THREE.Mesh(pivotGeo, pivotMat);
+      pivotMesh.position.fromArray(this.pivotPoint);
+      pivotMesh.renderOrder = 99999;
+      guides.add(pivotMesh);
+
+      // Current dynamic guide line from pivot to mouse
+      const pVec = new THREE.Vector3(...this.pivotPoint);
+      const eVec = new THREE.Vector3(...mousePoint);
+      const rPoints = [pVec.x, pVec.y, pVec.z, eVec.x, eVec.y, eVec.z];
+      const rGeometry = new LineGeometry();
+      rGeometry.setPositions(rPoints);
+      const rMaterial = new LineMaterial({
+        color: 0x00ff66,
+        linewidth: 2,
+        dashed: true,
+        dashScale: 5,
+        dashSize: 0.1,
+        gapSize: 0.08,
+        resolution: new THREE.Vector2(window.innerWidth, window.innerHeight),
+        depthTest: false
+      });
+      const rLine = new Line2(rGeometry, rMaterial);
+      rLine.computeLineDistances();
+      rLine.renderOrder = 99999;
+      guides.add(rLine);
+
+      // Temporary cursor point ball (Green)
+      const endGeo = new THREE.SphereGeometry(ballRadius, 16, 16);
+      const endMat = new THREE.MeshBasicMaterial({ color: 0x00ff66, depthTest: false });
+      const endMesh = new THREE.Mesh(endGeo, endMat);
+      endMesh.position.copy(eVec);
+      endMesh.renderOrder = 99999;
+      guides.add(endMesh);
+
+      this.base.view.scene.add(guides);
+    }
+}

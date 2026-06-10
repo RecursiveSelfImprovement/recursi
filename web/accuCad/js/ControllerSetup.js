@@ -27,6 +27,10 @@ class ControllerSetup {
         new RotateElementCommand(baseController)
       );
       baseController.registerCommand(
+        'scale',
+        new ScaleElementCommand(baseController)
+      );
+      baseController.registerCommand(
         'select',
         new ElementPickCommand(baseController)
       );
