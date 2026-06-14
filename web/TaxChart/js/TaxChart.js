@@ -11,7 +11,7 @@ class TaxChart {
       
       this.datasets = [
         { path: '/TaxChart/data/us_estimate.json', label: 'United States Estimate (2024)' },
-        { path: '/TaxChart/data/social_democratic.json', label: 'Nordic Social Democratic Model' },
+        { path: '/TaxChart/data/social_democratic.json', label: 'High Unemployment Shock Model (30%)' },
         { path: '/TaxChart/data/concentrated_wealth.json', label: 'AI Automated Post-Job Economy' }
       ];
 
@@ -22,7 +22,7 @@ class TaxChart {
       this.logOffset = 15000; 
       this.isLogarithmic = true; // toggle between log and linear scales
       this.taxRevenuePercent = 30; // 30% of national income
-      this.taxProgressivity = 50; // slider range 0 to 100 (0=Poll, 30=Flat, 50=Progressive, 100=Equalized)
+      this.taxProgressivity = 50; // slider range 0 to 100
       this.showAfterTax = false; // default is unchecked
       this.hoveredIndex = null;
       this.customInputs = {};
@@ -128,20 +128,6 @@ class TaxChart {
           gap: 20px;
         }
 
-        .tc-header {
-          border-bottom: 1px solid var(--tc-border);
-          padding-bottom: 12px;
-        }
-
-        .tc-title {
-          font-size: 1.8rem;
-          font-weight: 800;
-          margin: 0 0 8px 0;
-          background: linear-gradient(135deg, var(--tc-primary), var(--tc-success));
-          -webkit-background-clip: text;
-          -webkit-text-fill-color: transparent;
-        }
-
         .tc-description {
           font-size: 0.95rem;
           color: var(--tc-muted);
@@ -150,15 +136,12 @@ class TaxChart {
         }
 
         .tc-dashboard-grid {
-          display: grid;
-          grid-template-columns: 1fr;
+          display: flex;
+          flex-direction: column;
           gap: 20px;
-        }
-
-        @media (min-width: 1024px) {
-          .tc-dashboard-grid {
-            grid-template-columns: 3fr 1fr;
-          }
+          width: 100%;
+          max-width: 900px;
+          margin: 0 auto;
         }
 
         .tc-chart-pane {
@@ -243,24 +226,29 @@ class TaxChart {
 
         .tc-tooltip {
           position: absolute;
-          background: rgba(15, 23, 42, 0.88);
-          border: 2px solid var(--tc-primary);
-          border-radius: 8px;
-          padding: 12px;
-          font-size: 0.85rem;
-          pointer-events: none;
-          opacity: 0;
+          top: 16px;
+          left: 16px;
+          background: rgba(15, 23, 42, 0.95);
+          border: 1.5px solid var(--tc-border);
+          border-radius: 10px;
+          padding: 12px 14px;
+          font-size: 0.825rem;
+          pointer-events: auto !important; /* Ensure clicking and dragging work perfectly */
           z-index: 100;
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.6);
-          width: 280px;
-          /* Smooth slide transitions */
-          transition: left 0.18s cubic-bezier(0.25, 1, 0.5, 1), top 0.18s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.15s ease;
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+          width: 290px;
+          box-sizing: border-box;
+          transition: border-color 0.15s ease, opacity 0.15s ease;
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          user-select: none; /* Prevent text highlight while dragging */
         }
 
         .tc-tooltip-header {
           font-weight: bold;
           color: var(--tc-primary);
-          margin-bottom: 6px;
+          margin-bottom: 4px;
           border-bottom: 1px solid var(--tc-border);
           padding-bottom: 4px;
         }
@@ -276,41 +264,13 @@ class TaxChart {
           color: var(--tc-text);
         }
 
-        .tc-stats-sidebar {
-          display: flex;
-          flex-direction: column;
-          gap: 16px;
-        }
-
-        .tc-stat-card {
-          background-color: var(--tc-card);
-          border: 1px solid var(--tc-border);
-          border-radius: 12px;
-          padding: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 4px;
-        }
-
-        .tc-stat-title {
-          font-size: 0.8rem;
-          font-weight: bold;
-          color: var(--tc-muted);
-          text-transform: uppercase;
-          letter-spacing: 0.05em;
-        }
-
-        .tc-stat-value {
-          font-size: 1.6rem;
-          font-weight: 800;
-        }
-
         .tc-legend {
           display: flex;
           gap: 20px;
           font-size: 0.85rem;
           margin-top: 8px;
           justify-content: center;
+          flex-wrap: wrap;
         }
 
         .tc-legend-item {
@@ -325,21 +285,6 @@ class TaxChart {
           border-radius: 3px;
         }
 
-        .tc-btn {
-          background-color: var(--tc-primary);
-          color: var(--tc-bg);
-          border: none;
-          padding: 10px 16px;
-          font-weight: bold;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: background-color 0.15s ease;
-        }
-
-        .tc-btn:hover {
-          background-color: var(--tc-success);
-        }
-
         .tc-toggle-wrap {
           display: flex;
           align-items: center;
@@ -350,59 +295,180 @@ class TaxChart {
           font-weight: bold;
           cursor: pointer;
         }
+
+        /* Top Centered Giant Indicators */
+        .tc-indicator-header {
+          display: flex;
+          justify-content: center;
+          gap: 24px;
+          width: 100%;
+          margin: 0 auto 12px auto;
+          max-width: 900px;
+          flex-wrap: wrap;
+        }
+
+        .tc-indicator-card {
+          flex: 1;
+          min-width: 280px;
+          background-color: var(--tc-card);
+          border: 1px solid var(--tc-border);
+          border-radius: 14px;
+          padding: 16px 24px;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+          box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+          position: relative;
+          overflow: hidden;
+        }
+
+        .tc-indicator-card::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 3px;
+        }
+
+        .tc-indicator-card.gni::before {
+          background: linear-gradient(90deg, var(--tc-primary), #0284c7);
+        }
+
+        .tc-indicator-card.budget::before {
+          background: linear-gradient(90deg, var(--tc-accent), var(--tc-success));
+        }
+
+        .tc-indicator-label {
+          font-size: 0.825rem;
+          font-weight: 700;
+          color: var(--tc-muted);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 6px;
+        }
+
+        .tc-indicator-value {
+          font-size: 2.1rem;
+          font-weight: 800;
+          letter-spacing: -0.02em;
+          line-height: 1.1;
+        }
+
+        .tc-indicator-sub {
+          font-size: 0.825rem;
+          color: var(--tc-muted);
+          margin-top: 6px;
+          font-weight: 500;
+        }
+
+        /* Beautiful Segmented Selection Bar */
+        .tc-segmented-picker {
+          display: flex;
+          background-color: var(--tc-card);
+          border: 1px solid var(--tc-border);
+          border-radius: 12px;
+          padding: 6px;
+          gap: 6px;
+          margin: 0 auto;
+          width: 100%;
+          max-width: 900px;
+          box-sizing: border-box;
+        }
+
+        .tc-segment-btn {
+          flex: 1;
+          background: transparent;
+          border: none;
+          color: var(--tc-muted);
+          padding: 12px 16px;
+          font-size: 0.9rem;
+          font-weight: 700;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          text-align: center;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .tc-segment-btn:hover {
+          color: var(--tc-text);
+          background-color: rgba(255, 255, 255, 0.04);
+        }
+
+        .tc-segment-btn.active {
+          color: #ffffff;
+          background: linear-gradient(135deg, #0284c7, #059669);
+          box-shadow: 0 4px 12px rgba(2, 132, 199, 0.35);
+        }
+
+        /* Central Gini Badge */
+        .tc-gini-badge-container {
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          gap: 12px;
+          background: rgba(30, 41, 59, 0.5);
+          border: 1px solid var(--tc-border);
+          border-radius: 20px;
+          padding: 6px 16px;
+          margin: 8px auto 0 auto;
+          width: max-content;
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
       `, 'taxchart-theme-styles');
     }
 
   renderLayout(parent) {
       this.appContainer = makeElement('div', { className: 'tc-container' });
 
-      // Header row with title & selective dataset load dropdown, log-mode toggle and show-after-tax toggle
-      const header = makeElement('div', { className: 'tc-header' }, [
-        makeElement('div', { style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' } }, [
-          makeElement('h1', { className: 'tc-title' }, 'Income & Progressive Taxation Simulator'),
-          makeElement('div', { style: { display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '16px' } }, [
-            // Show After-Tax Checkbox Toggle
-            makeElement('label', { className: 'tc-toggle-wrap' }, [
-              this.afterTaxToggleCheckbox = makeElement('input', {
-                type: 'checkbox',
-                checked: this.showAfterTax,
-                onchange: (e) => {
-                  this.showAfterTax = e.target.checked;
-                  this.updateInteractiveElements();
-                }
-              }),
-              makeElement('span', { style: { color: 'var(--tc-success)' } }, 'Show After-Tax Income Curve')
-            ]),
-            // Log/Linear Checkbox Toggle
-            makeElement('label', { className: 'tc-toggle-wrap' }, [
-              this.logToggleCheckbox = makeElement('input', {
-                type: 'checkbox',
-                checked: this.isLogarithmic,
-                onchange: (e) => {
-                  this.isLogarithmic = e.target.checked;
-                  this.updateInteractiveElements();
-                }
-              }),
-              makeElement('span', 'Use Logarithmic Scale')
-            ]),
-            makeElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } }, [
-              makeElement('span', { style: { fontSize: '0.85rem', color: 'var(--tc-muted)', fontWeight: 'bold' } }, 'Dataset:'),
-              this.datasetSelect = makeElement('select', {
-                className: 'tc-select',
-                style: { width: 'auto', minWidth: '220px' },
-                onchange: (e) => {
-                  this.currentDatasetPath = e.target.value;
-                  this.loadSelectedDataset();
-                }
-              }, this.datasets.map(d => makeElement('option', { value: d.path }, d.label)))
-            ])
-          ])
+      // Row 1: Massive beautiful indicator cards (Gross National Income & Public Budget Collected)
+      this.indicatorHeader = makeElement('div', { className: 'tc-indicator-header' }, [
+        this.gniCard = makeElement('div', { className: 'tc-indicator-card gni' }, [
+          makeElement('span', { className: 'tc-indicator-label' }, 'Gross National Income'),
+          this.topGniValue = makeElement('span', { className: 'tc-indicator-value', style: { color: 'var(--tc-primary)' } }, '$0'),
+          this.topGniSub = makeElement('span', { className: 'tc-indicator-sub' }, 'Annual aggregate GNI')
         ]),
-        this.descriptionLabel = makeElement('p', { className: 'tc-description' }, 'Loading income distribution models...')
+        this.budgetCard = makeElement('div', { className: 'tc-indicator-card budget' }, [
+          makeElement('span', { className: 'tc-indicator-label' }, 'Public Budget Collected'),
+          this.topBudgetValue = makeElement('span', { className: 'tc-indicator-value', style: { color: 'var(--tc-accent)' } }, '$0'),
+          this.topBudgetSub = makeElement('span', { className: 'tc-indicator-sub' }, 'Target: 30% | Effective: 30%')
+        ])
       ]);
-      this.appContainer.appendChild(header);
+      this.appContainer.appendChild(this.indicatorHeader);
 
-      // Create Grid Area
+      // Row 2: Beautiful Segmented Control Picker
+      this.pickerContainer = makeElement('div', { className: 'tc-segmented-picker' }, 
+        this.datasets.map((d) => {
+          return makeElement('button', {
+            className: `tc-segment-btn ${d.path === this.currentDatasetPath ? 'active' : ''}`,
+            onclick: (e) => {
+              // Deactivate others
+              const buttons = this.pickerContainer.querySelectorAll('.tc-segment-btn');
+              buttons.forEach(btn => btn.classList.remove('active'));
+              // Activate this
+              e.currentTarget.classList.add('active');
+
+              this.currentDatasetPath = d.path;
+              this.loadSelectedDataset();
+            }
+          }, d.label);
+        })
+      );
+      this.appContainer.appendChild(this.pickerContainer);
+
+      // Row 3: Description paragraph
+      this.descriptionLabel = makeElement('p', { 
+        className: 'tc-description',
+        style: { textAlign: 'center', margin: '0 auto 12px auto', maxWidth: '800px', fontSize: '0.9rem', color: 'var(--tc-muted)' }
+      }, 'Loading income distribution models...');
+      this.appContainer.appendChild(this.descriptionLabel);
+
+      // Create Grid Area (single-column)
       this.dashboardGrid = makeElement('div', { className: 'tc-dashboard-grid' });
       this.appContainer.appendChild(this.dashboardGrid);
 
@@ -437,19 +503,32 @@ class TaxChart {
   async getFallbackData(path) {
       if (path.includes('social_democratic')) {
         return {
-          "name": "Nordic Social Democratic Model",
+          "name": "High Unemployment Shock Model (30% Unemployed)",
           "type": "households",
-          "totalEntities": 12000000,
-          "currency": "kr",
-          "description": "Compressed income ranges with a high basic floor and low inequality.",
+          "totalEntities": 131400000,
+          "currency": "$",
+          "description": "Severe economic downturn simulation: 30% of households are fully unemployed with zero wage income, while the upper-middle class and wealthy brackets retain significant earnings.",
           "data": [
-            {"percentile": 2.5, "income": 26000}, {"percentile": 7.5, "income": 31000}, {"percentile": 12.5, "income": 35000},
-            {"percentile": 17.5, "income": 39000}, {"percentile": 22.5, "income": 43000}, {"percentile": 27.5, "income": 47000},
-            {"percentile": 32.5, "income": 51000}, {"percentile": 37.5, "income": 55000}, {"percentile": 42.5, "income": 59000},
-            {"percentile": 47.5, "income": 64000}, {"percentile": 52.5, "income": 69000}, {"percentile": 57.5, "income": 74000},
-            {"percentile": 62.5, "income": 80000}, {"percentile": 67.5, "income": 87000}, {"percentile": 72.5, "income": 95000},
-            {"percentile": 77.5, "income": 105000}, {"percentile": 82.5, "income": 118000}, {"percentile": 87.5, "income": 136000},
-            {"percentile": 92.5, "income": 165000}, {"percentile": 97.5, "income": 230000}
+            { "percentile": 2.5, "income": 0 },
+            { "percentile": 7.5, "income": 0 },
+            { "percentile": 12.5, "income": 0 },
+            { "percentile": 17.5, "income": 0 },
+            { "percentile": 22.5, "income": 0 },
+            { "percentile": 27.5, "income": 0 },
+            { "percentile": 32.5, "income": 25000 },
+            { "percentile": 37.5, "income": 38000 },
+            { "percentile": 42.5, "income": 50000 },
+            { "percentile": 47.5, "income": 65000 },
+            { "percentile": 52.5, "income": 80000 },
+            { "percentile": 57.5, "income": 100000 },
+            { "percentile": 62.5, "income": 125000 },
+            { "percentile": 67.5, "income": 155000 },
+            { "percentile": 72.5, "income": 200000 },
+            { "percentile": 77.5, "income": 280000 },
+            { "percentile": 82.5, "income": 380000 },
+            { "percentile": 87.5, "income": 550000 },
+            { "percentile": 92.5, "income": 950000 },
+            { "percentile": 97.5, "income": 2500000 }
           ]
         };
       } else if (path.includes('concentrated_wealth')) {
@@ -1674,14 +1753,30 @@ class TaxChart {
 
       if (!this.currentData || !this.currentData.data) return;
 
-      // 1. Chart Pane shell
       const chartPane = makeElement('div', { className: 'tc-chart-pane' });
-      const svgContainer = makeElement('div', { className: 'tc-svg-container' });
+      
+      const svgContainer = makeElement('div', { 
+        className: 'tc-svg-container',
+        style: { position: 'relative' } 
+      });
       chartPane.appendChild(svgContainer);
 
-      // Tooltip inside same container
-      this.tooltipEl = makeElement('div', { className: 'tc-tooltip' });
+      // Tooltip inside same container at permanent sticky position, made draggable
+      this.tooltipEl = makeElement('div', { 
+        className: 'tc-tooltip',
+        style: {
+          position: 'absolute',
+          width: '290px',
+          minHeight: '185px',
+          zIndex: '100',
+          opacity: '1'
+        }
+      });
       svgContainer.appendChild(this.tooltipEl);
+      
+      // Initialize layout structure
+      this.renderTooltipPlaceholder();
+      this.setupTooltipDragging(this.tooltipEl);
 
       // Create static responsive SVG shell
       const width = 1000;
@@ -1692,36 +1787,15 @@ class TaxChart {
       });
       svgContainer.appendChild(this.svgElement);
 
-      // Legend panel (keep reference to dynamically adjust opacity)
-      this.preTaxLegendItem = makeElement('div', { className: 'tc-legend-item' }, [
-        makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-primary)' } }),
-        makeElement('span', 'Pre-Tax Income')
-      ]);
-      this.postTaxLegendItem = makeElement('div', { 
-        className: 'tc-legend-item',
-        style: { transition: 'opacity 0.2s ease' }
-      }, [
-        makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-success)' } }),
-        makeElement('span', 'After-Tax Disposable Income')
-      ]);
-
-      chartPane.appendChild(makeElement('div', { className: 'tc-legend' }, [
-        this.preTaxLegendItem,
-        this.postTaxLegendItem,
-        makeElement('div', { className: 'tc-legend-item', style: { fontSize: '0.8rem', color: 'var(--tc-muted)' } }, 
-          '● Hover vertical columns to review policy splits.'
-        )
-      ]));
-
-      // 2. Control Panel holding Side-by-Side Policy Sliders
-      const slidersRow = makeElement('div', { className: 'tc-sliders-row' }, [
+      // 1. SLIDERS ROW: Repositioned immediately under the chart as requested
+      const slidersRow = makeElement('div', { className: 'tc-sliders-row', style: { marginTop: '8px' } }, [
         
         // COLUMN 1: Revenue Target / Public Budget Size
         makeElement('div', { className: 'tc-policy-card' }, [
           makeElement('div', { className: 'tc-slider-group' }, [
             makeElement('div', { className: 'tc-slider-label-row' }, [
-              makeElement('span', { style: { color: 'var(--tc-primary)', fontSize: '1rem', fontWeight: '800' } }, 'Government Revenue Target'),
-              this.revenueDisplayLabel = makeElement('span', { style: { color: 'var(--tc-primary)', fontWeight: 'bold', fontSize: '1rem' } }, '30%')
+              makeElement('span', { style: { color: 'var(--tc-primary)', fontSize: '0.95rem', fontWeight: '800' } }, 'Government Revenue Target'),
+              this.revenueDisplayLabel = makeElement('span', { style: { color: 'var(--tc-primary)', fontWeight: 'bold', fontSize: '0.95rem' } }, '30%')
             ]),
             this.revenueSliderInput = makeElement('input', {
               type: 'range',
@@ -1740,7 +1814,7 @@ class TaxChart {
             ])
           ]),
           this.revenueExplanationText = makeElement('p', { 
-            style: { fontSize: '0.825rem', color: 'var(--tc-muted)', margin: '4px 0 0 0', lineHeight: '1.4' } 
+            style: { fontSize: '0.8rem', color: 'var(--tc-muted)', margin: '4px 0 0 0', lineHeight: '1.4' } 
           }, 'Configures what percent of all generated GNI is captured to fund the public budget.')
         ]),
 
@@ -1748,8 +1822,8 @@ class TaxChart {
         makeElement('div', { className: 'tc-policy-card' }, [
           makeElement('div', { className: 'tc-slider-group' }, [
             makeElement('div', { className: 'tc-slider-label-row' }, [
-              makeElement('span', { style: { color: 'var(--tc-success)', fontSize: '1rem', fontWeight: '800' } }, 'Tax Progressivity'),
-              this.progressivityDisplayLabel = makeElement('span', { style: { color: 'var(--tc-success)', fontWeight: 'bold', fontSize: '1rem' } }, '50%')
+              makeElement('span', { style: { color: 'var(--tc-success)', fontSize: '0.95rem', fontWeight: '800' } }, 'Tax Progressivity'),
+              this.progressivityDisplayLabel = makeElement('span', { style: { color: 'var(--tc-success)', fontWeight: 'bold', fontSize: '0.95rem' } }, '50%')
             ]),
             this.progressivitySliderInput = makeElement('input', {
               type: 'range',
@@ -1763,44 +1837,87 @@ class TaxChart {
               }
             }),
             makeElement('div', { style: { display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--tc-muted)' } }, [
-              makeElement('span', '0% (Flat Poll Fee)'),
+              makeElement('span', '0% (Poll Fee)'),
               makeElement('span', '30% (Flat Rate)'),
-              makeElement('span', '50% (Progressive Center)'),
-              makeElement('span', '100% (UBI Equalizer)')
+              makeElement('span', '50% (Progressive)'),
+              makeElement('span', '100% (Equalizer)')
             ])
           ]),
           this.progressivityExplanationText = makeElement('p', { 
-            style: { fontSize: '0.825rem', color: 'var(--tc-muted)', margin: '4px 0 0 0', lineHeight: '1.4' } 
+            style: { fontSize: '0.8rem', color: 'var(--tc-muted)', margin: '4px 0 0 0', lineHeight: '1.4' } 
           }, 'Determines the distribution design. Above 30%, negative taxes act as basic dividend payouts.')
         ])
       ]);
-
       chartPane.appendChild(slidersRow);
-      this.dashboardGrid.appendChild(chartPane);
 
-      // 3. Right Sidebar holding static metric outputs
-      this.sidebarPanel = makeElement('div', { className: 'tc-stats-sidebar' }, [
-        makeElement('div', { className: 'tc-stat-card' }, [
-          makeElement('span', { className: 'tc-stat-title' }, 'Gross National Income'),
-          this.sidebarGniText = makeElement('span', { className: 'tc-stat-value', style: { color: 'var(--tc-primary)' } }, '$0')
-        ]),
-        makeElement('div', { className: 'tc-stat-card' }, [
-          makeElement('span', { className: 'tc-stat-title' }, 'Public Budget Collected'),
-          this.sidebarBudgetCollectedText = makeElement('span', { className: 'tc-stat-value', style: { color: 'var(--tc-accent)' } }, '$0'),
-          this.sidebarCollectedRatioText = makeElement('span', { style: { fontSize: '0.75rem', color: 'var(--tc-muted)' } }, '0%')
-        ]),
-        makeElement('div', { className: 'tc-stat-card' }, [
-          makeElement('span', { className: 'tc-stat-title' }, 'Pre-Tax Gini Index'),
-          this.sidebarPreGiniText = makeElement('span', { className: 'tc-stat-value' }, '0.0000')
-        ]),
-        makeElement('div', { className: 'tc-stat-card' }, [
-          makeElement('span', { className: 'tc-stat-title' }, 'Post-Tax Gini Index'),
-          this.sidebarPostGiniText = makeElement('span', { className: 'tc-stat-value', style: { color: 'var(--tc-success)' } }, '0.0000'),
-          this.sidebarReductionText = makeElement('span', { style: { fontSize: '0.75rem', color: 'var(--tc-muted)' } }, '0% reduction')
-        ])
+      // Legend panel
+      this.preTaxLegendItem = makeElement('div', { className: 'tc-legend-item' }, [
+        makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-primary)' } }),
+        makeElement('span', 'Pre-Tax Income')
+      ]);
+      this.postTaxLegendItem = makeElement('div', { 
+        className: 'tc-legend-item',
+        style: { transition: 'opacity 0.2s ease' }
+      }, [
+        makeElement('div', { className: 'tc-legend-color', style: { backgroundColor: 'var(--tc-success)' } }),
+        makeElement('span', 'After-Tax Disposable Income')
       ]);
 
-      this.dashboardGrid.appendChild(this.sidebarPanel);
+      // Sleek row containing standard legends
+      chartPane.appendChild(makeElement('div', { className: 'tc-legend', style: { marginTop: '12px' } }, [
+        this.preTaxLegendItem,
+        this.postTaxLegendItem,
+        makeElement('div', { className: 'tc-legend-item', style: { fontSize: '0.8rem', color: 'var(--tc-muted)' } }, 
+          '● Hover vertical columns to review policy splits.'
+        )
+      ]));
+
+      // Sleek Gini comparison badge
+      this.giniComparisonBadge = makeElement('div', { className: 'tc-gini-badge-container' }, [
+        this.giniTextNode = makeElement('span', 'Inequality index loading...')
+      ]);
+      chartPane.appendChild(this.giniComparisonBadge);
+
+      // Control Row for switches/toggles
+      const togglesRow = makeElement('div', { 
+        style: { 
+          display: 'flex', 
+          justifyContent: 'center', 
+          gap: '24px', 
+          padding: '12px', 
+          background: 'rgba(30, 41, 59, 0.4)', 
+          borderRadius: '10px', 
+          marginTop: '12px',
+          marginBottom: '8px',
+          flexWrap: 'wrap'
+        } 
+      }, [
+        makeElement('label', { className: 'tc-toggle-wrap', style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } }, [
+          this.afterTaxToggleCheckbox = makeElement('input', {
+            type: 'checkbox',
+            checked: this.showAfterTax,
+            onchange: (e) => {
+              this.showAfterTax = e.target.checked;
+              this.updateInteractiveElements();
+            }
+          }),
+          makeElement('span', { style: { color: 'var(--tc-success)', fontWeight: 'bold' } }, 'Show After-Tax Income Curve')
+        ]),
+        makeElement('label', { className: 'tc-toggle-wrap', style: { display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' } }, [
+          this.logToggleCheckbox = makeElement('input', {
+            type: 'checkbox',
+            checked: this.isLogarithmic,
+            onchange: (e) => {
+              this.isLogarithmic = e.target.checked;
+              this.updateInteractiveElements();
+            }
+          }),
+          makeElement('span', { style: { color: 'var(--tc-primary)', fontWeight: 'bold' } }, 'Use Logarithmic Scale')
+        ])
+      ]);
+      chartPane.appendChild(togglesRow);
+
+      this.dashboardGrid.appendChild(chartPane);
     }
 
   updateInteractiveElements() {
@@ -1835,7 +1952,7 @@ class TaxChart {
         this.revenueExplanationText.textContent = `Large Social Welfare State: Capturing ${this.taxRevenuePercent}% of national income provides massive resources to finance a solid universal dividend floor or public goods.`;
       }
 
-      // Column 2 Description update with new 30% Flat Tax and 50% Center Progressive marker
+      // Column 2 Description update
       if (this.taxProgressivity === 0) {
         this.progressivityExplanationText.textContent = `Regressive Poll Tax: Every single bracket pays the exact same absolute dollar fee. Visually flattens lower-income segments to $0.`;
       } else if (this.taxProgressivity < 30) {
@@ -1864,21 +1981,29 @@ class TaxChart {
       const totalTaxesCollected = taxes.reduce((a, b) => a + b, 0) * (totalPop * 0.05);
       const actualCollectedRatio = nationalAnnualIncome > 0 ? (totalTaxesCollected / nationalAnnualIncome * 100) : 0;
 
-      // 3. Update Sidebar stat cards directly
-      this.sidebarGniText.textContent = `${currency}${Math.round(nationalAnnualIncome).toLocaleString()}`;
-      this.sidebarBudgetCollectedText.textContent = `${currency}${Math.round(totalTaxesCollected).toLocaleString()}`;
-      this.sidebarCollectedRatioText.textContent = `Target: ${this.taxRevenuePercent}% | Mapped Collection: ${actualCollectedRatio.toFixed(1)}%`;
-      this.sidebarPreGiniText.textContent = preTaxGini.toFixed(4);
-      this.sidebarPostGiniText.textContent = postTaxGini.toFixed(4);
-
-      if (preTaxGini > 0) {
-        const reduction = ((preTaxGini - postTaxGini) / preTaxGini * 100);
-        this.sidebarReductionText.textContent = `Inequality reduced by ${reduction.toFixed(1)}%`;
-      } else {
-        this.sidebarReductionText.textContent = '0% reduction';
+      // 3. Update beautiful top indicator cards
+      if (this.topGniValue) {
+        this.topGniValue.textContent = this.formatCurrency(nationalAnnualIncome, currency);
+        this.topGniSub.textContent = `For ${totalPop.toLocaleString()} simulated ${this.currentData.type || 'households'}`;
       }
 
-      // 4. Update SVG elements directly
+      if (this.topBudgetValue) {
+        this.topBudgetValue.textContent = this.formatCurrency(totalTaxesCollected, currency);
+        this.topBudgetSub.textContent = `Target: ${this.taxRevenuePercent}% | Effective: ${actualCollectedRatio.toFixed(1)}% of aggregate GNI`;
+      }
+
+      // 4. Update the centered Gini badge line below the chart
+      if (this.giniTextNode) {
+        const reduction = preTaxGini > 0 ? ((preTaxGini - postTaxGini) / preTaxGini * 100) : 0;
+        this.giniTextNode.innerHTML = `
+          <span style="color: var(--tc-primary)">Pre-Tax Gini: ${preTaxGini.toFixed(4)}</span>
+          <span style="color: var(--tc-muted); margin: 0 8px;">➔</span>
+          <span style="color: var(--tc-success)">Post-Tax Gini: ${postTaxGini.toFixed(4)}</span>
+          <span style="color: var(--tc-highlight); margin-left: 12px; font-weight: 800;">(${reduction.toFixed(1)}% inequality reduction)</span>
+        `;
+      }
+
+      // 5. Update SVG elements directly
       const width = 1000;
       const height = 440;
       const padding = { top: 30, right: 40, bottom: 50, left: 110 };
@@ -2066,7 +2191,6 @@ class TaxChart {
         }
 
         const colWidth = xEnd - xStart;
-        const xCenter = (xStart + xEnd) / 2;
 
         svgChildren.push(['svg:rect', {
           x: xStart,
@@ -2078,7 +2202,6 @@ class TaxChart {
           onmouseover: (e) => {
             this.hoveredIndex = idx;
             this.updateTooltip(idx);
-            this.tooltipEl.style.opacity = '1';
 
             // Bring the active curve segment paths to the top of the Z-order
             const activePrePath = this.svgElement.querySelector(`#pre-seg-path-${idx}`);
@@ -2090,34 +2213,11 @@ class TaxChart {
               activePostPath.parentNode.appendChild(activePostPath);
             }
 
-            // --- SMART POSITIONING & COLLISION AVOIDANCE ALGORITHM ---
-            // Calculate height of both active curves at the hovered index coordinate
-            const cyPre = mapY(idx === 0 ? preZero : (idx === 20 ? preOneHundred : dataPoints[idx - 1].income));
-            const cyPost = mapY(idx === 0 ? postZero : (idx === 20 ? postOneHundred : postTax[idx - 1]));
-            
-            // The active height is the highest curve at this location (minimum screen Y-coordinate)
-            const activeCurveY = Math.min(cyPre, this.showAfterTax ? cyPost : cyPre);
-
-            // Position horizontal: tend to the left of the hovered point with a 35px safety buffer
-            // Tooltip width is 280px.
-            let targetX = xCenter - 280 - 35;
-            // Clamp so that it never leaves the left chart boundary
-            let tooltipX = Math.max(padding.left, targetX);
-
-            // Position vertical: place cleanly above the curves with a 35px safety margin
-            // Estimated tooltip height is around 175px
-            let targetY = activeCurveY - 175 - 35;
-            // Clamp vertical limits to avoid clipping the header area
-            let tooltipY = Math.max(padding.top, targetY);
-
-            this.tooltipEl.style.left = `${tooltipX}px`;
-            this.tooltipEl.style.top = `${tooltipY}px`;
-
             this.updateInteractiveElements();
           },
           onmouseout: () => {
             this.hoveredIndex = null;
-            this.tooltipEl.style.opacity = '0';
+            this.renderTooltipPlaceholder();
             this.updateInteractiveElements();
           }
         }]);
@@ -2202,7 +2302,7 @@ class TaxChart {
         this.svgElement.appendChild(el);
       });
 
-      // If a node is active while sliding, keep its tooltip values synchronized in real-time
+      // If a node is active, keep its tooltip values synchronized in real-time
       if (this.hoveredIndex !== null) {
         this.updateTooltip(this.hoveredIndex);
       }
@@ -2245,7 +2345,10 @@ class TaxChart {
     }
 
   updateTooltip(idx) {
-      if (idx === null || !this.tooltipEl || !this.currentData) return;
+      if (idx === null || !this.tooltipEl || !this.currentData) {
+        this.renderTooltipPlaceholder();
+        return;
+      }
 
       const dataPoints = this.currentData.data;
       const totalPop = this.currentData.totalEntities;
@@ -2259,10 +2362,8 @@ class TaxChart {
 
       const bracketPop = totalPop * 0.05;
 
-      // Segment index corresponds exactly to its clean integer percentile (0%, 5%, ..., 100%)
       let percentileCenter = idx * 5;
       
-      // Compute beautiful non-overlapping integer bounds
       let minVal = Math.ceil(percentileCenter - 2.5);
       let maxVal = Math.floor(percentileCenter + 2.5);
 
@@ -2274,7 +2375,6 @@ class TaxChart {
         maxVal = 100;
       }
 
-      // Read representational pre/post values
       let repPreIncome = 0;
       let repPostIncome = 0;
       if (idx === 0) {
@@ -2288,42 +2388,33 @@ class TaxChart {
         repPostIncome = postTax[idx - 1];
       }
 
-      const bracketPreVal = repPreIncome * bracketPop;
-      const bracketPostVal = repPostIncome * bracketPop;
-      const preShare = preTaxSum > 0 ? (repPreIncome / preTaxSum * 100) : 0;
-      const postShare = postSum > 0 ? (repPostIncome / postSum * 100) : 0;
       const taxPaid = repPreIncome - repPostIncome;
       const taxRate = repPreIncome > 0 ? (taxPaid / repPreIncome * 100) : 0;
+      const preShare = preTaxSum > 0 ? (repPreIncome / preTaxSum * 100) : 0;
+      const postShare = postSum > 0 ? (repPostIncome / postSum * 100) : 0;
 
       this.tooltipEl.innerHTML = '';
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-header' }, `${percentileCenter}th Percentile`));
       
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
-        makeElement('span', 'Bracket Range:'),
-        makeElement('span', { className: 'tc-tooltip-val' }, `${minVal}% to ${maxVal}%`)
-      ]));
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
-        makeElement('span', 'Pre-Tax Income:'),
-        makeElement('span', { className: 'tc-tooltip-val', style: { color: 'var(--tc-primary)' } }, `${currency}${Math.round(repPreIncome).toLocaleString()}`)
-      ]));
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
-        makeElement('span', 'Post-Tax Income:'),
-        makeElement('span', { className: 'tc-tooltip-val', style: { color: 'var(--tc-success)' } }, `${currency}${Math.round(repPostIncome).toLocaleString()}`)
-      ]));
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
-        makeElement('span', 'Effective Tax Paid:'),
-        makeElement('span', { className: 'tc-tooltip-val', style: { color: taxPaid < 0 ? 'var(--tc-success)' : 'var(--tc-accent)' } }, 
-          taxPaid < 0 ? `+${currency}${Math.round(Math.abs(taxPaid)).toLocaleString()} (Net Credit)` : `${currency}${Math.round(taxPaid).toLocaleString()}`
-        )
-      ]));
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
-        makeElement('span', 'Effective Rate:'),
-        makeElement('span', { className: 'tc-tooltip-val' }, `${repPreIncome > 0 ? taxRate.toFixed(1) + '%' : 'N/A'}`)
-      ]));
-      this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
-        makeElement('span', 'Pre vs Post-Tax Share:'),
-        makeElement('span', { className: 'tc-tooltip-val' }, `${preShare.toFixed(1)}% ➔ ${postShare.toFixed(1)}%`)
-      ]));
+      const headerEl = makeElement('div', { className: 'tc-tooltip-header', style: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' } }, [
+        makeElement('span', `${percentileCenter}th Percentile`),
+        makeElement('span', { style: { fontSize: '0.75rem', color: 'var(--tc-muted)', fontWeight: 'normal' } }, `${minVal}% to ${maxVal}%`)
+      ]);
+      this.tooltipEl.appendChild(headerEl);
+      
+      const details = [
+        ['Pre-Tax Income:', `${currency}${Math.round(repPreIncome).toLocaleString()}`, 'var(--tc-primary)'],
+        ['Post-Tax Income:', `${currency}${Math.round(repPostIncome).toLocaleString()}`, 'var(--tc-success)'],
+        ['Effective Tax:', taxPaid < 0 ? `+${currency}${Math.round(Math.abs(taxPaid)).toLocaleString()} (Credit)` : `${currency}${Math.round(taxPaid).toLocaleString()}`, taxPaid < 0 ? 'var(--tc-success)' : 'var(--tc-accent)'],
+        ['Effective Rate:', `${repPreIncome > 0 ? taxRate.toFixed(1) + '%' : 'N/A'}`, 'var(--tc-text)'],
+        ['Share of GNI:', `${preShare.toFixed(1)}% ➔ ${postShare.toFixed(1)}%`, 'var(--tc-highlight)']
+      ];
+
+      details.forEach(([label, value, color]) => {
+        this.tooltipEl.appendChild(makeElement('div', { className: 'tc-tooltip-row' }, [
+          makeElement('span', label),
+          makeElement('span', { className: 'tc-tooltip-val', style: { color: color } }, value)
+        ]));
+      });
     }
 
   computeBezierSegments(nodes, baselineY) {
@@ -2374,5 +2465,103 @@ class TaxChart {
         });
       }
       return segments;
+    }
+
+  renderTooltipPlaceholder() {
+      if (!this.tooltipEl) return;
+      this.tooltipEl.innerHTML = '';
+      this.tooltipEl.appendChild(makeElement('div', { 
+        style: { 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: '6px', 
+          textAlign: 'center', 
+          justifyContent: 'center', 
+          height: '100%', 
+          color: 'var(--tc-muted)', 
+          padding: '10px 4px',
+          boxSizing: 'border-box'
+        } 
+      }, [
+        makeElement('div', { style: { fontSize: '1.4rem', marginBottom: '1px' } }, '✥'),
+        makeElement('div', { style: { fontWeight: 'bold', color: 'var(--tc-primary)', fontSize: '0.85rem' } }, 'Interactive Inspector'),
+        makeElement('div', { style: { fontSize: '0.78rem', lineHeight: '1.4' } }, 'Hover over any percentile column in the chart below to inspect pre vs post tax splits.'),
+        makeElement('div', { style: { fontSize: '0.72rem', color: 'var(--tc-accent)', fontStyle: 'italic', marginTop: '4px' } }, '✥ Click & drag this box anywhere')
+      ]));
+    }
+
+  formatCurrency(val, currency) {
+      if (val >= 1e12) {
+        return `${currency}${(val / 1e12).toFixed(2)}T`;
+      } else if (val >= 1e9) {
+        return `${currency}${(val / 1e9).toFixed(1)}B`;
+      } else if (val >= 1e6) {
+        return `${currency}${(val / 1e6).toFixed(1)}M`;
+      } else {
+        return `${currency}${Math.round(val).toLocaleString()}`;
+      }
+    }
+
+  setupTooltipDragging(el) {
+      let isDragging = false;
+      let startX = 0, startY = 0;
+      let initialLeft = 16, initialTop = 16;
+
+      // Ensure position coordinates persist nicely
+      if (this.tooltipX !== undefined && this.tooltipY !== undefined) {
+        el.style.left = `${this.tooltipX}px`;
+        el.style.top = `${this.tooltipY}px`;
+      } else {
+        this.tooltipX = 16;
+        this.tooltipY = 16;
+        el.style.left = '16px';
+        el.style.top = '16px';
+      }
+
+      const onMouseDown = (e) => {
+        if (e.button !== 0) return; // limit to standard mouse click
+        
+        isDragging = true;
+        startX = e.clientX;
+        startY = e.clientY;
+        
+        initialLeft = parseFloat(el.style.left) || 16;
+        initialTop = parseFloat(el.style.top) || 16;
+        
+        el.style.transition = 'none'; // clear transitions during movement
+        
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup', onMouseUp);
+        e.preventDefault();
+      };
+
+      const onMouseMove = (e) => {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        
+        const newLeft = initialLeft + dx;
+        const newTop = initialTop + dy;
+        
+        // Prevent layout limits overflow
+        const clampedLeft = Math.max(-50, Math.min(850, newLeft));
+        const clampedTop = Math.max(-20, Math.min(420, newTop));
+        
+        this.tooltipX = clampedLeft;
+        this.tooltipY = clampedTop;
+        
+        el.style.left = `${clampedLeft}px`;
+        el.style.top = `${clampedTop}px`;
+      };
+
+      const onMouseUp = () => {
+        isDragging = false;
+        el.style.transition = 'border-color 0.15s ease, opacity 0.15s ease';
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      el.addEventListener('mousedown', onMouseDown);
+      el.style.cursor = 'move';
     }
 }

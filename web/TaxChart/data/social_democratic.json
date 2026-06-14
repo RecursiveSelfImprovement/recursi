@@ -1,89 +1,89 @@
 {
-  "name": "Nordic Social Democratic Model",
+  "name": "High Unemployment Shock Model (30% Unemployed)",
   "type": "households",
-  "totalEntities": 12000000,
-  "currency": "kr",
-  "description": "A simulation of highly compressed income ranges with elevated basic floors, generous social wage policies, and low Gini indices.",
+  "totalEntities": 131400000,
+  "currency": "$",
+  "description": "Severe economic downturn simulation: 30% of households are fully unemployed with zero wage income, while the upper-middle class and wealthy brackets retain significant earnings.",
   "data": [
     {
       "percentile": 2.5,
-      "income": 26000
+      "income": 0
     },
     {
       "percentile": 7.5,
-      "income": 31000
+      "income": 0
     },
     {
       "percentile": 12.5,
-      "income": 35000
+      "income": 0
     },
     {
       "percentile": 17.5,
-      "income": 39000
+      "income": 0
     },
     {
       "percentile": 22.5,
-      "income": 43000
+      "income": 0
     },
     {
       "percentile": 27.5,
-      "income": 47000
+      "income": 0
     },
     {
       "percentile": 32.5,
-      "income": 51000
+      "income": 25000
     },
     {
       "percentile": 37.5,
-      "income": 55000
+      "income": 38000
     },
     {
       "percentile": 42.5,
-      "income": 59000
+      "income": 50000
     },
     {
       "percentile": 47.5,
-      "income": 64000
+      "income": 65000
     },
     {
       "percentile": 52.5,
-      "income": 69000
-    },
-    {
-      "percentile": 57.5,
-      "income": 74000
-    },
-    {
-      "percentile": 62.5,
       "income": 80000
     },
     {
+      "percentile": 57.5,
+      "income": 100000
+    },
+    {
+      "percentile": 62.5,
+      "income": 125000
+    },
+    {
       "percentile": 67.5,
-      "income": 87000
+      "income": 155000
     },
     {
       "percentile": 72.5,
-      "income": 95000
+      "income": 200000
     },
     {
       "percentile": 77.5,
-      "income": 105000
+      "income": 280000
     },
     {
       "percentile": 82.5,
-      "income": 118000
+      "income": 380000
     },
     {
       "percentile": 87.5,
-      "income": 136000
+      "income": 550000
     },
     {
       "percentile": 92.5,
-      "income": 165000
+      "income": 950000
     },
     {
       "percentile": 97.5,
-      "income": 230000
+      "income": 2500000
     }
   ]
 }
