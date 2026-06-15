@@ -181,6 +181,8 @@ class EmberLogo {
   }
 
   _doCollapseAnimation() {
+      if (!this.brand) return; // Defensive guard
+
       const f1 = this.brand.querySelector('.p-f1');
       const f2 = this.brand.querySelector('.p-f2');
       const f3 = this.brand.querySelector('.p-f3');
@@ -224,6 +226,8 @@ class EmberLogo {
     }
 
   _setupHoverTransitions(skipEntranceCollapse = false) {
+      if (!this.brand) return; // Defensive guard
+
       const f1 = this.brand.querySelector('.p-f1');
       const f2 = this.brand.querySelector('.p-f2');
       const f3 = this.brand.querySelector('.p-f3');
@@ -241,6 +245,7 @@ class EmberLogo {
       });
 
       const performMeasurement = () => {
+        if (!this.brand) return false;
         if (this._widthsMeasured) return true;
         const w1 = f1.getBoundingClientRect().width;
         const w2 = f2.getBoundingClientRect().width;
@@ -252,6 +257,7 @@ class EmberLogo {
       };
 
       const expand = () => {
+        if (!this.brand) return;
         this.isHovered = true;
         clearTimeout(this._entranceTimer);
         performMeasurement();

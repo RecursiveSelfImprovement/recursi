@@ -4,10 +4,11 @@
     "js/AccuDrawValuation.js"
   ],
   "local": [
+    "/LogoExperiments/js/SnareDrumAnimation.js",
+        "js/ValueEmberLogo.js"
   ],
   "library": [
     "UITools.js"
   ],
-  "thirdParty": [
-  ]
+  "thirdParty": []
 }

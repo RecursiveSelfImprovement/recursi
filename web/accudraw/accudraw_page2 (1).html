@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AccuDraw: The 3D Thinking Tool — MicroStation Manager, February 1995</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #c8c0b8;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #111;
+    padding: 2rem;
+  }
+
+  .page {
+    background: #f5f2ed;
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 1.75rem 2rem 1rem;
+  }
+
+  .layout-table {
+    width: 100%;
+    border-collapse: collapse;
+    table-layout: fixed;
+  }
+
+  /* Two columns: left ~40%, right ~60% */
+  .col-left  { width: 40%; vertical-align: top; padding-right: 16px; }
+  .col-right { width: 60%; vertical-align: top; padding-left: 16px; border-left: 1px solid #bbb; }
+
+  .body-text { font-size: 13.5px; line-height: 1.62; text-align: justify; }
+  .body-text p { margin-bottom: 0.65rem; }
+
+  code { font-family: 'Courier New', monospace; font-size: 12.5px; }
+
+  /* ── FIGURE BOX: image + caption inside the gradient box ── */
+  .figure-box {
+    padding: 8px 8px 10px;
+    margin-bottom: 0.9rem;
+    border-radius: 2px;
+  }
+  /* Top figure: pink/purple top-right → white bottom-left */
+  .figure-box-top {
+    background: linear-gradient(225deg, #b060a8 0%, #d490c0 20%, #ecc8dc 45%, #f8eef4 70%, #ffffff 100%);
+    border: 1.5px solid #a060a0;
+  }
+  /* Bottom figure: white top-left → pink/purple bottom-right */
+  .figure-box-bottom {
+    background: linear-gradient(45deg, #b060a8 0%, #d490c0 20%, #ecc8dc 45%, #f8eef4 70%, #ffffff 100%);
+    border: 1.5px solid #a060a0;
+  }
+
+  .figure-box img {
+    width: 100%;
+    display: block;
+    border: 2px solid #8050a0;
+    background: #d4c4d0;
+  }
+  .figure-box .img-placeholder {
+    width: 100%;
+    aspect-ratio: 4/3;
+    background: #d0c0cc;
+    border: 2px solid #8050a0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #555;
+    font-family: Arial, sans-serif;
+    font-style: italic;
+    text-align: center;
+    padding: 6px;
+  }
+
+  .fig-caption {
+    font-size: 11px;
+    line-height: 1.45;
+    color: #111;
+    margin-top: 7px;
+    font-family: Arial, Helvetica, sans-serif;
+  }
+  .fig-caption strong {
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 10.5px;
+  }
+  .fig-caption em { font-style: italic; }
+
+  /* ── AD BOX: pale yellow, full width of right col, black rounded border ── */
+  .ad-box {
+    width: 100%;
+    background: #fffff0;
+    border: 2px solid #111;
+    border-radius: 10px;
+    padding: 1rem 1.25rem 1rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 400px;
+  }
+
+  .ad-label {
+    font-family: Arial, sans-serif;
+    font-size: 9.5px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #888;
+    text-align: center;
+    margin-bottom: 0.5rem;
+  }
+
+  .ad-content {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    color: #666;
+    font-style: italic;
+    text-align: center;
+    padding: 1rem 0;
+  }
+
+  .ad-photos-note {
+    border-top: 1px solid #ccc;
+    margin-top: 0.75rem;
+    padding-top: 0.6rem;
+    font-family: Arial, sans-serif;
+    font-size: 10.5px;
+    color: #555;
+    text-align: center;
+    line-height: 1.5;
+  }
+  .ad-photos-note a {
+    color: #1a3a8f;
+    text-decoration: underline;
+  }
+
+  /* ── PAGE FOOTER ── */
+  .page-footer {
+    border-top: 1px solid #888;
+    margin-top: 1.25rem;
+    padding-top: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-family: 'Arial Narrow', Arial, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    color: #333;
+  }
+  .page-footer .page-num {
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 0;
+    font-family: Arial, sans-serif;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <table class="layout-table">
+
+    <!-- ═══ ROW 1: top of page ═══ -->
+    <tr>
+      <!-- LEFT COL: Figure 3 at top, then body text, then Figure 4 at bottom -->
+      <td class="col-left" style="padding-top:0;">
+
+        <!-- Figure 3: pink/purple top-right → white bottom-left -->
+        <div class="figure-box figure-box-top">
+          <img src="images/figure3_accudraw_block.jpg"
+               alt="Figure 3: AccuDraw block rotation screenshot"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="img-placeholder" style="display:none;">images/figure3_accudraw_block.jpg</div>
+          <p class="fig-caption">
+            <strong>Figure 3:</strong> <em>AccuDraw automatically rotates axes and locks the x coordinates based on the first two points entered, allowing accurate feedback as to the length and width of a rotated block, and allowing the option of using the second point entered as the length of the block. The user can now keyin the width of the block, snap to another point, type <code>x</code> to unlock the X coordinate (length of the block), etc.</em>
+          </p>
+        </div>
+
+        <div class="body-text">
+          <p>the need for individual settings on many of the tools, such as the distance and angle fields of the <code>Place Line</code> tool, the radius field of the <code>Place Circle</code> tool, and the length, width and height fields of the <code>Place Slab</code> tool, as well as the alignments feature on several version 5 tools. It also reduces the need for the user to do constructions: For instance, it generally eliminates the need to place a line and then extend it by snap, just to use its endpoint for another command.</p>
+          <p>AccuDraw allows the user to make highly optimized use of both keyboard and mouse, working together as a team. It allows the user to keep his or her eyes and mouse where they belong, on the view window. The keyboard is used to both type dimensional information or use any number of keyboard shortcuts to access other functionality. The amount of typing is minimized, as are the mouse motions.</p>
+        </div>
+
+        <!-- Figure 4: white top-left → pink/purple bottom-right -->
+        <div class="figure-box figure-box-bottom">
+          <img src="images/figure4_accudraw_shortcuts.jpg"
+               alt="Figure 4: AccuDraw Shortcuts dialog"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="img-placeholder" style="display:none;">images/figure4_accudraw_shortcuts.jpg</div>
+          <p class="fig-caption">
+            <strong>Figure 4:</strong> <em>Single letter and two letter shortcut. It is not necessary to press &lt;Enter&gt; following the letter(s) to run the shortcuts. The Shortcuts dialog box does not need to be on screen for shortcuts to be available, but it is useful for learning or for creating your own shortcuts.</em>
+          </p>
+        </div>
+      </td>
+
+      <!-- RIGHT COL: body text then full-width ad -->
+      <td class="col-right" style="padding-top:0;">
+
+        <!-- Body text -->
+        <div class="body-text" style="margin-bottom: 1rem;">
+          <p>The key to making this sort of functionality easy to use is to have lots of feedback. In addition to the compact AccuDraw dialog box, there is a graphic indicator right in the view window showing the origin (also known as the "reference point," typically being the last point placed), and axis rotation. When the user moves the cursor onto one of the axes relative to the origin, a bright line indicates that the point is indexed to that axis. A look at the dialog box will confirm this, showing either X or Y to be zero, or the angle to be either 0, 90, 180 or 270 degrees. Should the user press the &lt;Enter&gt; key while the cursor is indexed, the index will be locked. Again, the dialog box will confirm this, showing the appropriate lock button has been checked.</p>
+          <p>The dialog box serves as both dynamic coordinate readout and keyboard input. Users will find little need to actually click the mouse on the dialog box, however, since the keyboard focus is dynamically adjusted depending on cursor position, and the text items default to "typeover" mode. It is not even necessary to worry about typing a negative sign, since all numerical input is interpreted based on cursor position. Any</p>
+        </div>
+
+        <!-- Ad box: full width of right col -->
+        <div class="ad-box">
+          <div class="ad-label">Advertisement</div>
+          <div class="ad-content">
+            [AutoVue — Professional Engineering Document Viewing &amp; Markup Software advertisement]
+          </div>
+          <div class="ad-photos-note">
+            Photos of the original magazine page, including this advertisement, are available at <a href="originalphotos.html">originalphotos.html</a>.
+          </div>
+        </div>
+
+      </td>
+    </tr>
+
+  </table>
+
+  <!-- PAGE FOOTER -->
+  <div class="page-footer">
+    <span>MicroStation Manager &nbsp;&middot;&nbsp; February 1995</span>
+    <span>Reader Service #86</span>
+    <span class="page-num">37</span>
+  </div>
+
+</div>
+</body>
+</html>

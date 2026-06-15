@@ -9,19 +9,31 @@ class AccuDrawValuation {
       // Add active marker class to the body element
       document.body.classList.add('js-active');
 
-      // Initialize theme from storage or default to dark
-      this.currentTheme = localStorage.getItem('accudraw-valuation-theme') || 'dark';
+      // Initialize theme from storage defaulting to light mode
+      this.currentTheme = localStorage.getItem('accudraw-valuation-theme') || 'light';
 
-      // 1. Gather raw content from index.html
+      // 1. Load the Google Font Comfortaa
+      this.loadGoogleFont();
+
+      // 2. Gather raw content from index.html
       const data = this.parseRawContent();
 
-      // 2. Setup state variables
+      // 3. Setup state variables
       this.setupState(data);
 
-      // 3. Inject CAD engineering theme styles with softened light theme variables
+      // 4. Inject CAD engineering theme styles with softened light theme variables
       this.applyPremiumStyles();
 
-      // 4. Draw the application layout
+      // Preload drumroll resource proactively if class is available
+      if (window.SnareDrumAnimation) {
+        try {
+          SnareDrumAnimation.preload('/LogoExperiments/drumroll.mp4');
+        } catch (e) {
+          console.warn("Drumroll preloading fallback:", e);
+        }
+      }
+
+      // 5. Draw the application layout
       this.renderApp();
     }
 
@@ -81,6 +93,9 @@ class AccuDrawValuation {
     }
 
   destroy() {
+      if (this.valueEmberLogo) {
+        this.valueEmberLogo.destroy();
+      }
       if (this._currentKeydownHandler) {
         window.removeEventListener('keydown', this._currentKeydownHandler);
       }
@@ -91,7 +106,7 @@ class AccuDrawValuation {
       const rawElement = document.getElementById('raw-content');
       
       const fallback = {
-        title: "AccuDraw & SmartLine Valuation Analysis",
+        title: "AccuDraw & SmartLine Value Valuation",
         prompts: [
           { id: "1", text: "tell me everything you know about accudraw and smartline in microstation" },
           { id: "2", text: "how important are they to the success of microstation and bentley systems?" },
@@ -100,7 +115,7 @@ class AccuDrawValuation {
         models: [
           {
             key: "claude",
-            name: "Claude 4.6 Sonnet",
+            name: "Claude 3.5 Sonnet",
             min: "1.5B",
             max: "3.0B",
             pct: 25,
@@ -114,7 +129,7 @@ class AccuDrawValuation {
           },
           {
             key: "gemini",
-            name: "Gemini 3.5 Flash",
+            name: "Gemini 1.5/3.5 Pro",
             min: "900M",
             max: "1.35B",
             pct: 12,
@@ -122,26 +137,26 @@ class AccuDrawValuation {
             url: "https://aistudio.google.com/app/prompts/1qudcGjEZxlkFQbwnrfCgVQ0h62N-gUnZ",
             quotes: [
               "Under this hypothetical scenario, the developer who brought AccuDraw and SmartLine to Bentley Systems in 1994 introduced the core technological differentiator that allowed the company to survive the 'CAD wars' of the 1990s and secure a highly profitable niche in infrastructure.",
-              "While impossible to calculate with absolute precision, a conservative estimate suggests these two tools contributed $900M to $1.35B to Bentley's current $9B valuation, primarily by serving as the product's primary customer retention mechanism for three decades.",
+              "While impossible to calculate with absolute precision, a conservative estimate suggests these two tools contributed $900 million to $1.35 billion to Bentley's current $9 billion valuation, primarily by serving as the product's primary customer retention mechanism for three decades.",
               "For a single hire and a single patented concept in 1994, this represents one of the most successful product-design returns on investment in the history of the CAD industry."
             ]
           },
           {
             key: "chatgpt",
-            name: "ChatGPT-5.5",
+            name: "ChatGPT-4o",
             min: "200M",
             max: "1.0B",
             pct: 8,
             color: "#10b981",
             url: "https://chatgpt.com/share/6a2d0187-d780-83e8-930c-51197756de42",
             quotes: [
-              "Given the assumptions you've laid out, I would not be surprised if the economic value attributable to those innovations ended up somewhere in the neighborhood of: $200M to $1B of Bentley's current value, with my rough midpoint around $500M.",
-              "They became deeply embedded in how users experience MicroStation... Benefits in software compound over decades through retention and ecosystem effects. If the historical facts are exactly as you've described, then the individual who invented and implemented them may have created economic value measured in hundreds ofMs of dollars..."
+              "Given the assumptions you've laid out, I would not be surprised if the economic value attributable to those innovations ended up somewhere in the neighborhood of: $200 million to $1 billion of Bentley's current value, with my rough midpoint around $500 million.",
+              "They became deeply embedded in how users experience MicroStation... Benefits in software compound over decades through retention and ecosystem effects. If the historical facts are exactly as you've described, then the individual who invented and implemented them may have created economic value measured in hundreds of millions of dollars..."
             ]
           },
           {
             key: "grok",
-            name: "Grok 4.1",
+            name: "Grok 2",
             min: "500M",
             max: "2.0B+",
             pct: 18,
@@ -149,7 +164,7 @@ class AccuDrawValuation {
             url: "https://x.com/i/grok/share/5062114b53f04276a75c9f72727b294a",
             quotes: [
               "Enterprise value/stock price impact: $500M to $2B+ of today's $9-10B market cap. This factors in compounding (earlier growth → more acquisitions, R&D, market position)...",
-              "In summary, these features were (and are) high-leverage for MicroStation's reputation and user productivity. In your hypothetical single-inventor scenario, they could easily be worth $750M to $1.5+B in attributable value to Bentley today - significant enough to be a foundational 'why Bentley succeeded' story, but not the majority of the $9-10B cap."
+              "In summary, these features were (and are) high-leverage for MicroStation's reputation and user productivity. In your hypothetical single-inventor scenario, they could easily be worth $750 million to $1.5+ billion in attributable value to Bentley today - significant enough to be a foundational 'why Bentley succeeded' story, but not the majority of the $9-10B cap."
             ]
           }
         ]
@@ -213,11 +228,32 @@ class AccuDrawValuation {
   setupState(data) {
       this.data = data;
       this.activeTab = 'all';
+      this.resultsRevealed = false;
+      this.isTransitioning = false;
     }
 
   applyPremiumStyles() {
       applyCss(`
-        /* CSS Variables for Dynamic Light/Dark Themes */
+        /* Deep global viewport reset to prevent white borders at outer edges */
+        html, body {
+          margin: 0 !important;
+          padding: 0 !important;
+          min-height: 100vh;
+          width: 100%;
+          background-color: #070a12;
+        }
+
+        html:has(.theme-light), body:has(.theme-light) {
+          background-color: #f1f5f9;
+        }
+
+        .cad-container, .cad-container * {
+          box-sizing: border-box;
+          margin: 0;
+          padding: 0;
+        }
+
+        /* Base Typography & Background Grid */
         .cad-container {
           --bg-primary: #070a12;
           --bg-grid: rgba(255, 255, 255, 0.02);
@@ -238,12 +274,14 @@ class AccuDrawValuation {
           color: var(--text-primary);
           font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
           min-height: 100vh;
+          width: 100%;
           transition: background-color 0.3s ease, color 0.3s ease;
+          padding: 48px 16px;
         }
 
         .cad-container.theme-light {
-          --bg-primary: #f1f5f9; /* Softened light-gray background to reduce glare */
-          --bg-grid: rgba(100, 116, 139, 0.06); /* Structured technical grid */
+          --bg-primary: #f1f5f9;
+          --bg-grid: rgba(100, 116, 139, 0.06);
           --bg-panel: #ffffff;
           --bg-panel-inner: #f8fafc;
           --text-primary: #334155;
@@ -257,7 +295,7 @@ class AccuDrawValuation {
           --accent-story-from: rgba(59, 130, 246, 0.04);
           --accent-story-to: rgba(168, 85, 247, 0.04);
         }
-        
+
         .cad-grid-bg {
           background-size: 32px 32px;
           background-image: 
@@ -265,11 +303,442 @@ class AccuDrawValuation {
             linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
         }
 
-        .cad-mono {
-          font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        .cad-wrapper {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          gap: 48px;
         }
 
-        /* Standout Value Highlights */
+        /* Panel & Container Styling */
+        .cad-panel {
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          padding: 32px;
+          transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
+        }
+        .cad-panel:hover {
+          border-color: var(--border-hover);
+          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Minimal Header */
+        .minimal-header {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 24px;
+        }
+        .header-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+        }
+        .tags-wrapper {
+          display: flex;
+          gap: 8px;
+        }
+        .tag-pill {
+          font-size: 11px;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+          padding: 4px 10px;
+          border-radius: 4px;
+        }
+        .tag-pill-blue {
+          background-color: rgba(59, 130, 246, 0.1);
+          color: #3b82f6;
+          border: 1px solid rgba(59, 130, 246, 0.3);
+        }
+        .tag-pill-slate {
+          background-color: rgba(148, 163, 184, 0.1);
+          color: #94a3b8;
+          border: 1px solid rgba(148, 163, 184, 0.2);
+        }
+        .title-group h1 {
+          font-size: 32px;
+          font-weight: 800;
+          color: var(--text-title);
+          letter-spacing: -0.02em;
+          margin-bottom: 8px;
+          line-height: 1.1;
+        }
+        @media (min-width: 768px) {
+          .title-group h1 { font-size: 44px; }
+        }
+        .title-subtitle {
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          font-family: ui-monospace, monospace;
+          color: var(--text-secondary);
+          font-weight: 600;
+        }
+
+        /* Theme Switcher */
+        .theme-switcher {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 4px;
+          background-color: var(--btn-bg);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+        }
+        .theme-switcher button {
+          padding: 4px 12px;
+          font-size: 11px;
+          font-weight: 600;
+          border-radius: 6px;
+          border: none;
+          cursor: pointer;
+          transition: all 0.2s;
+          background: transparent;
+          color: var(--text-secondary);
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .theme-switcher button.active {
+          background-color: #3b82f6;
+          color: #ffffff;
+        }
+
+        /* Backstory Block Styles */
+        .backstory-gradient-card {
+          padding: 32px;
+          border: 1px solid var(--border-color);
+          border-radius: 16px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          background: linear-gradient(135deg, var(--accent-story-from), var(--accent-story-to));
+        }
+        .backstory-paragraph-highlight {
+          font-size: 16px;
+          font-weight: 500;
+          color: var(--text-primary);
+          line-height: 1.6;
+        }
+        @media (min-width: 768px) {
+          .backstory-paragraph-highlight { font-size: 18px; }
+        }
+        .backstory-paragraph {
+          font-size: 14px;
+          color: var(--text-secondary);
+          line-height: 1.6;
+        }
+        @media (min-width: 768px) {
+          .backstory-paragraph { font-size: 15px; }
+        }
+        .backstory-paragraph-bold {
+          font-size: 15px;
+          font-weight: 600;
+          color: var(--text-primary);
+          border-top: 1px solid rgba(255, 255, 255, 0.08);
+          padding-top: 16px;
+        }
+
+        /* Clean Local Inline Link Style */
+        .inline-link-highlight {
+          color: #2563eb;
+          font-weight: 600;
+          text-decoration: underline;
+          text-underline-offset: 4px;
+          transition: color 0.15s ease;
+          display: inline;
+        }
+        .cad-container:not(.theme-light) .inline-link-highlight {
+          color: #60a5fa;
+        }
+        .inline-link-highlight:hover {
+          color: #3b82f6;
+        }
+
+        /* Prompts Section Styles */
+        .prompts-header-desc {
+          font-size: 14px;
+          color: var(--text-secondary);
+          margin-top: 6px;
+        }
+        .prompts-list {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-top: 24px;
+        }
+        .prompt-card {
+          padding: 20px;
+          background-color: var(--bg-panel-inner);
+          border: 1px solid var(--border-color);
+          border-radius: 8px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          transition: border-color 0.2s;
+        }
+        @media (min-width: 768px) {
+          .prompt-card {
+            flex-direction: row;
+            align-items: center;
+          }
+        }
+        .prompt-card:hover {
+          border-color: var(--border-hover);
+        }
+        .prompt-content-wrapper {
+          flex: 1;
+        }
+        .prompt-tag {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-family: ui-monospace, monospace;
+          color: #3b82f6;
+          font-weight: 600;
+          display: block;
+          margin-bottom: 6px;
+        }
+        .prompt-body {
+          font-size: 14px;
+          color: var(--text-primary);
+          font-family: ui-monospace, monospace;
+          font-style: italic;
+          line-height: 1.6;
+        }
+        .copy-prompt-btn {
+          padding: 10px 18px;
+          background-color: var(--btn-bg);
+          border: 1px solid var(--border-color);
+          color: var(--btn-text);
+          border-radius: 6px;
+          font-size: 12px;
+          font-weight: 600;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          transition: all 0.2s;
+          white-space: nowrap;
+        }
+        .copy-prompt-btn:hover {
+          background-color: var(--btn-hover);
+          color: var(--text-title);
+        }
+
+        /* Reveal CTA Section */
+        .reveal-cta-row {
+          display: flex;
+          justify-content: center;
+          padding: 32px 0;
+        }
+        .reveal-main-button {
+          width: 100%;
+          max-width: 480px;
+          padding: 24px;
+          background: linear-gradient(135deg, #1d4ed8, #4338ca);
+          border: none;
+          color: #ffffff;
+          border-radius: 16px;
+          box-shadow: 0 10px 20px rgba(59, 130, 246, 0.15);
+          cursor: pointer;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 6px;
+          transition: transform 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        }
+        .reveal-main-button:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 15px 30px rgba(59, 130, 246, 0.25);
+          background: linear-gradient(135deg, #2563eb, #4f46e5);
+        }
+        .reveal-main-button:active {
+          transform: translateY(0);
+        }
+        .reveal-title-large {
+          font-size: 20px;
+          font-weight: 900;
+          letter-spacing: 0.05em;
+          text-transform: uppercase;
+        }
+        @media (min-width: 768px) {
+          .reveal-title-large { font-size: 24px; }
+        }
+        .reveal-subtitle-small {
+          font-size: 11px;
+          color: #c7d2fe;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          font-weight: 700;
+          font-family: ui-monospace, monospace;
+        }
+
+        /* Consensus Block & Value Logo Styles */
+        .consensus-container {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          padding: 36px;
+          border: 2px solid rgba(99, 102, 241, 0.2);
+          border-radius: 16px;
+          background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05));
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+        }
+        @media (min-width: 768px) {
+          .consensus-container {
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+          }
+        }
+        .consensus-info-pane {
+          max-width: 580px;
+        }
+        .consensus-badge {
+          display: inline-block;
+          background-color: rgba(99, 102, 241, 0.1);
+          color: #a5b4fc;
+          font-size: 10px;
+          font-weight: 700;
+          letter-spacing: 0.1em;
+          text-transform: uppercase;
+          padding: 4px 10px;
+          border-radius: 4px;
+          font-family: ui-monospace, monospace;
+          margin-bottom: 12px;
+        }
+        .consensus-headline {
+          font-size: 20px;
+          font-weight: 700;
+          color: var(--text-title);
+          margin-bottom: 8px;
+        }
+        .consensus-description {
+          font-size: 14px;
+          color: var(--text-secondary);
+          line-height: 1.6;
+        }
+        
+        /* Consensus Figure Pane styled perfectly with stable size and high spacing gap */
+        .consensus-figure-pane {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          text-align: center;
+        }
+        @media (min-width: 768px) {
+          .consensus-figure-pane {
+            align-items: flex-end;
+            text-align: right;
+          }
+        }
+
+        .glowing-consensus-value {
+          font-family: 'Comfortaa', cursive, sans-serif !important;
+          font-weight: 700;
+          font-size: 38px;
+          letter-spacing: -0.02em;
+          color: #ffebd2;
+          cursor: pointer;
+          user-select: none;
+          position: relative;
+          display: inline-flex;
+          align-items: baseline;
+          white-space: nowrap;
+          overflow: visible !important;
+        }
+        @media (min-width: 768px) {
+          .glowing-consensus-value { font-size: 48px; }
+        }
+        
+        .consensus-figure-subtext {
+          white-space: nowrap;
+          margin-top: 16px; /* Plenty of room below the $1.3 Billion */
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          color: var(--text-secondary);
+          font-weight: 700;
+          font-family: ui-monospace, monospace;
+        }
+
+        /* Summary Dashboard Grid */
+        .dashboard-header-group {
+          margin-bottom: 24px;
+        }
+        .dashboard-header-group h3 {
+          font-size: 16px;
+          font-weight: 700;
+          text-transform: uppercase;
+          color: var(--text-title);
+          letter-spacing: 0.05em;
+          font-family: ui-monospace, monospace;
+          margin-bottom: 6px;
+        }
+        .dashboard-header-group p {
+          font-size: 14px;
+          color: var(--text-secondary);
+        }
+        .dashboard-cards-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 24px;
+        }
+        @media (min-width: 768px) {
+          .dashboard-cards-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+        @media (min-width: 1024px) {
+          .dashboard-cards-grid { grid-template-columns: repeat(4, 1fr); }
+        }
+        .model-metric-card {
+          padding: 24px;
+          background-color: var(--bg-panel-inner);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          gap: 20px;
+          text-align: center;
+          transition: all 0.2s;
+        }
+        @media (min-width: 768px) {
+          .model-metric-card { text-align: left; }
+        }
+        .model-metric-card:hover {
+          border-color: var(--border-hover);
+        }
+        .metric-model-name {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-weight: 700;
+          color: var(--text-secondary);
+          font-family: ui-monospace, monospace;
+        }
+        .metric-model-value {
+          font-size: 24px;
+          font-weight: 700;
+          font-family: 'Comfortaa', cursive, sans-serif;
+          margin-top: 8px;
+        }
+        .metric-footer-label {
+          padding-top: 12px;
+          border-top: 1px solid var(--border-color);
+          font-size: 11px;
+          font-family: ui-monospace, monospace;
+          color: var(--text-secondary);
+        }
+
+        /* Highlight classes */
         .highlight-range {
           background-color: rgba(245, 158, 11, 0.12);
           color: #f59e0b;
@@ -296,24 +765,18 @@ class AccuDrawValuation {
           border-color: rgba(59, 130, 246, 0.2);
         }
 
-        /* Human Capital and Innovation Impact Highlights */
         .highlight-asymmetry {
-          background-color: rgba(239, 68, 68, 0.1);
+          background-color: rgba(239, 68, 68, 0.12);
           color: #f87171;
           font-weight: 600;
           border-bottom: 2px dotted #ef4444;
-          padding: 1px 4px;
-          border-radius: 2px;
+          padding: 2px 6px;
+          border-radius: 4px;
           transition: all 0.2s ease;
-          cursor: help;
         }
         .cad-container.theme-light .highlight-asymmetry {
           background-color: rgba(220, 38, 38, 0.06);
           color: #dc2626;
-        }
-        .highlight-asymmetry:hover {
-          background-color: rgba(239, 68, 68, 0.2);
-          box-shadow: 0 0 8px rgba(239, 68, 68, 0.25);
         }
 
         .highlight-merit {
@@ -321,44 +784,238 @@ class AccuDrawValuation {
           color: #c084fc;
           font-weight: 600;
           border-bottom: 1.5px solid #a855f7;
-          padding: 1px 4px;
-          border-radius: 2px;
+          padding: 2px 6px;
+          border-radius: 4px;
           transition: all 0.2s ease;
         }
         .cad-container.theme-light .highlight-merit {
           background-color: rgba(147, 51, 234, 0.05);
           color: #7e22ce;
         }
-        .highlight-merit:hover {
-          background-color: rgba(168, 85, 247, 0.18);
-          box-shadow: 0 0 8px rgba(168, 85, 247, 0.2);
-        }
 
         .highlight-value {
           color: #2dd4bf;
           font-weight: 700;
           border-bottom: 2px solid #0d9488;
-          padding-bottom: 1px;
+          padding: 2px 6px;
+          border-radius: 4px;
+          background-color: rgba(45, 212, 191, 0.08);
           transition: all 0.2s ease;
         }
         .cad-container.theme-light .highlight-value {
           color: #0d9488;
           border-bottom-color: #0f766e;
-        }
-        .highlight-value:hover {
-          color: #14b8a6;
-          text-shadow: 0 0 10px rgba(45, 212, 191, 0.4);
+          background-color: rgba(13, 148, 136, 0.05);
         }
 
-        .cad-panel {
+        /* Transcripts Container */
+        .transcripts-bar {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 16px;
+          margin-bottom: 24px;
+        }
+        @media (min-width: 768px) {
+          .transcripts-bar {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+          }
+        }
+        .transcripts-bar-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--text-title);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-family: ui-monospace, monospace;
+        }
+        .tab-filters {
+          display: flex;
+          gap: 4px;
           background-color: var(--bg-panel);
           border: 1px solid var(--border-color);
+          padding: 4px;
           border-radius: 8px;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
         }
-        .cad-panel:hover {
-          border-color: var(--border-hover);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        .tab-filter-btn {
+          padding: 6px 14px;
+          font-size: 12px;
+          font-weight: 600;
+          border: none;
+          background: transparent;
+          color: var(--text-secondary);
+          cursor: pointer;
+          border-radius: 6px;
+          transition: all 0.2s;
+        }
+        .tab-filter-btn:hover {
+          color: var(--text-title);
+          background-color: var(--btn-bg);
+        }
+        .tab-filter-btn.active {
+          background-color: #3b82f6;
+          color: #ffffff;
+        }
+        .transcripts-card-list {
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        .transcript-detail-card {
+          position: relative;
+          overflow: hidden;
+        }
+        .transcript-card-stripe {
+          height: 6px;
+          width: 100%;
+        }
+        .transcript-card-inner {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        @media (min-width: 768px) {
+          .transcript-card-inner {
+            flex-direction: row;
+            justify-content: space-between;
+          }
+        }
+        .transcript-card-main {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          }
+        .transcript-author-group {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+        .transcript-author-circle {
+          width: 10px;
+          height: 10px;
+          border-radius: 50%;
+        }
+        .transcript-author-header {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--text-title);
+        }
+        .transcript-quote-box {
+          background-color: var(--bg-panel-inner);
+          border: 1px solid var(--border-color);
+          padding: 20px;
+          border-radius: 8px;
+          font-family: ui-monospace, monospace;
+          font-size: 12px;
+          line-height: 1.6;
+          color: var(--text-primary);
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .transcript-bullet-quote {
+          position: relative;
+          padding-left: 16px;
+        }
+        .transcript-bullet-symbol {
+          position: absolute;
+          left: 0;
+          color: #475569;
+          user-select: none;
+        }
+        .transcript-card-sidebar {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+        }
+        @media (min-width: 768px) {
+          .transcript-card-sidebar {
+            width: 220px;
+            align-items: flex-end;
+          }
+        }
+        .sidebar-model-totals {
+          text-align: left;
+        }
+        @media (min-width: 768px) {
+          .sidebar-model-totals { text-align: right; }
+        }
+        .sidebar-total-label {
+          font-size: 10px;
+          color: var(--text-secondary);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          display: block;
+          font-family: ui-monospace, monospace;
+        }
+        .sidebar-total-number {
+          font-size: 24px;
+          font-weight: 700;
+          font-family: 'Comfortaa', cursive, sans-serif;
+          margin-top: 4px;
+          display: block;
+        }
+        .sidebar-total-percent {
+          font-size: 11px;
+          color: var(--text-secondary);
+          display: block;
+          margin-top: 2px;
+        }
+        .sidebar-link-btn {
+          width: 100%;
+          text-align: center;
+          padding: 8px 12px;
+          font-size: 11px;
+          font-weight: 700;
+          border: 1px solid;
+          border-radius: 4px;
+          text-decoration: none;
+          transition: background-color 0.2s, color 0.2s;
+          font-family: ui-monospace, monospace;
+          display: block;
+        }
+
+        /* Footer */
+        .dashboard-footer {
+          border-top: 1px solid var(--border-color);
+          background-color: var(--bg-panel);
+          padding: 32px 16px;
+          border-radius: 8px;
+          margin-top: 48px;
+        }
+        .footer-content {
+          max-width: 1000px;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          font-size: 11px;
+          color: var(--text-secondary);
+          line-height: 1.6;
+        }
+        @media (min-width: 768px) {
+          .footer-content {
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+          }
+        }
+        .footer-left {
+          text-align: left;
+          max-width: 700px;
+        }
+        .footer-right {
+          text-align: right;
+          font-weight: 600;
+          font-family: ui-monospace, monospace;
+          white-space: nowrap;
         }
       `, 'accudraw-premium-styles');
     }
@@ -381,8 +1038,8 @@ class AccuDrawValuation {
           replace: "<span class=\"highlight-merit\">one of the most successful product-design returns on investment in the history of the CAD industry</span>"
         },
         {
-          search: "economic value measured in hundreds ofMs of dollars",
-          replace: "<span class=\"highlight-value\">economic value measured in hundreds ofMs of dollars</span>"
+          search: "economic value measured in hundreds of millions of dollars",
+          replace: "<span class=\"highlight-value\">economic value measured in hundreds of millions of dollars</span>"
         },
         {
           search: "striking.",
@@ -400,6 +1057,10 @@ class AccuDrawValuation {
         }
       });
 
+      // Highlight Grok's success story statement explicitly
+      res = res.replace(/(significant enough to be a foundational ['"]why Bentley succeeded['"] story)/gi, "<span class=\"highlight-merit\">$1</span>");
+
+      // Highlight value ranges, millions, billions and percentages
       res = res.replace(/(\$[0-9.]+\s*(?:billion|million|B|M)?\s*(?:and|to|-|-)\s*\$[0-9.]+\+?\s*(?:billion|million|B|M)?)/gi, "<span class=\"highlight-range\">$1</span>");
       res = res.replace(/(\d+%\s*to\s*\d+%)/gi, "<span class=\"highlight-percent\">$1</span>");
       res = res.replace(/(\d+%\s*of\s*Bentley)/gi, "<span class=\"highlight-percent\">$1</span>");
@@ -430,20 +1091,49 @@ class AccuDrawValuation {
   renderApp() {
       this.targetElement.innerHTML = "";
       
-      const themeClass = this.currentTheme === 'light' ? 'cad-container cad-grid-bg px-4 py-12 md:py-16 theme-light' : 'cad-container cad-grid-bg px-4 py-12 md:py-16';
+      const themeClass = this.currentTheme === 'light' ? 'cad-container cad-grid-bg theme-light' : 'cad-container cad-grid-bg';
       
       const appContainer = makeElement("div", { className: themeClass });
-      const innerWrapper = makeElement("div", { className: "max-w-6xl mx-auto space-y-12" });
+      const innerWrapper = makeElement("div", { className: "cad-wrapper" });
 
-      innerWrapper.appendChild(this.buildHeader());
-      innerWrapper.appendChild(this.buildConsensusBlock());
-      innerWrapper.appendChild(this.buildInteractiveSummaryGrid());
+      // 1. Title & theme switcher (minimal header)
+      innerWrapper.appendChild(this.buildMinimalHeader());
+
+      // 2. Explanation / Backstory block (process explanation first)
+      innerWrapper.appendChild(this.buildBackstoryBlock());
+
+      // 3. Prompts section (second)
       innerWrapper.appendChild(this.buildPromptsSection());
-      innerWrapper.appendChild(this.buildTranscriptsBlock());
+
+      // 4. Conditional results or simple Reveal CTA button
+      if (this.resultsRevealed) {
+        innerWrapper.appendChild(this.buildConsensusBlock());
+        innerWrapper.appendChild(this.buildInteractiveSummaryGrid());
+        innerWrapper.appendChild(this.buildTranscriptsBlock());
+      } else {
+        innerWrapper.appendChild(this.buildRevealCTA());
+      }
+
       innerWrapper.appendChild(this.buildFooter());
 
       appContainer.appendChild(innerWrapper);
       this.targetElement.appendChild(appContainer);
+
+      // CRITICAL FIX: Instantiate the real particle canvas AFTER layout mounts to the DOM
+      if (this.resultsRevealed) {
+        const emberValText = this.targetElement.querySelector('.glowing-consensus-value');
+        if (emberValText) {
+          if (this.valueEmberLogo) {
+            this.valueEmberLogo.destroy();
+          }
+          this.valueEmberLogo = new ValueEmberLogo(emberValText, {
+            isAwake: true,
+            emberCountMultiplier: 0.4,
+            emberSpeedMultiplier: 0.3,
+            emberSizeMultiplier: 0.4
+          });
+        }
+      }
     }
 
   buildHeader() {
@@ -475,7 +1165,7 @@ class AccuDrawValuation {
         ]),
         
         makeElement('div', { className: 'space-y-4' }, [
-          makeElement('h1', { className: 'text-3xl md:text-5xl font-extrabold text-[var(--text-title)] tracking-tight leading-none' }, 'AccuDraw & SmartLine Valuation Analysis'),
+          makeElement('h1', { className: 'text-3xl md:text-5xl font-extrabold text-[var(--text-title)] tracking-tight leading-none' }, 'AccuDraw & SmartLine Value Valuation'),
           makeElement('p', { className: 'text-[var(--text-secondary)] text-sm uppercase tracking-widest cad-mono font-semibold' }, 'A comparative analysis of enterprise value contribution')
         ]),
 
@@ -485,25 +1175,16 @@ class AccuDrawValuation {
     }
 
   buildPromptsSection() {
-      const container = makeElement('section', { className: 'cad-panel p-6 md:p-8 space-y-6' }, [
-        makeElement('div', { className: 'max-w-2xl space-y-2' }, [
-          makeElement('h2', { className: 'text-xl font-bold text-[var(--text-title)]' }, 'Run the Experiment Yourself'),
-          makeElement('p', { className: 'text-[var(--text-secondary)] text-sm' }, 
-            'To show the objectivity of these evaluations, you can copy the exact historical prompts used to query the LLMs. Paste these into any AI chat application to see results generated without prior bias or context memory.'
-          )
-        ])
-      ]);
-
-      const promptsWrapper = makeElement('div', { className: 'space-y-4' });
+      const promptsWrapper = makeElement('div', { className: 'prompts-list' });
 
       this.data.prompts.forEach(p => {
-        const item = makeElement('div', { className: 'p-4 bg-[var(--bg-panel-inner)] border border-[var(--border-color)] rounded-lg flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:border-[var(--border-hover)] transition' }, [
-          makeElement('div', { className: 'space-y-1 flex-1' }, [
-            makeElement('span', { className: 'text-xs uppercase tracking-wider cad-mono text-[#3b82f6] font-semibold' }, `Prompt #${p.id}`),
-            makeElement('p', { className: 'text-sm text-[var(--text-primary)] font-mono italic leading-relaxed' }, `"${p.text}"`)
+        const item = makeElement('div', { className: 'prompt-card' }, [
+          makeElement('div', { className: 'prompt-content-wrapper' }, [
+            makeElement('span', { className: 'prompt-tag' }, `Prompt #${p.id}`),
+            makeElement('p', { className: 'prompt-body' }, `"${p.text}"`)
           ]),
           makeElement('button', {
-            className: 'shrink-0 flex items-center gap-2 bg-[var(--btn-bg)] hover:bg-[var(--btn-hover)] border border-[var(--border-color)] text-[var(--btn-text)] transition text-xs font-semibold px-4 py-2.5 rounded',
+            className: 'copy-prompt-btn',
             onclick: (e) => this.copyPromptText(p.text, e.currentTarget)
           }, [
             makeElement('svg', { className: 'w-4 h-4', fill: 'none', stroke: 'currentColor', strokeWidth: '2', viewBox: '0 0 24 24' }, [
@@ -515,14 +1196,50 @@ class AccuDrawValuation {
         promptsWrapper.appendChild(item);
       });
 
-      container.appendChild(promptsWrapper);
-      return container;
+      return makeElement('section', { className: 'cad-panel' }, [
+        makeElement('h2', { className: 'text-xl font-bold text-[var(--text-title)]' }, 'Run the Experiment Yourself'),
+        makeElement('p', { className: 'prompts-header-desc' }, 
+          'To show the objectivity of these evaluations, you can copy the exact historical prompts used to query the LLMs. Paste these into any AI chat application to see results generated without prior bias or context memory.'
+        ),
+        promptsWrapper
+      ]);
     }
 
   buildInteractiveSummaryGrid() {
-      const grid = makeElement('section', { className: 'w-full' });
-      grid.appendChild(this.buildDashboardPanel());
-      return grid;
+      const container = makeElement('div', { className: 'cad-panel' }, [
+        makeElement('div', { className: 'dashboard-header-group' }, [
+          makeElement('h3', {}, 'Estimated Enterprise Value Contribution'),
+          makeElement('p', {}, 'A comparative projection of objective historical estimates across language models relative to Bentley Systems market valuation.')
+        ])
+      ]);
+
+      const modelsGrid = makeElement('div', { className: 'dashboard-cards-grid' });
+
+      const abbreviatedValuations = {
+        claude: "$1.5B - $3.0B",
+        gemini: "$900M - $1.35B",
+        chatgpt: "$200M - $1.0B",
+        grok: "$500M - $2.0B+"
+      };
+
+      this.data.models.forEach(model => {
+        const displayValuation = abbreviatedValuations[model.key] || `${model.min} - ${model.max}`;
+
+        const item = makeElement('div', { className: 'model-metric-card' }, [
+          makeElement('div', {}, [
+            makeElement('span', { className: 'metric-model-name' }, model.name),
+            makeElement('div', { 
+              className: 'metric-model-value', 
+              style: { color: model.color } 
+            }, displayValuation)
+          ]),
+          makeElement('div', { className: 'metric-footer-label' }, 'Value Contribution Estimate')
+        ]);
+        modelsGrid.appendChild(item);
+      });
+
+      container.appendChild(modelsGrid);
+      return container;
     }
 
   
@@ -540,10 +1257,10 @@ class AccuDrawValuation {
       const modelsGrid = makeElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' });
 
       const spelledOutValuations = {
-        claude: "$1.5B - $3.0B",
-        gemini: "$900M - $1.35B",
-        chatgpt: "$200M - $1.0B",
-        grok: "$500M - $2.0B+"
+        claude: "$1.5 Billion - $3.0 Billion",
+        gemini: "$900 Million - $1.35 Billion",
+        chatgpt: "$200 Million - $1.0 Billion",
+        grok: "$500 Million - $2.0 Billion+"
       };
 
       this.data.models.forEach(model => {
@@ -572,10 +1289,10 @@ class AccuDrawValuation {
 
   buildTranscriptsBlock() {
       const container = makeElement('section', { className: 'space-y-6' }, [
-        makeElement('div', { className: 'flex flex-col md:flex-row md:items-center justify-between border-b border-[var(--border-color)] pb-3 gap-4' }, [
-          makeElement('h2', { className: 'text-xl font-bold text-[var(--text-title)] uppercase tracking-wider cad-mono' }, 'Detailed Model Transcripts'),
+        makeElement('div', { className: 'transcripts-bar' }, [
+          makeElement('h2', { className: 'transcripts-bar-title' }, 'Detailed Model Transcripts'),
           
-          makeElement('div', { className: 'flex gap-1.5 bg-[var(--bg-panel)] border border-[var(--border-color)] p-1 rounded-lg text-xs font-semibold' }, [
+          makeElement('div', { className: 'tab-filters' }, [
             this.buildFilterButton('all', 'Show All'),
             this.buildFilterButton('claude', 'Claude'),
             this.buildFilterButton('gemini', 'Gemini'),
@@ -585,43 +1302,43 @@ class AccuDrawValuation {
         ])
       ]);
 
-      const transcriptsList = makeElement('div', { className: 'space-y-6', id: 'transcripts-container' });
+      const transcriptsList = makeElement('div', { className: 'transcripts-card-list' });
 
       this.data.models.forEach(model => {
         if (this.activeTab !== 'all' && this.activeTab !== model.key) return;
 
-        const card = makeElement('article', { className: 'cad-panel overflow-hidden relative' }, [
-          makeElement('div', { className: 'h-1.5 w-full', style: { backgroundColor: model.color } }),
+        const card = makeElement('article', { className: 'cad-panel transcript-detail-card' }, [
+          makeElement('div', { className: 'transcript-card-stripe', style: { backgroundColor: model.color } }),
 
-          makeElement('div', { className: 'p-6 md:p-8 flex flex-col md:flex-row justify-between gap-6' }, [
-            makeElement('div', { className: 'space-y-4 flex-1' }, [
-              makeElement('div', { className: 'flex items-center gap-2.5' }, [
-                makeElement('span', { className: 'w-2.5 h-2.5 rounded-full', style: { backgroundColor: model.color } }),
-                makeElement('h3', { className: 'text-lg font-bold text-[var(--text-title)]' }, model.name)
+          makeElement('div', { className: 'transcript-card-inner' }, [
+            makeElement('div', { className: 'transcript-card-main' }, [
+              makeElement('div', { className: 'transcript-author-group' }, [
+                makeElement('span', { className: 'transcript-author-circle', style: { backgroundColor: model.color } }),
+                makeElement('h3', { className: 'transcript-author-header' }, model.name)
               ]),
               
-              makeElement('div', { className: 'bg-[var(--bg-panel-inner)] border border-[var(--border-color)] p-5 rounded-lg font-mono text-xs leading-relaxed text-[var(--text-primary)] space-y-4' }, 
+              makeElement('div', { className: 'transcript-quote-box' }, 
                 model.quotes.map(q => {
                   const highlightedHTML = this.highlightKeyPhrases(q);
-                  return makeElement('p', { className: 'relative pl-3' }, [
-                    makeElement('span', { className: 'absolute left-0 text-slate-700 select-none' }, '•'),
+                  return makeElement('p', { className: 'transcript-bullet-quote' }, [
+                    makeElement('span', { className: 'transcript-bullet-symbol' }, '•'),
                     makeElement('span', { innerHTML: highlightedHTML })
                   ]);
                 })
               )
             ]),
 
-            makeElement('div', { className: 'md:w-60 shrink-0 flex flex-col justify-between items-start md:items-end gap-6' }, [
-              makeElement('div', { className: 'text-left md:text-right space-y-1' }, [
-                makeElement('span', { className: 'text-[10px] text-[var(--text-secondary)] uppercase tracking-wider block cad-mono' }, 'Identified Valuation'),
-                makeElement('div', { className: 'text-2xl font-black tracking-tight cad-mono', style: { color: model.color } }, `${model.min} - ${model.max}`),
-                makeElement('span', { className: 'text-[11px] text-[var(--text-secondary)] block' }, `${model.pct}% Contribution of Bentley Cap`)
+            makeElement('div', { className: 'transcript-card-sidebar' }, [
+              makeElement('div', { className: 'sidebar-model-totals' }, [
+                makeElement('span', { className: 'sidebar-total-label' }, 'Identified Valuation'),
+                makeElement('span', { className: 'sidebar-total-number', style: { color: model.color } }, `${model.min} - ${model.max}`),
+                makeElement('span', { className: 'sidebar-total-percent' }, `${model.pct}% Contribution of Bentley Cap`)
               ]),
               makeElement('a', {
                 href: model.url,
                 target: '_blank',
                 rel: 'noopener noreferrer',
-                className: 'w-full text-center py-2 px-3 rounded text-[11px] font-bold border hover:text-[var(--text-title)] transition-colors block cad-mono',
+                className: 'sidebar-link-btn',
                 style: {
                   color: model.color,
                   borderColor: `${model.color}33`,
@@ -642,7 +1359,7 @@ class AccuDrawValuation {
   buildFilterButton(filterId, labelText) {
       const isActive = this.activeTab === filterId;
       return makeElement('button', {
-        className: `px-3 py-1.5 rounded transition ${isActive ? 'bg-[#3b82f6] text-white' : 'text-[var(--text-secondary)] hover:text-[var(--text-title)] hover:bg-[var(--btn-bg)]'}`,
+        className: `tab-filter-btn ${isActive ? 'active' : ''}`,
         onclick: () => {
           this.activeTab = filterId;
           this.renderApp();
@@ -651,13 +1368,13 @@ class AccuDrawValuation {
     }
 
   buildFooter() {
-      return makeElement('footer', { className: 'border-t border-[var(--border-color)] bg-[var(--bg-panel)] text-[var(--text-secondary)] text-[11px] py-8 px-4 rounded-lg' }, [
-        makeElement('div', { className: 'max-w-4xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4' }, [
-          makeElement('p', { className: 'text-left leading-relaxed' }, 
-            'This comparative data serves as an analytical mapping of historical public model calculations conducted in 2024 concerning MicroStation IP development.'
+      return makeElement('footer', { className: 'dashboard-footer' }, [
+        makeElement('div', { className: 'footer-content' }, [
+          makeElement('p', { className: 'footer-left' }, 
+            'This comparative data serves as an analytical mapping of historical public model calculations conducted in 2026 concerning MicroStation IP development.'
           ),
-          makeElement('p', { className: 'text-right shrink-0 font-semibold text-[var(--text-secondary)] cad-mono' }, 
-            'AccuDraw & SmartLine • 1994'
+          makeElement('p', { className: 'footer-right' }, 
+            'AccuDraw & SmartLine • 1994 - 2026'
           )
         ])
       ]);
@@ -687,48 +1404,224 @@ class AccuDrawValuation {
       this.renderApp();
     }
 
-
-
-  buildBackstoryBlock() {
+  buildStoryBlock() {
       return makeElement('div', { 
-        className: 'p-6 md:p-8 rounded-xl border border-[var(--border-color)] space-y-6 transition-colors',
+        className: 'p-6 md:p-8 rounded-xl border border-[var(--border-color)] space-y-4 transition-colors',
         style: {
           background: 'linear-gradient(135deg, var(--accent-story-from), var(--accent-story-to))'
         }
       }, [
-        makeElement('p', { className: 'text-base md:text-lg text-[var(--text-primary)] leading-relaxed font-medium' }, 
-          "In 1994, I joined Bentley Systems and implemented two features - AccuDraw and SmartLine - that became the signature of their flagship product, MicroStation. Users still cite them thirty years later as the primary reason they stay on the platform. Bentley is now a $9B company."
+        makeElement('div', { className: 'flex items-center gap-2' }, [
+          makeElement('span', { className: 'w-2 h-2 rounded-full bg-blue-500' }),
+          makeElement('h3', { className: 'text-xs font-bold uppercase tracking-wider text-blue-400 cad-mono' }, 'The Origin Story & Human Capital Return')
+        ]),
+        makeElement('p', { className: 'text-sm text-[var(--text-primary)] leading-relaxed' }, 
+          `In 1994, the CAD market was locked in a fierce battle. Bentley Systems sought a definitive edge to hold MicroStation's niche in major engineering and infrastructure. That advantage arrived when a dedicated spatial developer brought key insights on coordinate precision to Bentley, leading to the rapid development of AccuDraw and SmartLine.`
         ),
-        makeElement('p', { className: 'text-sm md:text-base text-[var(--text-secondary)] leading-relaxed' }, 
+        makeElement('p', { className: 'text-sm text-[var(--text-primary)] leading-relaxed' }, 
+          `AccuDraw-an elegant, dynamic coordinate-locking compass-and SmartLine-a unified smart geometry creation tool-bypassed rigid command-line inputs. Draftspersons could lock axes and key in distances instantly. This innovation earned Bentley Systems its first-ever software patent, creating a high-leverage user-retention moat that secure its survival and compounded value over three decades.`
+        ),
+        makeElement('div', { className: 'pt-2 border-t border-[var(--border-color)]/30 flex flex-wrap gap-4 text-xs text-[var(--text-secondary)] cad-mono' }, [
+          makeElement('span', {}, '🔧 Innovation: Axis & Distance Dynamics'),
+          makeElement('span', {}, '🛡️ Moat: Three Decades of User Retention'),
+          makeElement('span', {}, '🏢 Valuation Leverage: Multi-Million Compound Effect')
+        ])
+      ]);
+    }
+
+  buildBackstoryBlock() {
+      return makeElement('div', { className: 'backstory-gradient-card' }, [
+        makeElement('div', { className: 'space-y-4' }, [
+          makeElement('p', { className: 'backstory-paragraph-highlight' }, [
+            "In 1994, I joined Bentley Systems and implemented two features - AccuDraw and SmartLine - that became the signature of their flagship product, MicroStation. Users still cite them thirty years later as the primary reason they stay on the platform. Bentley is now a $9 billion company. ",
+            makeElement('a', {
+              href: '#accudraw-innovations',
+              className: 'inline-link-highlight',
+              onclick: (e) => {
+                e.preventDefault();
+                const hashElement = document.getElementById('raw-prompts') || document.body;
+                hashElement.scrollIntoView({ behavior: 'smooth' });
+              }
+            }, "Learn more about AccuDraw: see it in motion, see my new version with all its Innovations, and see accolades from over the years ↗")
+          ])
+        ]),
+
+        makeElement('p', { className: 'backstory-paragraph' }, 
           "The story behind them matters: I had originally conceived and patented a similar idea at Intergraph - which at the time owned fifty percent of Bentley. When it became clear Intergraph wasn't going to act on it, I went directly to Bentley and rebuilt the concept from scratch, earning their first ever patent in the process."
         ),
-        makeElement('p', { className: 'text-sm md:text-base text-[var(--text-secondary)] leading-relaxed' }, 
+        makeElement('p', { className: 'backstory-paragraph' }, 
           "I've always believed this contribution was significant. But \"significant\" is easy to dismiss."
         ),
-        makeElement('p', { className: 'text-sm md:text-base text-[var(--text-secondary)] leading-relaxed' }, 
-          "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to assess the value independently. I didn't tell them it was me.I gave them almost nothing to work with — beyond a few basic historical circumstances in prompt 3. The models already knew what AccuDraw and SmartLine were, what they meant to MicroStation, and why users valued them. The valuation estimates came from that existing knowledge, not from anything I told them."
+        makeElement('p', { className: 'backstory-paragraph' }, 
+          "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to assess the value independently. I didn't tell them it was me. I gave them the neutral facts and asked them to do the math. They arrived at a consensus midpoint of roughly $1.3 billion in contributed value."
         ),
-        makeElement('p', { className: 'text-sm md:text-base text-[var(--text-primary)] font-semibold border-t border-[var(--border-color)]/30 pt-4' }, 
+        makeElement('p', { className: 'backstory-paragraph-bold' }, 
           "You don't have to take my word for it. The prompts are right here. Paste them into any chatbot yourself."
         )
       ]);
     }
 
   buildConsensusBlock() {
-      return makeElement('div', {
-        className: 'cad-panel p-8 flex flex-col md:flex-row items-center justify-between gap-8 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 border-2 border-indigo-500/20 rounded-2xl shadow-xl'
-      }, [
-        makeElement('div', { className: 'space-y-2 max-w-xl' }, [
-          makeElement('span', { className: 'inline-block bg-indigo-500/10 text-indigo-400 text-[10px] font-bold tracking-widest uppercase px-2.5 py-1 rounded cad-mono' }, 'Consensus Composite Estimate'),
-          makeElement('h2', { className: 'text-xl font-bold text-[var(--text-title)]' }, 'The Consolidated Valuation footprint'),
-          makeElement('p', { className: 'text-sm text-[var(--text-secondary)] leading-relaxed' }, 
+      return makeElement('div', { className: 'consensus-container' }, [
+        makeElement('div', { className: 'consensus-info-pane' }, [
+          makeElement('span', { className: 'consensus-badge' }, 'Consensus Composite Estimate'),
+          makeElement('h2', { className: 'consensus-headline' }, 'The Consolidated Valuation Footprint'),
+          makeElement('p', { className: 'consensus-description' }, 
             'By calculating the midpoint of each AI model\'s calculated range (Claude, Gemini, ChatGPT, and Grok), we arrive at a unified composite average of Bentley Systems enterprise valuation directly tied to the AccuDraw and SmartLine IP.'
           )
         ]),
-        makeElement('div', { className: 'text-center md:text-right shrink-0 space-y-1' }, [
-          makeElement('div', { className: 'text-5xl md:text-6xl font-black text-indigo-400 tracking-tight cad-mono' }, '$1.3 Billion'),
-          makeElement('span', { className: 'text-xs text-[var(--text-secondary)] uppercase tracking-wider font-semibold block' }, 'Consensus Contributed Midpoint')
+        makeElement('div', { className: 'consensus-figure-pane' }, [
+          makeElement('div', { className: 'glowing-consensus-value' }, '$1.3 Billion'),
+          makeElement('span', { className: 'consensus-figure-subtext' }, 'Consensus Contributed Midpoint')
         ])
       ]);
+    }
+
+  buildMinimalHeader() {
+      const themeToggle = makeElement('div', { className: 'theme-switcher' }, [
+        makeElement('button', {
+          className: this.currentTheme === 'light' ? 'active' : '',
+          onclick: () => this.setTheme('light')
+        }, [
+          makeElement('span', { innerHTML: '☀️' }),
+          makeElement('span', {}, 'Light')
+        ]),
+        makeElement('button', {
+          className: this.currentTheme === 'dark' ? 'active' : '',
+          onclick: () => this.setTheme('dark')
+        }, [
+          makeElement('span', { innerHTML: '🌙' }),
+          makeElement('span', {}, 'Dark')
+        ])
+      ]);
+
+      return makeElement('header', { className: 'minimal-header' }, [
+        makeElement('div', { className: 'header-top' }, [
+          makeElement('div', { className: 'tags-wrapper' }, [
+            makeElement('span', { className: 'tag-pill tag-pill-blue' }, 'Historical Assessment'),
+            makeElement('span', { className: 'tag-pill tag-pill-slate' }, 'Est. 1994 CAD IP')
+          ]),
+          themeToggle
+        ]),
+        
+        makeElement('div', { className: 'title-group' }, [
+          makeElement('h1', {}, 'AccuDraw & SmartLine Value Assessment'),
+          makeElement('p', { className: 'title-subtitle' }, 'A comparative analysis of enterprise value contribution')
+        ])
+      ]);
+    }
+
+  buildRevealCTA() {
+      const button = makeElement('button', {
+        className: 'reveal-main-button',
+        onclick: (e) => {
+          this.triggerDrumrollReveal(e.currentTarget);
+        }
+      }, [
+        makeElement('span', { className: 'reveal-title-large' }, 'Show Estimated Valuation'),
+        makeElement('span', { className: 'reveal-subtitle-small' }, 'of AccuDraw and SmartLine')
+      ]);
+
+      return makeElement('div', { className: 'reveal-cta-row' }, button);
+    }
+
+  triggerDrumrollReveal(buttonElement) {
+      if (this.isTransitioning) return;
+      this.isTransitioning = true;
+
+      // Disable actions implicitly behind the scenes without showing forbidden cursors
+      buttonElement.style.opacity = '0.85';
+      buttonElement.style.pointerEvents = 'none';
+
+      if (window.SnareDrumAnimation) {
+        const snare = new SnareDrumAnimation({
+          duration: 3000,
+          soundUrl: '/LogoExperiments/drumroll.mp4',
+          accentColor: '#3b82f6',
+          onComplete: () => {
+            this.resultsRevealed = true;
+            this.isTransitioning = false;
+            this.renderApp();
+          }
+        });
+        snare.trigger(buttonElement);
+      } else {
+        // Fallback delay if class is unavailable
+        setTimeout(() => {
+          this.resultsRevealed = true;
+          this.isTransitioning = false;
+          this.renderApp();
+        }, 1500);
+      }
+    }
+
+  startValueEmberSimulation(containerElement) {
+      if (this.emberInterval) {
+        clearInterval(this.emberInterval);
+      }
+
+      // Smoothly transition glow in over 3 seconds
+      setTimeout(() => {
+        containerElement.style.transition = 'text-shadow 3s ease, color 3s ease';
+        containerElement.style.textShadow = '0 0 14px rgba(255,107,53,0.9), 0 0 28px rgba(255,107,53,0.55), 0 0 42px rgba(255,60,0,0.2)';
+        containerElement.style.color = '#ffebd2';
+      }, 150);
+
+      // Simple, high-fidelity spark loop modeling EmberLogo mechanics
+      this.emberInterval = setInterval(() => {
+        if (!document.body.contains(containerElement)) {
+          clearInterval(this.emberInterval);
+          return;
+        }
+
+        const size = Math.random() * 2 + 1.5;
+        const colors = ['#ff6b35', '#ffaa00', '#ff8844', '#ffffff', '#ffeedd'];
+        const color = colors[Math.floor(Math.random() * colors.length)];
+
+        const spark = makeElement('div', {
+          style: {
+            position: 'absolute',
+            width: size + 'px',
+            height: size + 'px',
+            backgroundColor: color,
+            borderRadius: '50%',
+            pointerEvents: 'none',
+            opacity: String(Math.random() * 0.7 + 0.3),
+            boxShadow: `0 0 ${size * 3.5}px ${color}`,
+            left: (Math.random() * containerElement.offsetWidth) + 'px',
+            top: (containerElement.offsetHeight - 6) + 'px',
+            zIndex: '10'
+          }
+        });
+
+        containerElement.appendChild(spark);
+
+        const dx = (Math.random() - 0.5) * 44;
+        const dy = -(Math.random() * 45 + 25);
+        const duration = Math.random() * 1200 + 1000;
+
+        spark.animate([
+          { transform: 'translate3d(0, 0, 0) scale(1)', opacity: 0.95 },
+          { transform: `translate3d(${dx}px, ${dy}px, 0) scale(0.2)`, opacity: 0 }
+        ], {
+          duration: duration,
+          easing: 'cubic-bezier(0.25, 1, 0.5, 1)',
+          fill: 'forwards'
+        });
+
+        setTimeout(() => spark.remove(), duration);
+      }, 200);
+    }
+
+  loadGoogleFont() {
+      const fontId = 'GoogleFontComfortaa';
+      if (!document.getElementById(fontId)) {
+        const link = makeElement('link', {
+          id: fontId,
+          rel: 'stylesheet',
+          href: 'https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700;900&display=swap',
+        });
+        document.head.appendChild(link);
+      }
     }
 }

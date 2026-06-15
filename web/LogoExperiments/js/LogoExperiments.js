@@ -1,263 +1,339 @@
 class LogoExperiments {
   async run(env) {
-        this.env       = env;
-        this.container = env.container;
-        this.activeLogos = [];
+      this.env       = env;
+      this.container = env.container;
+      this.activeLogos = [];
 
-        applyCss(`
-          .lx-root {
-            background: #0c0e12;
-            color: #e2e8f0;
-            font-family: system-ui, sans-serif;
-            min-height: 100vh;
-            padding: 28px;
-            box-sizing: border-box;
-            background-image: radial-gradient(circle at 50% 25%, #191410 0%, #0c0e12 68%);
-            position: relative;
-            overflow: hidden;
-          }
-          .lx-header { margin-bottom: 22px; }
-          .lx-title {
-            font-size: 20px; font-weight: 800; margin: 0 0 4px 0;
-            background: linear-gradient(125deg,#fff 0%,#ff9f43 100%);
-            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-transform: uppercase; letter-spacing: 0.06em;
-          }
-          .lx-sub {
-            font-size: 11px; color: #ff6b35; text-transform: uppercase;
-            letter-spacing: 0.12em;
-          }
-          .lx-layout { display: flex; gap: 24px; align-items: flex-start; }
-          .lx-panel {
-            background: rgba(16,18,24,0.9);
-            border: 1px solid rgba(255,107,53,0.13);
-            border-radius: 12px;
-            padding: 18px;
-            backdrop-filter: blur(10px);
-            display: flex; flex-direction: column; gap: 12px;
-            width: 260px; flex-shrink: 0;
-            position: relative; z-index: 1;
-          }
-          .lx-section-title {
-            font-size: 10px; font-weight: 700; color: #ff6b35;
-            text-transform: uppercase; letter-spacing: 0.12em;
-            border-bottom: 1px solid rgba(255,107,53,0.13);
-            padding-bottom: 5px; margin-bottom: 4px;
-          }
-          .lx-row { margin-bottom: 6px; }
-          .lx-row label {
-            display: block; font-size: 10px; color: #718096;
-            text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
-          }
-          .lx-slider-wrap { display: flex; align-items: center; gap: 8px; }
-          .lx-slider {
-            flex-grow: 1; accent-color: #ff6b35; cursor: pointer;
-            height: 4px; border-radius: 2px;
-          }
-          .lx-slider:disabled { opacity: 0.3; cursor: default; }
-          .lx-val {
-            font-family: monospace; font-size: 11px; color: #ff9f43;
-            min-width: 36px; text-align: right; transition: opacity 0.2s;
-          }
-          .lx-val.dim { opacity: 0.3; }
-          .lx-toggle-row {
-            display: flex; align-items: center;
-            justify-content: space-between; margin-bottom: 6px;
-          }
-          .lx-toggle-row label { font-size: 11px; color: #e2e8f0; cursor: pointer; }
-          .lx-cb { accent-color: #ff6b35; cursor: pointer; width: 14px; height: 14px; }
-          .lx-cb:disabled { opacity: 0.3; cursor: default; }
-          .lx-btn {
-            width: 100%;
-            background: linear-gradient(135deg,#ff9f43 0%,#ff6b35 100%);
-            border: none; border-radius: 7px; color: #fff;
-            padding: 9px; font-size: 11px; font-weight: 700;
-            text-transform: uppercase; letter-spacing: 0.05em;
-            cursor: pointer; transition: opacity 0.15s;
-          }
-          .lx-btn:hover { opacity: 0.88; }
-          .lx-btn.ghost {
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.09);
-            color: #718096; margin-top: 5px;
-          }
-          .lx-btn.ghost:hover { background: rgba(255,255,255,0.09); color: #e2e8f0; }
-          .lx-btn:disabled { opacity: 0.3; cursor: default; }
-          .lx-status {
-            font-size: 10px; text-align: center;
-            color: #718096; margin-top: 2px; letter-spacing: 0.05em;
-            transition: color 0.3s;
-          }
-          .lx-status.active { color: #ff9f43; }
-          .lx-diag {
-            display: none; width: 100%; height: 110px;
-            background: rgba(0,0,0,0.5); color: #5af78e;
-            border: 1px solid rgba(255,107,53,0.18);
-            font-family: monospace; font-size: 9px;
-            margin-top: 6px; padding: 7px;
-            box-sizing: border-box; border-radius: 7px; resize: vertical;
-          }
-          .lx-bg {
-            flex: 1; min-height: 420px; position: relative;
-            border-radius: 10px;
-            border: 1px dashed rgba(255,107,53,0.08);
-          }
-        `, 'lx-styles');
+      applyCss(`
+        .lx-root {
+          background: #0c0e12;
+          color: #e2e8f0;
+          font-family: system-ui, sans-serif;
+          min-height: 100vh;
+          padding: 28px;
+          box-sizing: border-box;
+          background-image: radial-gradient(circle at 50% 25%, #191410 0%, #0c0e12 68%);
+          position: relative;
+          overflow: hidden;
+        }
+        .lx-header { margin-bottom: 22px; }
+        .lx-title {
+          font-size: 20px; font-weight: 800; margin: 0 0 4px 0;
+          background: linear-gradient(125deg,#fff 0%,#ff9f43 100%);
+          -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+          text-transform: uppercase; letter-spacing: 0.06em;
+        }
+        .lx-sub {
+          font-size: 11px; color: #ff6b35; text-transform: uppercase;
+          letter-spacing: 0.12em;
+        }
+        .lx-layout { display: flex; gap: 24px; align-items: flex-start; }
+        .lx-panel {
+          background: rgba(16,18,24,0.9);
+          border: 1px solid rgba(255,107,53,0.13);
+          border-radius: 12px;
+          padding: 18px;
+          backdrop-filter: blur(10px);
+          display: flex; flex-direction: column; gap: 12px;
+          width: 270px; flex-shrink: 0;
+          position: relative; z-index: 1;
+        }
+        .lx-section-title {
+          font-size: 10px; font-weight: 700; color: #ff6b35;
+          text-transform: uppercase; letter-spacing: 0.12em;
+          border-bottom: 1px solid rgba(255,107,53,0.13);
+          padding-bottom: 5px; margin-bottom: 4px;
+        }
+        .lx-row { margin-bottom: 6px; }
+        .lx-row label {
+          display: block; font-size: 10px; color: #718096;
+          text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px;
+        }
+        .lx-slider-wrap { display: flex; align-items: center; gap: 8px; }
+        .lx-slider {
+          flex-grow: 1; accent-color: #ff6b35; cursor: pointer;
+          height: 4px; border-radius: 2px;
+        }
+        .lx-slider:disabled { opacity: 0.3; cursor: default; }
+        .lx-val {
+          font-family: monospace; font-size: 11px; color: #ff9f43;
+          min-width: 36px; text-align: right; transition: opacity 0.2s;
+        }
+        .lx-val.dim { opacity: 0.3; }
+        .lx-toggle-row {
+          display: flex; align-items: center;
+          justify-content: space-between; margin-bottom: 6px;
+        }
+        .lx-toggle-row label { font-size: 11px; color: #e2e8f0; cursor: pointer; }
+        .lx-cb { accent-color: #ff6b35; cursor: pointer; width: 14px; height: 14px; }
+        .lx-cb:disabled { opacity: 0.3; cursor: default; }
+        .lx-btn {
+          width: 100%;
+          background: linear-gradient(135deg,#ff9f43 0%,#ff6b35 100%);
+          border: none; border-radius: 7px; color: #fff;
+          padding: 9px; font-size: 11px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.05em;
+          cursor: pointer; transition: opacity 0.15s;
+        }
+        .lx-btn:hover { opacity: 0.88; }
+        .lx-btn.ghost {
+          background: rgba(255,255,255,0.04);
+          border: 1px solid rgba(255,255,255,0.09);
+          color: #718096; margin-top: 5px;
+        }
+        .lx-btn.ghost:hover { background: rgba(255,255,255,0.09); color: #e2e8f0; }
+        .lx-btn:disabled { opacity: 0.3; cursor: default; }
+        .lx-status {
+          font-size: 10px; text-align: center;
+          color: #718096; margin-top: 2px; letter-spacing: 0.05em;
+          transition: color 0.3s;
+        }
+        .lx-status.active { color: #ff9f43; }
+        .lx-diag {
+          display: none; width: 100%; height: 110px;
+          background: rgba(0,0,0,0.5); color: #5af78e;
+          border: 1px solid rgba(255,107,53,0.18);
+          font-family: monospace; font-size: 9px;
+          margin-top: 6px; padding: 7px;
+          box-sizing: border-box; border-radius: 7px; resize: vertical;
+        }
+        .lx-bg {
+          flex: 1; min-height: 420px; position: relative;
+          border-radius: 10px;
+          border: 1px dashed rgba(255,107,53,0.08);
+        }
+      `, 'lx-styles');
 
-        this.container.classList.add('lx-root');
-        this.container.innerHTML = '';
+      this.container.classList.add('lx-root');
+      this.container.innerHTML = '';
 
-        const header = makeElement('div', { className: 'lx-header' },
-          makeElement('h1', { className: 'lx-title' }, 'Ember Logo · Test Harness'),
-          makeElement('div', { className: 'lx-sub' }, 'interactive live playground'),
-        );
+      const header = makeElement('div', { className: 'lx-header' },
+        makeElement('h1', { className: 'lx-title' }, 'Ember Logo & Snare Drum Harness'),
+        makeElement('div', { className: 'lx-sub' }, 'interactive live playground'),
+      );
 
-        const layout = makeElement('div', { className: 'lx-layout' });
-        const panel  = makeElement('div', { className: 'lx-panel' });
-        this.bg = makeElement('div', { className: 'lx-bg' });
+      const layout = makeElement('div', { className: 'lx-layout' });
+      const panel  = makeElement('div', { className: 'lx-panel' });
+      this.bg = makeElement('div', { className: 'lx-bg' });
 
-        layout.appendChild(panel);
-        layout.appendChild(this.bg);
-        this.container.appendChild(header);
-        this.container.appendChild(layout);
+      layout.appendChild(panel);
+      layout.appendChild(this.bg);
+      this.container.appendChild(header);
+      this.container.appendChild(layout);
 
-        panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Logo Config'));
+      panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Logo Config'));
 
-        this._buildSlider(panel, 'density', 'Ember Density',    0.1, 3.0, 0.05, 0.4,  v => v.toFixed(2)+'×');
-        this._buildSlider(panel, 'speed',   'Ember Speed',      0.1, 4.0, 0.05, 0.3,  v => v.toFixed(2)+'×');
-        this._buildSlider(panel, 'size',    'Ember Size',       0.1, 3.0, 0.05, 0.4,  v => v.toFixed(2)+'×');
-        this._buildSlider(panel, 'bgOp',    'Panel Opacity',    0,   1.0, 0.05, 0.0,  v => Math.round(v*100)+'%');
+      this._buildSlider(panel, 'density', 'Ember Density',    0.1, 3.0, 0.05, 0.4,  v => v.toFixed(2)+'×');
+      this._buildSlider(panel, 'speed',   'Ember Speed',      0.1, 4.0, 0.05, 0.3,  v => v.toFixed(2)+'×');
+      this._buildSlider(panel, 'size',    'Ember Size',       0.1, 3.0, 0.05, 0.4,  v => v.toFixed(2)+'×');
+      this._buildSlider(panel, 'bgOp',    'Panel Opacity',    0,   1.0, 0.05, 0.0,  v => Math.round(v*100)+'%');
 
-        this._buildToggle(panel, 'awake',    'Awake Pulse',   true);
-        this._buildToggle(panel, 'subtitle', 'Show Subtitle', false);
-        this._buildToggle(panel, 'rainbow',  'Rainbow Mode',  false);
-        this._buildToggle(panel, 'outline',  'Show Outline',  false);
+      this._buildToggle(panel, 'awake',    'Awake Pulse',   true);
+      this._buildToggle(panel, 'subtitle', 'Show Subtitle', false);
+      this._buildToggle(panel, 'rainbow',  'Rainbow Mode',  false);
+      this._buildToggle(panel, 'outline',  'Show Outline',  false);
 
-        // Harness Customization Controls
-        panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Harness Controls'));
+      // --- Compact Snare Drum Controls Section ---
+      panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Pop-under Snare Drum'));
 
-        // Toggle to force expand / simulated hover
-        const hoverRow = makeElement('div', { className: 'lx-toggle-row' },
-          makeElement('label', { htmlFor: 'lx-cb-forceHover' }, 'Force Hover (Animate)'),
-          this.forceHoverCb = makeElement('input', {
-            type: 'checkbox',
-            className: 'lx-cb',
-            id: 'lx-cb-forceHover'
-          })
-        );
-        this.forceHoverCb.addEventListener('change', () => {
-          const logo = this.activeLogos.at(-1);
-          if (logo && logo.brand) {
-            if (this.forceHoverCb.checked) {
-              logo.brand.dispatchEvent(new MouseEvent('mouseenter'));
-            } else {
-              logo.brand.dispatchEvent(new MouseEvent('mouseleave'));
-            }
+      // Preload button to cache drumroll.mp4 immediately
+      const preloadRow = makeElement('div', { className: 'lx-row' },
+        this.preloadBtn = makeElement('button', {
+          className: 'lx-btn ghost',
+          style: { fontSize: '10px', padding: '6px' }
+        }, 'Preload drumroll.mp4')
+      );
+      this.preloadBtn.addEventListener('click', () => {
+        SnareDrumAnimation.preload('drumroll.mp4');
+        this.preloadBtn.textContent = '✓ preloaded drumroll.mp4';
+        this.preloadBtn.style.color = '#5af78e';
+      });
+      panel.appendChild(preloadRow);
+
+      const soundUrlRow = makeElement('div', { className: 'lx-row' },
+        makeElement('label', {}, 'Asset Path'),
+        this.soundUrlInput = makeElement('input', {
+          type: 'text',
+          value: 'drumroll.mp4',
+          style: {
+            width: '100%',
+            background: 'rgba(0,0,0,0.4)',
+            border: '1px solid rgba(255,107,53,0.2)',
+            borderRadius: '5px',
+            color: '#ff9f43',
+            fontSize: '11px',
+            padding: '6px',
+            boxSizing: 'border-box',
+            outline: 'none'
           }
-        });
-        panel.appendChild(hoverRow);
+        })
+      );
+      panel.appendChild(soundUrlRow);
 
-        // Custom Background Selector
-        const bgPickerRow = makeElement('div', { className: 'lx-row' },
-          makeElement('label', {}, 'Harness Background')
-        );
-
-        const pickerWrap = makeElement('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' } });
-
-        const colorInput = makeElement('input', {
+      const accentColorRow = makeElement('div', { className: 'lx-row' },
+        makeElement('label', {}, 'Stripe color'),
+        this.drumAccentColorInput = makeElement('input', {
           type: 'color',
-          value: '#0c0e12',
+          value: '#ff6b35',
           style: {
             border: 'none',
             padding: '0',
-            width: '28px',
+            width: '100%',
             height: '24px',
             background: 'transparent',
             cursor: 'pointer'
           }
+        })
+      );
+      panel.appendChild(accentColorRow);
+
+      // Trigger button
+      this.triggerDrumBtn = makeElement('button', {
+        className: 'lx-btn',
+        style: {
+          background: 'linear-gradient(135deg, #e65100 0%, #b71c1c 100%)',
+          marginTop: '6px'
+        }
+      }, '⚡ Trigger Snare Roll ⚡');
+      this.triggerDrumBtn.addEventListener('click', () => this.triggerSnareRoll());
+      panel.appendChild(this.triggerDrumBtn);
+
+      // target action indicator
+      this.actionIndicator = makeElement('div', {
+        style: {
+          fontSize: '11px',
+          color: '#5af78e',
+          textAlign: 'center',
+          marginTop: '6px',
+          fontFamily: 'monospace',
+          opacity: '0',
+          transition: 'opacity 0.4s ease'
+        }
+      }, '✓ Action callback triggered! 🚀');
+      panel.appendChild(this.actionIndicator);
+
+      // --- Harness Controls Section ---
+      panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Harness Controls'));
+
+      const hoverRow = makeElement('div', { className: 'lx-toggle-row' },
+        makeElement('label', { htmlFor: 'lx-cb-forceHover' }, 'Force Hover (Animate)'),
+        this.forceHoverCb = makeElement('input', {
+          type: 'checkbox',
+          className: 'lx-cb',
+          id: 'lx-cb-forceHover'
+        })
+      );
+      this.forceHoverCb.addEventListener('change', () => {
+        const logo = this.activeLogos.at(-1);
+        if (logo && logo.brand) {
+          if (this.forceHoverCb.checked) {
+            logo.brand.dispatchEvent(new MouseEvent('mouseenter'));
+          } else {
+            logo.brand.dispatchEvent(new MouseEvent('mouseleave'));
+          }
+        }
+      });
+      panel.appendChild(hoverRow);
+
+      const bgPickerRow = makeElement('div', { className: 'lx-row' },
+        makeElement('label', {}, 'Harness Background')
+      );
+
+      const pickerWrap = makeElement('div', { style: { display: 'flex', gap: '6px', alignItems: 'center', flexWrap: 'wrap' } });
+
+      const colorInput = makeElement('input', {
+        type: 'color',
+        value: '#0c0e12',
+        style: {
+          border: 'none',
+          padding: '0',
+          width: '28px',
+          height: '24px',
+          background: 'transparent',
+          cursor: 'pointer'
+        }
+      });
+
+      colorInput.addEventListener('input', (e) => {
+        const val = e.target.value;
+        this.container.style.backgroundImage = 'none';
+        this.container.style.backgroundColor = val;
+      });
+
+      const makePresetBtn = (label, color, isGradient = false) => {
+        const btn = makeElement('button', {
+          style: {
+            background: isGradient ? 'rgba(255,255,255,0.08)' : color,
+            border: '1px solid rgba(255,255,255,0.15)',
+            borderRadius: '4px',
+            color: '#fff',
+            fontSize: '9px',
+            padding: '3px 6px',
+            cursor: 'pointer',
+            fontFamily: 'sans-serif'
+          }
+        }, label);
+        btn.addEventListener('click', () => {
+          if (isGradient) {
+            this.container.style.backgroundImage = color;
+            this.container.style.backgroundColor = '';
+          } else {
+            this.container.style.backgroundImage = 'none';
+            this.container.style.backgroundColor = color;
+          }
+          if (color.startsWith('#') && color.length === 7) {
+            colorInput.value = color;
+          }
         });
+        return btn;
+      };
 
-        colorInput.addEventListener('input', (e) => {
-          const val = e.target.value;
-          this.container.style.backgroundImage = 'none';
-          this.container.style.backgroundColor = val;
-        });
+      pickerWrap.appendChild(colorInput);
+      pickerWrap.appendChild(makePresetBtn('Default', 'radial-gradient(circle at 50% 25%, #191410 0%, #0c0e12 68%)', true));
+      pickerWrap.appendChild(makePresetBtn('Chroma', '#00ff00'));
+      pickerWrap.appendChild(makePresetBtn('Dark', '#0a0a0e'));
+      pickerWrap.appendChild(makePresetBtn('Light', '#f7fafc'));
 
-        const makePresetBtn = (label, color, isGradient = false) => {
-          const btn = makeElement('button', {
-            style: {
-              background: isGradient ? 'rgba(255,255,255,0.08)' : color,
-              border: '1px solid rgba(255,255,255,0.15)',
-              borderRadius: '4px',
-              color: '#fff',
-              fontSize: '9px',
-              padding: '3px 6px',
-              cursor: 'pointer',
-              fontFamily: 'sans-serif'
-            }
-          }, label);
-          btn.addEventListener('click', () => {
-            if (isGradient) {
-              this.container.style.backgroundImage = color;
-              this.container.style.backgroundColor = '';
-            } else {
-              this.container.style.backgroundImage = 'none';
-              this.container.style.backgroundColor = color;
-            }
-            if (color.startsWith('#') && color.length === 7) {
-              colorInput.value = color;
-            }
-          });
-          return btn;
-        };
+      bgPickerRow.appendChild(pickerWrap);
+      panel.appendChild(bgPickerRow);
 
-        pickerWrap.appendChild(colorInput);
-        pickerWrap.appendChild(makePresetBtn('Default', 'radial-gradient(circle at 50% 25%, #191410 0%, #0c0e12 68%)', true));
-        pickerWrap.appendChild(makePresetBtn('Chroma', '#00ff00'));
-        pickerWrap.appendChild(makePresetBtn('Dark', '#0a0a0e'));
-        pickerWrap.appendChild(makePresetBtn('Light', '#f7fafc'));
+      panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Spawn Position'));
+      this._spawnX = makeElement('input', { type: 'number', value: '8', min: '0',
+        style: { width: '60px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,107,53,0.2)',
+          borderRadius: '5px', color: '#ff9f43', fontFamily: 'monospace', fontSize: '11px',
+          padding: '4px 6px', textAlign: 'right', outline: 'none' } });
+      this._spawnY = makeElement('input', { type: 'number', value: '8', min: '0',
+        style: { width: '60px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,107,53,0.2)',
+          borderRadius: '5px', color: '#ff9f43', fontFamily: 'monospace', fontSize: '11px',
+          padding: '4px 6px', textAlign: 'right', outline: 'none' } });
+      panel.appendChild(makeElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
+        makeElement('label', { style: { fontSize: '10px', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.06em' } }, 'X'),
+        this._spawnX,
+        makeElement('label', { style: { fontSize: '10px', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.06em' } }, 'Y'),
+        this._spawnY,
+      ));
 
-        bgPickerRow.appendChild(pickerWrap);
-        panel.appendChild(bgPickerRow);
+      this.statusEl = makeElement('div', { className: 'lx-status' }, 'No logos spawned');
+      panel.appendChild(this.statusEl);
 
-        // Spawn position
-        panel.appendChild(makeElement('div', { className: 'lx-section-title' }, 'Spawn Position'));
-        this._spawnX = makeElement('input', { type: 'number', value: '8', min: '0',
-          style: { width: '60px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,107,53,0.2)',
-            borderRadius: '5px', color: '#ff9f43', fontFamily: 'monospace', fontSize: '11px',
-            padding: '4px 6px', textAlign: 'right', outline: 'none' } });
-        this._spawnY = makeElement('input', { type: 'number', value: '8', min: '0',
-          style: { width: '60px', background: 'rgba(0,0,0,0.4)', border: '1px solid rgba(255,107,53,0.2)',
-            borderRadius: '5px', color: '#ff9f43', fontFamily: 'monospace', fontSize: '11px',
-            padding: '4px 6px', textAlign: 'right', outline: 'none' } });
-        panel.appendChild(makeElement('div', { style: { display: 'flex', alignItems: 'center', gap: '8px' } },
-          makeElement('label', { style: { fontSize: '10px', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.06em' } }, 'X'),
-          this._spawnX,
-          makeElement('label', { style: { fontSize: '10px', color: '#718096', textTransform: 'uppercase', letterSpacing: '0.06em' } }, 'Y'),
-          this._spawnY,
-        ));
+      this.spawnBtn = makeElement('button', { className: 'lx-btn' }, 'Spawn Floating Logo');
+      this.spawnBtn.addEventListener('click', () => this.spawnLogo());
+      panel.appendChild(this.spawnBtn);
 
-        this.statusEl = makeElement('div', { className: 'lx-status' }, 'No logos spawned');
-        panel.appendChild(this.statusEl);
+      this.popoutBtn = makeElement('button', { className: 'lx-btn ghost' }, '↗ Pop Out Logo');
+      this.popoutBtn.addEventListener('click', () => this._popOutLogo());
+      panel.appendChild(this.popoutBtn);
 
-        this.spawnBtn = makeElement('button', { className: 'lx-btn' }, 'Spawn Floating Logo');
-        this.spawnBtn.addEventListener('click', () => this.spawnLogo());
-        panel.appendChild(this.spawnBtn);
+      this.diagBtn = makeElement('button', { className: 'lx-btn ghost' }, '🔬 Diagnose Active Logo');
+      this.diagBtn.addEventListener('click', () => this.runDiagnostics());
+      panel.appendChild(this.diagBtn);
 
-        this.popoutBtn = makeElement('button', { className: 'lx-btn ghost' }, '↗ Pop Out Logo');
-        this.popoutBtn.addEventListener('click', () => this._popOutLogo());
-        panel.appendChild(this.popoutBtn);
+      this.diagEl = makeElement('textarea', { className: 'lx-diag' });
+      panel.appendChild(this.diagEl);
 
-        this.diagBtn = makeElement('button', { className: 'lx-btn ghost' }, '🔬 Diagnose Active Logo');
-        this.diagBtn.addEventListener('click', () => this.runDiagnostics());
-        panel.appendChild(this.diagBtn);
-
-        this.diagEl = makeElement('textarea', { className: 'lx-diag' });
-        panel.appendChild(this.diagEl);
-
-        this._updateControlState();
-        setTimeout(() => this.spawnLogo(), 150);
-      }
+      this._updateControlState();
+      setTimeout(() => this.spawnLogo(), 150);
+    }
 
   _popOutLogo() {
       const logo = this.activeLogos.at(-1);
@@ -360,19 +436,19 @@ class LogoExperiments {
       const t = this._toggles;
       if (!s || !t) return;
 
-      const opts = {
-        emberCountMultiplier: parseFloat(s.density.value),
-        emberSpeedMultiplier: parseFloat(s.speed.value),
-        emberSizeMultiplier:  parseFloat(s.size.value),
-        isAwake:              t.awake.checked,
-        showSubtitle:         t.subtitle.checked,
-        outlineContainer:     t.outline.checked,
-        rainbowMode:          t.rainbow.checked,
-      };
-      const bgOp = parseFloat(s.bgOp.value);
+      const opts = {};
+      if (s.density) opts.emberCountMultiplier = parseFloat(s.density.value);
+      if (s.speed) opts.emberSpeedMultiplier = parseFloat(s.speed.value);
+      if (s.size) opts.emberSizeMultiplier = parseFloat(s.size.value);
+      if (t.awake) opts.isAwake = t.awake.checked;
+      if (t.subtitle) opts.showSubtitle = t.subtitle.checked;
+      if (t.outline) opts.outlineContainer = t.outline.checked;
+      if (t.rainbow) opts.rainbowMode = t.rainbow.checked;
 
       logo.setOptions(opts);
-      if (logo._setBgOpacity) logo._setBgOpacity(bgOp);
+      if (s.bgOp && logo._setBgOpacity) {
+        logo._setBgOpacity(parseFloat(s.bgOp.value));
+      }
     }
 
   _updateControlState() {
@@ -459,4 +535,25 @@ class LogoExperiments {
         this.diagEl.value = report;
         this.diagEl.style.display = 'block';
       }
+
+  triggerSnareRoll() {
+      const soundUrl = this.soundUrlInput.value || 'drumroll.mp4';
+      const accentColor = this.drumAccentColorInput.value;
+
+      this.actionIndicator.style.opacity = '0';
+
+      const snare = new SnareDrumAnimation({
+        duration: 3000,
+        soundUrl,
+        accentColor,
+        onComplete: () => {
+          this.actionIndicator.style.opacity = '1';
+          setTimeout(() => {
+            if (this.actionIndicator) this.actionIndicator.style.opacity = '0';
+          }, 3500);
+        }
+      });
+
+      snare.trigger(this.triggerDrumBtn);
+    }
 }

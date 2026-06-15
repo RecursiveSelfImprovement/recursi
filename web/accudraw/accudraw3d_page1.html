@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AccuDraw: The 3D Thinking Tool — MicroStation Manager</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #b8b0a8;
+    font-family: Georgia, 'Times New Roman', serif;
+    color: #111;
+    padding: 2rem;
+  }
+
+  .page {
+    background: #f5f2ed;
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 1150px;
+    position: relative;
+  }
+
+  /* ══════════════════════════════════════
+     MASTHEAD
+  ══════════════════════════════════════ */
+  .masthead {
+    background: #f5f2ed;
+    padding: 2.5rem 2rem 0;
+    text-align: center;
+  }
+
+  /* "AccuDraw" — big bold italic blue, matching original font feel */
+  .title-accudraw {
+    font-family: 'Palatino Linotype', Palatino, 'Book Antiqua', Georgia, serif;
+    font-size: 108px;
+    font-weight: 900;
+    font-style: italic;
+    line-height: 0.95;
+    /* deep navy-blue with slight gradient to match the original two-tone blue */
+    background: linear-gradient(180deg, #2244bb 0%, #0d2080 55%, #1a2a8a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: -3px;
+    display: block;
+  }
+
+  /* "The ___ thinking tool" line */
+  .title-sub-line {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 4px;
+    margin-bottom: 0;
+  }
+
+  .title-the-tool {
+    font-family: Arial Black, 'Arial Narrow', Arial, sans-serif;
+    font-size: 62px;
+    font-weight: 900;
+    color: #111;
+    line-height: 1;
+    letter-spacing: -1px;
+  }
+
+  /* Slot for the 3D image — user drops in their 3D graphic here */
+  .img-3d-slot {
+    display: inline-block;
+    width: 110px;
+    height: 90px;
+    vertical-align: middle;
+    position: relative;
+    top: -4px;
+  }
+  .img-3d-slot img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+  }
+  .img-3d-slot .placeholder-3d {
+    width: 100%;
+    height: 100%;
+    background: #ddd;
+    border: 1px dashed #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    color: #888;
+    font-family: Arial, sans-serif;
+    font-style: italic;
+    text-align: center;
+    padding: 4px;
+  }
+
+  .byline {
+    text-align: right;
+    font-size: 13px;
+    color: #333;
+    padding: 0.4rem 0 1.2rem;
+    font-family: Georgia, serif;
+    letter-spacing: 0.05em;
+  }
+
+  /* thin rule separating masthead from body */
+  .masthead-rule {
+    height: 1px;
+    background: #aaa;
+    margin: 0 1.5rem 1.2rem;
+  }
+
+  /* ══════════════════════════════════════
+     BODY TEXT
+  ══════════════════════════════════════ */
+  .body-text {
+    font-size: 13.5px;
+    line-height: 1.65;
+    text-align: justify;
+    color: #111;
+  }
+  .body-text p {
+    margin-bottom: 0.65rem;
+    text-indent: 1.2em;
+  }
+  .body-text p.no-indent { text-indent: 0; }
+
+  strong, b { font-family: Arial, Helvetica, sans-serif; font-size: 13px; font-weight: bold; }
+  em { font-style: italic; }
+
+  /* editor note — italic, no indent */
+  .editor-note {
+    font-size: 13px;
+    font-style: italic;
+    color: #222;
+    margin-bottom: 0.9rem;
+    padding: 0 1.5rem;
+    line-height: 1.5;
+  }
+
+  /* ══════════════════════════════════════
+     TWO-COLUMN LAYOUT
+  ══════════════════════════════════════ */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 1.4rem;
+    padding: 0 1.5rem;
+    margin-bottom: 1rem;
+  }
+
+  /* Figure 1 floated left inside left column */
+  .fig1-wrap {
+    float: left;
+    width: 52%;
+    margin: 0.2rem 0.9rem 0.5rem 0;
+  }
+
+  /* ══════════════════════════════════════
+     FIGURE BOXES — plain style matching page 2
+  ══════════════════════════════════════ */
+  .figure-box {
+    border: 1px solid #888;
+    background: #e8e4de;
+    padding: 5px;
+    margin-bottom: 0.3rem;
+  }
+  .figure-box img {
+    width: 100%;
+    display: block;
+    background: #ccc;
+  }
+  .figure-box .img-placeholder {
+    width: 100%;
+    background: #d4d0c8;
+    border: 1px solid #aaa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    color: #555;
+    font-family: Arial, sans-serif;
+    font-style: italic;
+    text-align: center;
+    padding: 8px;
+    aspect-ratio: 3/4;
+  }
+
+  .fig-caption {
+    font-size: 11px;
+    line-height: 1.4;
+    color: #111;
+    margin-top: 5px;
+    font-family: Arial, Helvetica, sans-serif;
+    font-style: italic;
+    padding: 0 2px;
+  }
+
+  .clearfix::after { content: ''; display: table; clear: both; }
+
+  /* ══════════════════════════════════════
+     PAGE FOOTER — bottom right (p.54 or similar — this is page 1 of the article)
+     The original doesn't show the footer on this page but we match the style
+  ══════════════════════════════════════ */
+  .footer-rule {
+    height: 1px;
+    background: #aaa;
+    margin: 0 1.5rem;
+    margin-top: auto;
+  }
+
+  .page-footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    padding: 6px 1.5rem 8px;
+  }
+
+  .footer-right {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page-num-box {
+    background: #fff;
+    border: 1.5px solid #1a2a7a;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    font-weight: bold;
+    color: #1a2a7a;
+    margin-bottom: 1px;
+  }
+
+  .msm-logo {
+    font-family: Arial Black, Arial, sans-serif;
+    font-size: 18px;
+    font-weight: 900;
+    color: #1a2a7a;
+    letter-spacing: -1px;
+    line-height: 1;
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <!-- ══ MASTHEAD ══ -->
+  <div class="masthead">
+    <span class="title-accudraw">AccuDraw</span>
+
+    <div class="title-sub-line">
+      <span class="title-the-tool">The</span>
+
+      <!-- Drop your 3D graphic here: an image with transparent bg including the shadow -->
+      <div class="img-3d-slot">
+        <img src="images/title_3d_graphic.png"
+             alt="3D"
+             onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="placeholder-3d" style="display:none;">images/<br>title_3d_graphic.png</div>
+      </div>
+
+      <span class="title-the-tool">thinking tool</span>
+    </div>
+
+    <div class="byline">by Scott Williams</div>
+  </div>
+
+  <div class="masthead-rule"></div>
+
+  <!-- ══ EDITOR'S NOTE ══ -->
+  <p class="editor-note"><em>Editor's Note: This is the conclusion of a two-part series on AccuDraw.</em></p>
+
+  <!-- ══ TWO-COLUMN BODY ══ -->
+  <div class="two-col">
+
+    <!-- LEFT COLUMN -->
+    <div class="body-text">
+      <p class="no-indent">This month, we will take a look at AccuDraw's context sensitivity, usefulness in the 3D environment and customizability. Of course, an entire user's manual would be necessary to cover these topics completely, but the basics are easy to grasp and add greater efficiency and accuracy to MicroStation.</p>
+      <p>AccuDraw has the ability to make educated assumptions for you based on the active command or previous user input. It</p>
+
+      <!-- Figure 1: AccuDraw Settings screenshot, floated left -->
+      <div class="fig1-wrap">
+        <div class="figure-box">
+          <img src="images/figure1_accudraw_settings.jpg"
+               alt="Figure 1: AccuDraw Settings window"
+               onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+          <div class="img-placeholder" style="display:none;">images/figure1_accudraw_settings.jpg</div>
+        </div>
+        <p class="fig-caption">Figure 1: Activate the AccuDraw Settings window from the Settings pulldown.</p>
+      </div>
+
+      <p>is these assumptions that make AccuDraw so powerful. This ability is also referred to as context sensitivity. However, there are times when it is more productive to disable this feature.</p>
+      <p>By default, context sensitivity is on. When it is turned off, AccuDraw is still quite useful, it is just limited. For instance, the compass still functions; however, it will not automatically rotate to</p>
+
+      <div class="clearfix"></div>
+    </div>
+
+    <!-- RIGHT COLUMN -->
+    <div class="body-text">
+      <p class="no-indent">the last data point entered or switch between rectangular and polar mode.</p>
+      <p><strong>Context Sensitivity</strong> is controlled in the <strong>AccuDraw Settings</strong> window. It is opened from the <strong>Settings</strong> pulldown (see <em>Figure 1</em>). Shortcut keys also can activate the window. With the <strong>AccuDraw</strong> window highlighted, press G and then S. This shortcut stands for <strong>Go to Settings</strong>.</p>
+      <p><strong>Context Sensitivity</strong> is just one option on the <strong>AccuDraw Settings</strong> window (see <em>Figure 2</em>). It can be turned on or off by pressing the button next to the label.</p>
+      <p>Let's experiment. Open the accudraw.dgn file we created last month (see "AccuDraw," November 1996 <em>MSM</em>). Or, create a new design file called accudraw.dgn using the seed2D.dgn file as a seed (I suggest not using a production drawing for experimentation). Open the <strong>AccuDraw Settings</strong> window. Activate <strong>AccuDraw</strong> and select the <strong>Place Line</strong> tool. Place a few random lines—horizontal, vertical and diagonal. Now turn <strong>Context Sensitivity</strong> off and place a few more lines. Notice the differences in the way the compass works. It no longer rotates to the orientation of the last line.</p>
+      <p>Here is another example. Turn <strong>Context Sensitivity</strong> on and activate the <strong>Place Block</strong> tool. Place a data point. Notice that the rectangular coordinate system is now in use. Activate the <strong>Place Circle</strong> tool and place a data point. The compass has switched to the polar coordinate system. Repeat the same process with <strong>Context Sensitivity</strong> turned off. The compass will no longer automatically switch between the coordinate systems.</p>
+    </div>
+
+  </div><!-- end .two-col -->
+
+  <div style="flex: 1;"></div>
+  <div class="footer-rule"></div>
+
+  <div class="page-footer">
+    <div class="footer-right">
+      <div class="page-num-box">54</div>
+      <div class="msm-logo">MSM</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>
