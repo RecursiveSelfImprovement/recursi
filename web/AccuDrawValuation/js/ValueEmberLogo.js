@@ -24,7 +24,7 @@ class ValueEmberLogo {
       ValueEmberLogo._loadGoogleFont();
       this.applyStyles();
 
-      const text = this.element.textContent || "$1.3 Billion";
+      const text = this.element.textContent || "$2.3 Billion";
       this.element.innerHTML = "";
       
       this.element.style.fontFamily = "'Comfortaa', cursive, sans-serif";
@@ -39,7 +39,11 @@ class ValueEmberLogo {
 
       for (let i = 0; i < text.length; i++) {
         const charSpan = document.createElement('span');
-        charSpan.textContent = text[i];
+        if (text[i] === ' ') {
+          charSpan.innerHTML = '&nbsp;';
+        } else {
+          charSpan.textContent = text[i];
+        }
         charSpan.className = 'logo-char';
         charSpan.style.display = 'inline-block';
         charSpan.style.transition = 'margin 0.3s ease, opacity 0.3s ease';
@@ -83,9 +87,15 @@ class ValueEmberLogo {
       const baseSize = awake ? 1.5 : 1.0;
       const size = (Math.random() * (awake ? 3.0 : 2.0) + baseSize) * sizeMult;
 
-      let colors = ['#ff6b35', '#c44d20', '#ffaa00', '#ff8844', '#ffffff'];
-      if (awake) {
-        colors = ['#ffffff', '#ffeedd', '#ff3300', '#00ffff', '#cc33ff', '#33ff77', '#ff1155', '#ffcc00'];
+      const isLight = !!this.element.closest('.theme-light');
+      let colors;
+      if (isLight) {
+        colors = ['#d32f2f', '#e64a19', '#f57c00', '#e65100', '#f59e0b', '#b71c1c'];
+      } else {
+        colors = ['#ff6b35', '#c44d20', '#ffaa00', '#ff8844', '#ffffff'];
+        if (awake) {
+          colors = ['#ffffff', '#ffeedd', '#ff3300', '#00ffff', '#cc33ff', '#33ff77', '#ff1155', '#ffcc00'];
+        }
       }
       if (this.options.rainbowMode) {
         const hue = (this.colorCycle * 3) % 360;
@@ -94,7 +104,9 @@ class ValueEmberLogo {
 
       const color = colors[Math.floor(Math.random() * colors.length)];
       const opacity = Math.random() * (awake ? 0.6 : 0.4) + 0.4;
-      const boxShadow = `0 0 ${size * (awake ? 4 : 2.5)}px ${color}`;
+      const boxShadow = isLight
+        ? `0 0 ${size * 2}px ${color}`
+        : `0 0 ${size * (awake ? 4 : 2.5)}px ${color}`;
 
       const ember = document.createElement('div');
       Object.assign(ember.style, {
@@ -157,6 +169,7 @@ class ValueEmberLogo {
 
       const isAwake = this.isAwake;
       const rainbow = this.options.rainbowMode;
+      const isLight = !!this.element.closest('.theme-light');
 
       this.charSpans.forEach((char, idx) => {
         let targetColor = '';
@@ -166,6 +179,12 @@ class ValueEmberLogo {
           const hue = (time * 0.22 - idx * 20) % 360;
           targetColor = `hsl(${hue}, 100%, 80%)`;
           targetTextShadow = `0 0 10px hsl(${hue}, 100%, 55%), 0 0 22px hsl(${hue}, 100%, 42%)`;
+        } else if (isLight) {
+          const letterBreath = (Math.sin(time * 0.0025 + idx * 0.35) + 1) / 2;
+          targetColor = `hsl(16, 92%, ${34 + letterBreath * 8}%)`;
+          const hue = 14 + letterBreath * 12;
+          const glowSize = 3 + letterBreath * 4;
+          targetTextShadow = `0 0 ${glowSize}px hsl(${hue}, 95%, 60%), 0 0 ${glowSize * 1.5}px rgba(224, 83, 0, 0.4)`;
         } else if (isAwake || this.isHovered) {
           const letterBreath = (Math.sin(time * 0.0025 + idx * 0.35) + 1) / 2;
           targetColor = `hsl(30, 80%, ${82 + letterBreath * 8}%)`;

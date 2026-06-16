@@ -1,0 +1,709 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Is Going to Take Your Job. Yes, Yours.</title>
+  
+  <style>
+    /* CSS VARIABLES - THEME CONFIGURATION */
+    :root {
+      --bg-color: #0F0F0F;
+      --card-bg: #161616;
+      --border-color: #262626;
+      --text-main: #F0EDE6;
+      --text-muted: #8A9BA8;
+      --accent: #E8A020;
+      --accent-dim: #9E6B11;
+      --font-serif: Georgia, Cambria, "Times New Roman", Times, serif;
+      --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Consolas, Liberation Mono, monospace;
+      --max-width: 680px;
+    }
+
+    /* BASE RESET & STYLES */
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      font-family: var(--font-serif);
+      font-size: 1.15rem;
+      line-height: 1.75;
+      padding: 0 1.5rem 6rem 1.5rem;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* SCROLL PROGRESS BAR */
+    #progress-container {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background-color: transparent;
+      z-index: 1000;
+    }
+
+    #progress-bar {
+      height: 100%;
+      background-color: var(--accent);
+      width: 0%;
+      transition: width 0.1s ease-out;
+    }
+
+    /* CONFIGURATION PANEL (EDITABLE AT TOP OF BODY) */
+    .config-panel {
+      max-width: var(--max-width);
+      margin: 2rem auto;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-left: 4px solid var(--accent);
+      padding: 1.5rem;
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      border-radius: 4px;
+    }
+
+    .config-title {
+      font-family: var(--font-sans);
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .config-note {
+      color: var(--text-muted);
+      margin-bottom: 1rem;
+    }
+
+    .config-row {
+      display: flex;
+      justify-content: space-between;
+      border-bottom: 1px solid #222;
+      padding: 0.5rem 0;
+    }
+
+    .config-label {
+      color: #ccc;
+    }
+
+    .config-value {
+      color: var(--accent);
+      font-weight: bold;
+    }
+
+    /* TYPOGRAPHY */
+    header {
+      max-width: var(--max-width);
+      margin: 6rem auto 4rem auto;
+      text-align: left;
+    }
+
+    .category-eyebrow {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.2em;
+      color: var(--accent);
+      margin-bottom: 1.5rem;
+      display: block;
+    }
+
+    h1 {
+      font-family: var(--font-sans);
+      font-size: clamp(2.5rem, 6vw, 3.75rem);
+      line-height: 1.1;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      color: #fff;
+    }
+
+    .meta {
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      color: var(--text-muted);
+      display: flex;
+      gap: 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+      padding-bottom: 2rem;
+    }
+
+    .article-body {
+      max-width: var(--max-width);
+      margin: 0 auto;
+    }
+
+    p {
+      margin-bottom: 1.8rem;
+      color: var(--text-main);
+    }
+
+    h2, h3 {
+      font-family: var(--font-sans);
+      color: #fff;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+      margin: 3.5rem 0 1.5rem 0;
+    }
+
+    h2 {
+      font-size: 1.85rem;
+      border-top: 1px solid var(--border-color);
+      padding-top: 3rem;
+    }
+
+    h3 {
+      font-size: 1.45rem;
+    }
+
+    /* INTERACTIVE ELEMENTS & MEDIA */
+    .video-trigger {
+      position: relative;
+      width: 100%;
+      background-color: #1a1a1a;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      overflow: hidden;
+      cursor: pointer;
+      margin: 2.5rem 0;
+      transition: border-color 0.2s ease, transform 0.2s ease;
+      aspect-ratio: 16 / 9;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .video-trigger:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .video-thumbnail-placeholder {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: #111;
+      background-size: cover;
+      background-position: center;
+      opacity: 0.4;
+      transition: opacity 0.2s ease;
+    }
+
+    .video-trigger:hover .video-thumbnail-placeholder {
+      opacity: 0.55;
+    }
+
+    .play-button {
+      position: relative;
+      z-index: 2;
+      width: 64px;
+      height: 64px;
+      background-color: var(--accent);
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+      transition: transform 0.2s ease, background-color 0.2s ease;
+    }
+
+    .video-trigger:hover .play-button {
+      transform: scale(1.1);
+      background-color: #fff;
+    }
+
+    .play-icon {
+      width: 0;
+      height: 0;
+      border-style: solid;
+      border-width: 10px 0 10px 18px;
+      border-color: transparent transparent transparent #000;
+      margin-left: 4px;
+    }
+
+    .video-label {
+      position: relative;
+      z-index: 2;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: #fff;
+      margin-top: 1rem;
+      background: rgba(0,0,0,0.7);
+      padding: 0.25rem 0.75rem;
+      border-radius: 4px;
+    }
+
+    /* IMAGE PLACEHOLDERS */
+    .image-container {
+      margin: 2.5rem 0;
+    }
+
+    .placeholder-box {
+      width: 100%;
+      background-color: var(--card-bg);
+      border: 1px dashed var(--border-color);
+      border-radius: 6px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      color: var(--text-muted);
+      min-height: 240px;
+    }
+
+    .placeholder-box svg {
+      stroke: var(--text-muted);
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .placeholder-title {
+      font-family: var(--font-sans);
+      color: #fff;
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .placeholder-path {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+    }
+
+    .caption {
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      margin-top: 0.75rem;
+      line-height: 1.4;
+      text-align: left;
+    }
+
+    /* FLEXIBLE IMAGE GRIDS */
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin: 2.5rem 0;
+    }
+
+    .image-grid .placeholder-box {
+      min-height: 180px;
+      padding: 1.5rem;
+    }
+
+    /* CALLOUT CARD (ECONOMIC ARGUMENT LINK) */
+    .callout-card {
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-top: 4px solid var(--accent);
+      padding: 2.5rem;
+      border-radius: 6px;
+      margin: 3.5rem 0;
+    }
+
+    .callout-card h4 {
+      font-family: var(--font-sans);
+      color: #fff;
+      font-size: 1.25rem;
+      margin-bottom: 1rem;
+    }
+
+    .callout-link {
+      display: inline-flex;
+      align-items: center;
+      font-family: var(--font-sans);
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 600;
+      margin-top: 1rem;
+      font-size: 1rem;
+      transition: color 0.2s ease;
+    }
+
+    .callout-link:hover {
+      color: #fff;
+    }
+
+    .callout-link span {
+      margin-left: 0.5rem;
+      transition: transform 0.2s ease;
+    }
+
+    .callout-link:hover span {
+      transform: translateX(4px);
+    }
+
+    /* YOUTUBE LIGHTBOX MODAL */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(10, 10, 10, 0.95);
+      z-index: 2000;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-container {
+      width: 90%;
+      max-width: 960px;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      border: 1px solid var(--border-color);
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      position: relative;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: -45px;
+      right: 0;
+      background: none;
+      border: none;
+      color: #fff;
+      font-family: var(--font-sans);
+      font-size: 1rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: color 0.2s;
+    }
+
+    .modal-close:hover {
+      color: var(--accent);
+    }
+
+    .modal-iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+    }
+
+    /* RESPONSIVE OPTIMIZATIONS */
+    @media (max-width: 768px) {
+      body {
+        font-size: 1.1rem;
+      }
+      header {
+        margin: 4rem auto 2.5rem auto;
+      }
+      .config-panel {
+        margin: 1rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SCROLL PROGRESS BAR -->
+  <div id="progress-container">
+    <div id="progress-bar"></div>
+  </div>
+
+  <!-- EASILY EDITABLE CONFIGURATION PANEL -->
+  <div class="config-panel">
+    <div class="config-title">
+      <span>Developer Variable Config</span>
+      <span style="font-size: 0.7rem; color: #555;">Local / Non-CDN Environment</span>
+    </div>
+    <div class="config-note">Edit the video keys inside the &lt;script&gt; tag at the bottom of the document to update YouTube source URLs.</div>
+    <div class="config-row">
+      <span class="config-label">VFX Video (Star Wars demo ID):</span>
+      <span class="config-value" id="cfg-val-vfx">Loading...</span>
+    </div>
+    <div class="config-row">
+      <span class="config-label">Robotics Video (Hardware demo ID):</span>
+      <span class="config-value" id="cfg-val-robot">Loading...</span>
+    </div>
+  </div>
+
+  <!-- ARTICLE LAYOUT -->
+  <article>
+    <header>
+      <span class="category-eyebrow">Perspective / Artificial Intelligence</span>
+      <h1>AI Is Going to Take Your Job.<br>Yes, Yours.</h1>
+      <div class="meta">
+        <span>By J. Carter</span>
+        <span>Published Oct 2024</span>
+        <span>6 Min Read</span>
+      </div>
+    </header>
+
+    <div class="article-body">
+      <p>You saw the headline. You’re already building your defense.</p>
+
+      <p>Maybe you work in a specialized industry—medicine, corporate law, systems engineering, operations. You've likely filed arguments like this away under "tech hype," confident that automated algorithms are only bound to displace repetitive, manual labor.</p>
+
+      <p>Let's shift focus to graphics and cinema. Not because Hollywood represents the whole workforce, but because it is where the capability transition is most visible. It functions as a clear proof of concept for what is coming—and points directly to your field.</p>
+
+      <h2>The Creative Jobs Were Supposed to Be Safe</h2>
+
+      <p>For decades, the common consensus argued that automation would first conquer routine physical tasks—assembly lines, logistics, basic inventory—while creative decision-making and knowledge work remained safe behind human intelligence. We had that entirely backwards.</p>
+
+      <p>And those who felt most secure pointed to a single, recurring flaw as proof: <em>hands.</em></p>
+
+      <p>Early image generators famously struggled with hands. Fingers were fused together, bent at unnatural angles, or grew in sets of six. It became a running industry joke—a reliable way to spot a synthetic image and reassure yourself that human designers were safe.</p>
+
+      <!-- IMAGE PLACEHOLDER: Meme -->
+      <div class="image-container">
+        <div class="placeholder-box">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <path d="M21 15l-5-5L5 21" />
+          </svg>
+          <div class="placeholder-title">Meme: The AI Hand Deficit</div>
+          <div class="placeholder-path">images/meme-hand-glitches.jpg</div>
+        </div>
+        <div class="caption">The early community consensus was that anatomical glitches would save human creative jobs from rapid automation.</div>
+      </div>
+
+      <p>Then developers fed the models more data.</p>
+
+      <!-- IMAGE GRID: Hands progress -->
+      <div class="image-grid">
+        <div class="placeholder-box">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+          </svg>
+          <div class="placeholder-title">Intricate Hand Crafts</div>
+          <div class="placeholder-path">images/hands-craftsman.jpg</div>
+        </div>
+        <div class="placeholder-box">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+          </svg>
+          <div class="placeholder-title">Shaking Hands / Detail</div>
+          <div class="placeholder-path">images/hands-shaking.jpg</div>
+        </div>
+        <div class="placeholder-box">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M12 2a10 10 0 1 0 10 10H12V2z" />
+          </svg>
+          <div class="placeholder-title">Cat's Cradle Detail</div>
+          <div class="placeholder-path">images/hands-cats-cradle.jpg</div>
+        </div>
+      </div>
+
+      <p>The structural problem was solved with quiet speed. Whatever minor flaw you are pointing to today in your own industry as proof of human exceptionalism—I suggest not risking your career trajectory on it.</p>
+
+      <h2>What It’s Actually Doing Now</h2>
+
+      <!-- VIDEO EMBED: VFX Showcase -->
+      <div class="video-trigger" id="vfx-trigger">
+        <div class="video-thumbnail-placeholder" style="background-image: radial-gradient(#2a2a2a, #111);"></div>
+        <div class="play-button">
+          <div class="play-icon"></div>
+        </div>
+        <div class="video-label">Play: VFX Generation Demo</div>
+      </div>
+
+      <p>What you just watched wasn’t created by a multi-million dollar studio. A hobbyist assembled it in an afternoon. An animation instructor analyzing this level of output estimated that a dedicated student would typically spend a semester to a year of intense labor to match it.</p>
+
+      <p>This goes beyond simple face-swapping or cosmetic filters. It encompasses the entire visual pipeline: lighting matching, physical interaction, dynamic environments, and camera tracking. A neural system with no built-in knowledge of optics or physics analyzed patterns and generated visual coherence.</p>
+
+      <p>Consider this pipeline shift—re-rendering background assets, computing matching reflections, and generating variable conditions from a single source image:</p>
+
+      <!-- IMAGE PLACEHOLDER: Car pipeline -->
+      <div class="image-container">
+        <div class="placeholder-box">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3c-.5-.4-1.1-.7-1.8-.7H5c-.6 0-1.1.4-1.4.9l-1.4 2.9A3.7 3.7 0 0 0 2 12v4c0 .6.4 1 1 1h2" />
+            <circle cx="7" cy="17" r="2" />
+            <circle cx="17" cy="17" r="2" />
+          </svg>
+          <div class="placeholder-title">Visual Sequence: Car Context Shifts</div>
+          <div class="placeholder-path">images/car-transformation-sequence.jpg</div>
+        </div>
+        <div class="caption">A single automotive base image re-rendered across multiple lighting scenarios and environments in seconds.</div>
+      </div>
+
+      <p>Observe the pace of change. These two images were generated using identical prompts on the same platform, spaced fourteen months apart:</p>
+
+      <!-- IMAGE PLACEHOLDER: Side-by-Side comparison -->
+      <div class="image-container">
+        <div class="placeholder-box">
+          <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M21 3H3v18h18V3zM8.5 8.5L5 12l3.5 3.5M15.5 8.5l3.5 3.5-3.5 3.5" />
+          </svg>
+          <div class="placeholder-title">Side-by-Side Comparison: 14-Month Leap</div>
+          <div class="placeholder-path">images/comparison-2022-vs-2023.jpg</div>
+        </div>
+        <div class="caption">The output on the left was notable for its time; the output on the right is photorealistic. That trajectory has since transferred directly into video.</div>
+      </div>
+
+      <h2>“But That’s Just Entertainment”</h2>
+
+      <p>This is the most frequent pushback. The arts and entertainment fields are treated as separate from "substantive" industries.</p>
+
+      <p>But the professionals building these creative assets are not casual users. They are highly trained technical experts who spent decades mastering complex software and spatial math. Their roles are being condensed into prompt systems and real-time generation. If a neural model can replicate aesthetic balance, geometric consistency, and lighting logic, why assume your field is structured differently?</p>
+
+      <p>The underlying system is general, not application-specific. It did not learn to process video because a programmer wrote an explicit video-rendering algorithm; it developed the capability by processing structural data. That same general learning model is being adapted to software engineering, medical imagery analysis, contract drafting, and financial forecasting.</p>
+
+      <p>In software development—the field where my experience lies—automated engineering capabilities are actually progressing faster than visual generation tools. They simply do not look as flashy in a video presentation.</p>
+
+      <h2>Robots, Not Just Software</h2>
+
+      <p>If you find comfort in the belief that your work requires physical actions in the real world, you should notice that the hardware gap is narrowing as well.</p>
+
+      <!-- VIDEO EMBED: Robotics -->
+      <div class="video-trigger" id="robot-trigger">
+        <div class="video-thumbnail-placeholder" style="background-image: radial-gradient(#2a2a2a, #111);"></div>
+        <div class="play-button">
+          <div class="play-icon"></div>
+        </div>
+        <div class="video-label">Play: Autonomous Robotics Demo</div>
+      </div>
+
+      <p>The manufacturing cost of humanoid and specialized robotic hardware is dropping alongside the scale-up in AI reasoning. Combining spatial reasoning with physical mechanical units is changing the outlook for manufacturing, logistics, complex assembly, and care settings.</p>
+
+      <p>Businesses adopt these systems out of practical necessity rather than hostility. If your direct competitor lowers operational overhead by eighty percent, your options are to automate or exit the market. No enterprise can opt out of this shift, much like businesses couldn't opt out of adopting computers in the nineties.</p>
+
+      <h2>So What Do We Do?</h2>
+
+      <p>This is where public debate tends to drift toward fatalism, which misinterprets the challenge. This is not a production problem; it is a distribution problem.</p>
+
+      <p>Automation does not reduce actual abundance—it dramatically increases it. The core challenge is that we have historically relied on forty hours of weekly labor as the primary mechanism for distributing resources to individuals. If labor becomes abundant and inexpensive, we need to adapt our economic framework to preserve consumer capacity while keeping capital active.</p>
+
+      <p>We need stable fiscal solutions, such as progressive tax adjustments tied directly to computing output alongside mechanisms resistant to simple lobbying. This transition does not have to result in destitution; it requires updating outdated systems to match modern efficiency.</p>
+
+      <!-- CALLOUT CARD -->
+      <div class="callout-card">
+        <h4>The Economic Framework</h4>
+        <p>Explore a draft system exploring progressive capital incentives and automated dividend structures designed to preserve market dynamics.</p>
+        <a href="economic-argument.html" class="callout-link">
+          Read the full framework <span>&rarr;</span>
+        </a>
+      </div>
+
+      <p>The adjustment phase will be demanding. However, avoiding the reality of the curve because the transition looks complex is the least productive choice available.</p>
+
+      <p>Look at the trajectory. Plan accordingly.</p>
+    </div>
+  </article>
+
+  <!-- YOUTUBE MODAL LIGHTBOX -->
+  <div class="modal-overlay" id="video-modal">
+    <div class="modal-container">
+      <button class="modal-close" id="modal-close-btn">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+        Close Escape
+      </button>
+      <div id="modal-player-container" style="width:100%; height:100%;">
+        <!-- Iframe injected dynamically via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- INLINE CONFIGURATION & INTERACTION SCRIPT -->
+  <script>
+    // ==========================================
+    // DEVELOPER CONFIGURATION (EDIT KEYS HERE)
+    // ==========================================
+    const VIDEO_CONFIG = {
+      vfxDemoId: 'dQw4w9WgXcQ',    // Replace with VFX/Star Wars YouTube Video ID
+      robotDemoId: 'dQw4w9WgXcQ'   // Replace with Robot/Hardware YouTube Video ID
+    };
+    // ==========================================
+
+    // Display values in the configuration card at the top
+    document.getElementById('cfg-val-vfx').textContent = VIDEO_CONFIG.vfxDemoId;
+    document.getElementById('cfg-val-robot').textContent = VIDEO_CONFIG.robotDemoId;
+
+    // Progress Bar Logic
+    window.addEventListener('scroll', () => {
+      const winScroll = document.documentElement.scrollTop || document.body.scrollTop;
+      const height = document.documentElement.scrollHeight - document.documentElement.clientHeight;
+      const scrolled = (winScroll / height) * 100;
+      document.getElementById('progress-bar').style.width = scrolled + '%';
+    });
+
+    // Lightbox Modal Mechanics
+    const modal = document.getElementById('video-modal');
+    const playerContainer = document.getElementById('modal-player-container');
+    const closeBtn = document.getElementById('modal-close-btn');
+
+    function openVideo(videoId) {
+      // Safely inject iframe using local standard HTML without external script dependents
+      playerContainer.innerHTML = `
+        <iframe 
+          class="modal-iframe" 
+          src="https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0" 
+          title="YouTube video player" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen>
+        </iframe>`;
+      modal.classList.add('active');
+      document.body.style.overflow = 'hidden'; // Lock background scroll
+    }
+
+    function closeVideo() {
+      modal.classList.remove('active');
+      playerContainer.innerHTML = ''; // Destroy player on close
+      document.body.style.overflow = ''; // Restore scroll
+    }
+
+    // Attach click events
+    document.getElementById('vfx-trigger').addEventListener('click', () => {
+      openVideo(VIDEO_CONFIG.vfxDemoId);
+    });
+
+    document.getElementById('robot-trigger').addEventListener('click', () => {
+      openVideo(VIDEO_CONFIG.robotDemoId);
+    });
+
+    closeBtn.addEventListener('click', closeVideo);
+
+    // Close when clicking outside content container
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeVideo();
+      }
+    });
+
+    // ESC key close support
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        closeVideo();
+      }
+    });
+  </script>
+</body>
+</html>

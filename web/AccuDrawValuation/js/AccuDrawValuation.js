@@ -110,48 +110,47 @@ class AccuDrawValuation {
         prompts: [
           { id: "1", text: "tell me everything you know about accudraw and smartline in microstation" },
           { id: "2", text: "how important are they to the success of microstation and bentley systems?" },
-          { id: "3", text: "assume they were both developed by a single person, who had patented a similar idea at a different company, then arrived at bentley systems in 1994 and quickly implemented them, receiving the sole patent (bentley's first patent). given that Bentley now has a market cap of about $9B, what is your rough estimate as to how much value they brought bentley in terms of profit and/or stock price?" }
+          { id: "3", text: "assume they were both developed by a single person, who had received a sole inventor patent for similar idea at a different company (Intergraph, which at the time owned 50% of Bentley systems), then arrived at bentley systems in 1994 and quickly implemented them while working around the previous patent which was assigned to Intergraph, receiving the sole patent again (bentley's first patent). what is your rough estimate as to how much value they brought bentley in terms of profit and/or contribution to market cap?" }
         ],
         models: [
           {
             key: "claude",
             name: "Claude 3.5 Sonnet",
-            min: "1.5B",
-            max: "3.0B",
-            pct: 25,
+            min: "2.0B",
+            max: "5.0B",
+            pct: 33,
             color: "#f59e0b",
-            url: "https://claude.ai/share/83d60560-adf4-456d-828e-6dfa0ec3167e",
+            url: "https://claude.ai/share/d86cd05e-18b6-48a9-8c75-c55d32457756",
             quotes: [
-              "A reasonable estimate is that AccuDraw and SmartLine, as conceived and implemented by this individual, directly contributed somewhere between $1.5B and $3B in value to Bentley Systems - whether measured as accumulated profits, retained market cap, or competitive positioning value.",
-              "For a single person arriving at a company with a patented idea and implementing it within their first year, that is an extraordinary return on human capital - and almost certainly one of the highest individual contributions to a single company's trajectory in CAD software history.",
-              "The individual almost certainly received a salary and perhaps a bonus. The asymmetry between what they created and what they were likely compensated is... striking."
+              "My rough estimate: $2-5 billion in enterprise value contribution, with the most defensible point estimate around $3 billion - roughly 30% of Bentley's current market cap, reflecting the fact that AccuDraw and SmartLine weren't just features but the competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most.",
+              "The sole inventor of both, arriving in 1994 and immediately delivering Bentley's first patent, would have an extremely strong argument that this contribution is among the highest-leverage individual technical contributions in the history of infrastructure software."
             ]
           },
           {
             key: "gemini",
             name: "Gemini 1.5/3.5 Pro",
-            min: "900M",
-            max: "1.35B",
-            pct: 12,
+            min: "1.5B",
+            max: "3.5B",
+            pct: 27,
             color: "#3b82f6",
-            url: "https://aistudio.google.com/app/prompts/1qudcGjEZxlkFQbwnrfCgVQ0h62N-gUnZ",
+            url: "https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B%221KauHXifVO0ic-dTm5xabfotN7HnsE8ew%22%5D,%22action%22:%22open%22,%22userId%22:%22110615187007890782355%22,%22resourceKeys%22:%7B%7D%7D&usp=sharing",
             quotes: [
-              "Under this hypothetical scenario, the developer who brought AccuDraw and SmartLine to Bentley Systems in 1994 introduced the core technological differentiator that allowed the company to survive the 'CAD wars' of the 1990s and secure a highly profitable niche in infrastructure.",
-              "While impossible to calculate with absolute precision, a conservative estimate suggests these two tools contributed $900 million to $1.35 billion to Bentley's current $9 billion valuation, primarily by serving as the product's primary customer retention mechanism for three decades.",
-              "For a single hire and a single patented concept in 1994, this represents one of the most successful product-design returns on investment in the history of the CAD industry."
+              "In CAD, muscle memory is a powerful lock-in mechanism. By introducing a highly efficient, hotkey-driven drafting system, Bentley built a user base that was highly resistant to switching to other platforms.",
+              "AccuDraw solved the 3D input problem for Bentley years before many competitors had an elegant solution.",
+              "A reasonable estimate suggests that the development and patenting of AccuDraw and SmartLine contributed between $1.5 billion and $3.5 billion to Bentley Systems' current market capitalization, primarily by serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption."
             ]
           },
           {
             key: "chatgpt",
             name: "ChatGPT-4o",
-            min: "200M",
-            max: "1.0B",
-            pct: 8,
+            min: "1.0B",
+            max: "3.0B",
+            pct: 22,
             color: "#10b981",
-            url: "https://chatgpt.com/share/6a2d0187-d780-83e8-930c-51197756de42",
+            url: "https://chatgpt.com/share/6a31433e-680c-83e8-8afc-2fcb21db36c7",
             quotes: [
-              "Given the assumptions you've laid out, I would not be surprised if the economic value attributable to those innovations ended up somewhere in the neighborhood of: $200 million to $1 billion of Bentley's current value, with my rough midpoint around $500 million.",
-              "They became deeply embedded in how users experience MicroStation... Benefits in software compound over decades through retention and ecosystem effects. If the historical facts are exactly as you've described, then the individual who invented and implemented them may have created economic value measured in hundreds of millions of dollars..."
+              "Around $1-3 billion as a plausible range for their contribution to Bentley's long-term enterprise value.",
+              "If someone claimed that AccuDraw and SmartLine, together, ultimately created around a billion dollars or more of value for Bentley over several decades, I would consider that a defensible hypothesis."
             ]
           },
           {
@@ -159,12 +158,13 @@ class AccuDrawValuation {
             name: "Grok 2",
             min: "500M",
             max: "2.0B+",
-            pct: 18,
+            pct: 14,
             color: "#a855f7",
-            url: "https://x.com/i/grok/share/5062114b53f04276a75c9f72727b294a",
+            url: "https://x.com/i/grok/share/5a2a97e1efb345dab63242bcf423e62b",
             quotes: [
-              "Enterprise value/stock price impact: $500M to $2B+ of today's $9-10B market cap. This factors in compounding (earlier growth → more acquisitions, R&D, market position)...",
-              "In summary, these features were (and are) high-leverage for MicroStation's reputation and user productivity. In your hypothetical single-inventor scenario, they could easily be worth $750 million to $1.5+ billion in attributable value to Bentley today - significant enough to be a foundational 'why Bentley succeeded' story, but not the majority of the $9-10B cap."
+              "These could easily account for 20-40% (or more) of Bentley's valuation premium during key periods-hundreds of millions to low billions in attributed enterprise value today, as they underpin user productivity claims that support the entire product line.",
+              "Overall ballpark: $500 million to $2+ billion in total economic value (profits + valuation uplift) across Bentley's history.",
+              "Under this scenario, one person's patented ideas would rank among the highest-ROI contributions in Bentley's history - a true 'company-making' innovation that paid dividends for decades."
             ]
           }
         ]
@@ -207,8 +207,11 @@ class AccuDrawValuation {
           if (parsed) {
             return {
               ...m,
-              quotes: m.key === 'gemini' ? m.quotes : (parsed.quotes.length ? parsed.quotes : m.quotes),
-              url: m.url
+              quotes: parsed.quotes.length ? parsed.quotes : m.quotes,
+              url: parsed.url || m.url,
+              min: parsed.min || m.min,
+              max: parsed.max || m.max,
+              pct: parsed.pct || m.pct
             };
           }
           return m;
@@ -403,6 +406,7 @@ class AccuDrawValuation {
           display: flex;
           align-items: center;
           gap: 4px;
+          outline: none;
         }
         .theme-switcher button.active {
           background-color: #3b82f6;
@@ -658,10 +662,14 @@ class AccuDrawValuation {
         @media (min-width: 768px) {
           .glowing-consensus-value { font-size: 48px; }
         }
+
+        .cad-container.theme-light .glowing-consensus-value {
+          color: #c2410c;
+        }
         
         .consensus-figure-subtext {
           white-space: nowrap;
-          margin-top: 16px; /* Plenty of room below the $1.3 Billion */
+          margin-top: 16px; /* Plenty of room below the $2.3 Billion */
           font-size: 11px;
           text-transform: uppercase;
           letter-spacing: 0.08em;
@@ -889,7 +897,7 @@ class AccuDrawValuation {
           display: flex;
           flex-direction: column;
           gap: 16px;
-          }
+        }
         .transcript-author-group {
           display: flex;
           align-items: center;
@@ -1025,40 +1033,57 @@ class AccuDrawValuation {
       let res = text;
       
       const mappings = [
+        // Claude Mappings
         {
-          search: "extraordinary return on human capital",
-          replace: "<span class=\"highlight-merit\">extraordinary return on human capital</span>"
+          search: "competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most",
+          replace: "<span class=\"highlight-merit\">competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most</span>"
         },
         {
-          search: "highest individual contributions to a single company's trajectory in CAD software history",
-          replace: "<span class=\"highlight-merit\">highest individual contributions to a single company's trajectory in CAD software history</span>"
+          search: "among the highest-leverage individual technical contributions in the history of infrastructure software",
+          replace: "<span class=\"highlight-merit\">among the highest-leverage individual technical contributions in the history of infrastructure software</span>"
+        },
+        // ChatGPT Mappings
+        {
+          search: "ultimately created around a billion dollars or more of value for Bentley over several decades",
+          replace: "<span class=\"highlight-value\">ultimately created around a billion dollars or more of value for Bentley over several decades</span>"
         },
         {
-          search: "one of the most successful product-design returns on investment in the history of the CAD industry",
-          replace: "<span class=\"highlight-merit\">one of the most successful product-design returns on investment in the history of the CAD industry</span>"
+          search: "plausible range for their contribution to Bentley's long-term enterprise value",
+          replace: "<span class=\"highlight-value\">plausible range for their contribution to Bentley's long-term enterprise value</span>"
+        },
+        // Gemini Mappings
+        {
+          search: "muscle memory is a powerful lock-in mechanism",
+          replace: "<span class=\"highlight-merit\">muscle memory is a powerful lock-in mechanism</span>"
         },
         {
-          search: "economic value measured in hundreds of millions of dollars",
-          replace: "<span class=\"highlight-value\">economic value measured in hundreds of millions of dollars</span>"
+          search: "highly efficient, hotkey-driven drafting system",
+          replace: "<span class=\"highlight-merit\">highly efficient, hotkey-driven drafting system</span>"
         },
         {
-          search: "striking.",
-          replace: "<span class=\"highlight-asymmetry\">asymmetry between what they created and what they were likely compensated is... striking.</span>"
+          search: "solved the 3D input problem for Bentley years before many competitors had an elegant solution",
+          replace: "<span class=\"highlight-merit\">solved the 3D input problem for Bentley years before many competitors had an elegant solution</span>"
+        },
+        {
+          search: "serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption",
+          replace: "<span class=\"highlight-value\">serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption</span>"
+        },
+        // Grok Mappings
+        {
+          search: "underpin user productivity claims that support the entire product line",
+          replace: "<span class=\"highlight-merit\">underpin user productivity claims that support the entire product line</span>"
+        },
+        {
+          search: "true 'company-making' innovation that paid dividends for decades",
+          replace: "<span class=\"highlight-merit\">true 'company-making' innovation that paid dividends for decades</span>"
         }
       ];
 
       mappings.forEach(item => {
         if (res.includes(item.search)) {
-          if (item.search === "striking.") {
-            res = res.replace(/asymmetry between what they created and what they were likely compensated is\.\.\.\s*striking\./i, item.replace);
-          } else {
-            res = res.replace(item.search, item.replace);
-          }
+          res = res.replace(item.search, item.replace);
         }
       });
-
-      // Highlight Grok's success story statement explicitly
-      res = res.replace(/(significant enough to be a foundational ['"]why Bentley succeeded['"] story)/gi, "<span class=\"highlight-merit\">$1</span>");
 
       // Highlight value ranges, millions, billions and percentages
       res = res.replace(/(\$[0-9.]+\s*(?:billion|million|B|M)?\s*(?:and|to|-|-)\s*\$[0-9.]+\+?\s*(?:billion|million|B|M)?)/gi, "<span class=\"highlight-range\">$1</span>");
@@ -1119,7 +1144,7 @@ class AccuDrawValuation {
       appContainer.appendChild(innerWrapper);
       this.targetElement.appendChild(appContainer);
 
-      // CRITICAL FIX: Instantiate the real particle canvas AFTER layout mounts to the DOM
+      // Instantiate the real particle canvas AFTER layout mounts to the DOM
       if (this.resultsRevealed) {
         const emberValText = this.targetElement.querySelector('.glowing-consensus-value');
         if (emberValText) {
@@ -1216,9 +1241,9 @@ class AccuDrawValuation {
       const modelsGrid = makeElement('div', { className: 'dashboard-cards-grid' });
 
       const abbreviatedValuations = {
-        claude: "$1.5B - $3.0B",
-        gemini: "$900M - $1.35B",
-        chatgpt: "$200M - $1.0B",
+        claude: "$2.0B - $5.0B",
+        gemini: "$1.5B - $3.5B",
+        chatgpt: "$1.0B - $3.0B",
         grok: "$500M - $2.0B+"
       };
 
@@ -1257,9 +1282,9 @@ class AccuDrawValuation {
       const modelsGrid = makeElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6' });
 
       const spelledOutValuations = {
-        claude: "$1.5 Billion - $3.0 Billion",
-        gemini: "$900 Million - $1.35 Billion",
-        chatgpt: "$200 Million - $1.0 Billion",
+        claude: "$2.0 Billion - $5.0 Billion",
+        gemini: "$1.5 Billion - $3.5 Billion",
+        chatgpt: "$1.0 Billion - $3.0 Billion",
         grok: "$500 Million - $2.0 Billion+"
       };
 
@@ -1453,7 +1478,7 @@ class AccuDrawValuation {
           "I've always believed this contribution was significant. But \"significant\" is easy to dismiss."
         ),
         makeElement('p', { className: 'backstory-paragraph' }, 
-          "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to assess the value independently. I didn't tell them it was me. I gave them the neutral facts and asked them to do the math. They arrived at a consensus midpoint of roughly $1.3 billion in contributed value."
+          "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to assess the value independently. I didn't tell them it was me. I gave them the neutral facts and asked them to do the math. They arrived at a consensus midpoint of roughly $2.3 billion in contributed value."
         ),
         makeElement('p', { className: 'backstory-paragraph-bold' }, 
           "You don't have to take my word for it. The prompts are right here. Paste them into any chatbot yourself."
@@ -1471,13 +1496,30 @@ class AccuDrawValuation {
           )
         ]),
         makeElement('div', { className: 'consensus-figure-pane' }, [
-          makeElement('div', { className: 'glowing-consensus-value' }, '$1.3 Billion'),
+          makeElement('div', { className: 'glowing-consensus-value' }, '$2.3 Billion'),
           makeElement('span', { className: 'consensus-figure-subtext' }, 'Consensus Contributed Midpoint')
         ])
       ]);
     }
 
   buildMinimalHeader() {
+      const extraDramaChecked = localStorage.getItem('accudraw-extra-drama') !== 'false';
+
+      // discreetly placed "Extra drama" toggle near the theme switcher
+      const dramaToggle = makeElement('label', {
+        className: 'flex items-center gap-2 cursor-pointer text-xs font-semibold select-none text-[var(--text-secondary)] hover:text-[var(--text-title)] transition-colors'
+      }, [
+        makeElement('input', {
+          type: 'checkbox',
+          checked: extraDramaChecked,
+          className: 'cursor-pointer w-3.5 h-3.5 accent-blue-600 rounded bg-slate-800 border-slate-700',
+          onchange: (e) => {
+            localStorage.setItem('accudraw-extra-drama', e.target.checked);
+          }
+        }),
+        makeElement('span', {}, 'Extra drama')
+      ]);
+
       const themeToggle = makeElement('div', { className: 'theme-switcher' }, [
         makeElement('button', {
           className: this.currentTheme === 'light' ? 'active' : '',
@@ -1495,13 +1537,20 @@ class AccuDrawValuation {
         ])
       ]);
 
+      const controlsGroup = makeElement('div', {
+        className: 'flex items-center gap-6'
+      }, [
+        dramaToggle,
+        themeToggle
+      ]);
+
       return makeElement('header', { className: 'minimal-header' }, [
         makeElement('div', { className: 'header-top' }, [
           makeElement('div', { className: 'tags-wrapper' }, [
             makeElement('span', { className: 'tag-pill tag-pill-blue' }, 'Historical Assessment'),
             makeElement('span', { className: 'tag-pill tag-pill-slate' }, 'Est. 1994 CAD IP')
           ]),
-          themeToggle
+          controlsGroup
         ]),
         
         makeElement('div', { className: 'title-group' }, [
@@ -1527,32 +1576,59 @@ class AccuDrawValuation {
 
   triggerDrumrollReveal(buttonElement) {
       if (this.isTransitioning) return;
+
+      const extraDramaChecked = localStorage.getItem('accudraw-extra-drama') !== 'false';
+
+      if (!extraDramaChecked) {
+        // Instant Reveal without animation lag
+        this.resultsRevealed = true;
+        this.renderApp();
+        setTimeout(() => {
+          const consensusBlock = this.targetElement.querySelector('.consensus-container');
+          if (consensusBlock) {
+            consensusBlock.scrollIntoView({ block: 'center', behavior: 'smooth' });
+          }
+        }, 80);
+        return;
+      }
+
       this.isTransitioning = true;
 
-      // Disable actions implicitly behind the scenes without showing forbidden cursors
+      // Keep button centered so the snare animation doesn't go below bottom boundary
+      buttonElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+
       buttonElement.style.opacity = '0.85';
       buttonElement.style.pointerEvents = 'none';
 
-      if (window.SnareDrumAnimation) {
-        const snare = new SnareDrumAnimation({
-          duration: 3000,
-          soundUrl: '/LogoExperiments/drumroll.mp4',
-          accentColor: '#3b82f6',
-          onComplete: () => {
+      // Delayed start to allow viewport centering scroll to complete
+      setTimeout(() => {
+        if (window.SnareDrumAnimation) {
+          const snare = new SnareDrumAnimation({
+            duration: 3000,
+            soundUrl: '/LogoExperiments/drumroll.mp4',
+            accentColor: '#3b82f6',
+            onComplete: () => {
+              this.resultsRevealed = true;
+              this.isTransitioning = false;
+              this.renderApp();
+              setTimeout(() => {
+                const consensusBlock = this.targetElement.querySelector('.consensus-container');
+                if (consensusBlock) {
+                  consensusBlock.scrollIntoView({ block: 'center', behavior: 'smooth' });
+                }
+              }, 100);
+            }
+          });
+          snare.trigger(buttonElement);
+        } else {
+          // Fallback if class is absent
+          setTimeout(() => {
             this.resultsRevealed = true;
             this.isTransitioning = false;
             this.renderApp();
-          }
-        });
-        snare.trigger(buttonElement);
-      } else {
-        // Fallback delay if class is unavailable
-        setTimeout(() => {
-          this.resultsRevealed = true;
-          this.isTransitioning = false;
-          this.renderApp();
-        }, 1500);
-      }
+          }, 1500);
+        }
+      }, 350);
     }
 
   startValueEmberSimulation(containerElement) {
