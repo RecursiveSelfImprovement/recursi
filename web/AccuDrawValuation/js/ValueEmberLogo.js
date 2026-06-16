@@ -7,6 +7,7 @@ class ValueEmberLogo {
         emberSpeedMultiplier: 0.3,
         emberSizeMultiplier: 0.4,
         rainbowMode: false,
+        forceDark: true, // Force the fiery dark background glow logic
         ...options,
       };
 
@@ -87,7 +88,7 @@ class ValueEmberLogo {
       const baseSize = awake ? 1.5 : 1.0;
       const size = (Math.random() * (awake ? 3.0 : 2.0) + baseSize) * sizeMult;
 
-      const isLight = !!this.element.closest('.theme-light');
+      const isLight = this.options.forceDark ? false : !!this.element.closest('.theme-light');
       let colors;
       if (isLight) {
         colors = ['#d32f2f', '#e64a19', '#f57c00', '#e65100', '#f59e0b', '#b71c1c'];
@@ -169,7 +170,7 @@ class ValueEmberLogo {
 
       const isAwake = this.isAwake;
       const rainbow = this.options.rainbowMode;
-      const isLight = !!this.element.closest('.theme-light');
+      const isLight = this.options.forceDark ? false : !!this.element.closest('.theme-light');
 
       this.charSpans.forEach((char, idx) => {
         let targetColor = '';

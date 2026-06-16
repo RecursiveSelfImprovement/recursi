@@ -586,15 +586,17 @@ class AccuDrawValuation {
         }
 
         /* Consensus Block & Value Logo Styles */
+        /* ALWAYS STYLED AS DARK (even in light theme) so the Glowing Ember stands out */
         .consensus-container {
           display: flex;
           flex-direction: column;
           gap: 24px;
           padding: 36px;
-          border: 2px solid rgba(99, 102, 241, 0.2);
+          border: 2px solid rgba(99, 102, 241, 0.25) !important;
           border-radius: 16px;
-          background: linear-gradient(135deg, rgba(99, 102, 241, 0.05), rgba(168, 85, 247, 0.05));
-          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3);
+          background: linear-gradient(135deg, #090d16, #0c111d) !important;
+          box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45) !important;
+          color: #cbd5e1 !important;
         }
         @media (min-width: 768px) {
           .consensus-container {
@@ -603,32 +605,19 @@ class AccuDrawValuation {
             justify-content: space-between;
           }
         }
-        .consensus-info-pane {
-          max-width: 580px;
+        .consensus-container .consensus-headline {
+          color: #ffffff !important;
         }
-        .consensus-badge {
-          display: inline-block;
-          background-color: rgba(99, 102, 241, 0.1);
-          color: #a5b4fc;
-          font-size: 10px;
-          font-weight: 700;
-          letter-spacing: 0.1em;
-          text-transform: uppercase;
-          padding: 4px 10px;
-          border-radius: 4px;
-          font-family: ui-monospace, monospace;
-          margin-bottom: 12px;
+        .consensus-container .consensus-description {
+          color: #94a3b8 !important;
         }
-        .consensus-headline {
-          font-size: 20px;
-          font-weight: 700;
-          color: var(--text-title);
-          margin-bottom: 8px;
+        .consensus-container .consensus-badge {
+          background-color: rgba(99, 102, 241, 0.15) !important;
+          color: #a5b4fc !important;
+          border: 1px solid rgba(99, 102, 241, 0.2) !important;
         }
-        .consensus-description {
-          font-size: 14px;
-          color: var(--text-secondary);
-          line-height: 1.6;
+        .consensus-container .consensus-figure-subtext {
+          color: #94a3b8 !important;
         }
         
         /* Consensus Figure Pane styled perfectly with stable size and high spacing gap */
@@ -650,7 +639,7 @@ class AccuDrawValuation {
           font-weight: 700;
           font-size: 38px;
           letter-spacing: -0.02em;
-          color: #ffebd2;
+          color: #ffebd2 !important;
           cursor: pointer;
           user-select: none;
           position: relative;
@@ -661,10 +650,6 @@ class AccuDrawValuation {
         }
         @media (min-width: 768px) {
           .glowing-consensus-value { font-size: 48px; }
-        }
-
-        .cad-container.theme-light .glowing-consensus-value {
-          color: #c2410c;
         }
         
         .consensus-figure-subtext {
@@ -1503,21 +1488,23 @@ class AccuDrawValuation {
     }
 
   buildMinimalHeader() {
-      const extraDramaChecked = localStorage.getItem('accudraw-extra-drama') !== 'false';
+      const dramaActive = localStorage.getItem('accudraw-extra-drama') !== 'false';
 
-      // discreetly placed "Extra drama" toggle near the theme switcher
-      const dramaToggle = makeElement('label', {
-        className: 'flex items-center gap-2 cursor-pointer text-xs font-semibold select-none text-[var(--text-secondary)] hover:text-[var(--text-title)] transition-colors'
+      // Styled beautifully as a gray control button toggle that matches the switcher
+      const dramaToggleBtn = makeElement('button', {
+        className: `px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border ${
+          dramaActive 
+            ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/20' 
+            : 'text-gray-400 hover:text-gray-200 border-transparent bg-transparent'
+        }`,
+        style: { fontSize: '11px', outline: 'none' },
+        onclick: () => {
+          localStorage.setItem('accudraw-extra-drama', dramaActive ? 'false' : 'true');
+          this.renderApp();
+        }
       }, [
-        makeElement('input', {
-          type: 'checkbox',
-          checked: extraDramaChecked,
-          className: 'cursor-pointer w-3.5 h-3.5 accent-blue-600 rounded bg-slate-800 border-slate-700',
-          onchange: (e) => {
-            localStorage.setItem('accudraw-extra-drama', e.target.checked);
-          }
-        }),
-        makeElement('span', {}, 'Extra drama')
+        makeElement('span', { innerHTML: dramaActive ? '🎭' : '🎬' }),
+        makeElement('span', {}, 'Dramatic')
       ]);
 
       const themeToggle = makeElement('div', { className: 'theme-switcher' }, [
@@ -1538,9 +1525,9 @@ class AccuDrawValuation {
       ]);
 
       const controlsGroup = makeElement('div', {
-        className: 'flex items-center gap-6'
+        className: 'flex items-center gap-4'
       }, [
-        dramaToggle,
+        dramaToggleBtn,
         themeToggle
       ]);
 
