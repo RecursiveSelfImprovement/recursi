@@ -249,7 +249,8 @@ class AccuDrawValuation {
       }
     }
 
-  setupState(data) {
+  // Initialize clean state tracking variables for the playful calculation ticker and the 1-second warning delay
+    setupState(data) {
       this.data = data;
       this.activeTab = 'all';
       this.resultsRevealed = false;
@@ -257,6 +258,8 @@ class AccuDrawValuation {
       this.revealMode = localStorage.getItem('accudraw-reveal-mode') || 'drum-roll';
       this.wrongAnswerStage = 0;
       this.justCorrected = false;
+      this.isCalculating = false;
+      this.showRecalculateButton = false;
     }
 
   
@@ -621,35 +624,42 @@ class AccuDrawValuation {
       ]);
     }
 
-  buildConsensusBlock() {
+  // Upgraded Consensus block builder that allocates a stable structural action spacer below the digits
+    // and keeps the left information panel isolated so that width changes and button fades cause zero layout movement.
+    buildConsensusBlock() {
       const wrongSequence = ['$2.3 Million', '$23 Million', '$230 Million'];
       const finalValue = '$2.3 Billion';
+      
       const stage = this.wrongAnswerStage || 0;
-      const showWrongUI = this.revealMode === 'wrong-answers' && stage < wrongSequence.length;
-      const displayValue = showWrongUI ? wrongSequence[stage] : finalValue;
-      const valueClassName = `glowing-consensus-value${showWrongUI ? ' is-wrong' : ''}${this.revealMode === 'wrong-answers' ? ' value-pulse' : ''}`;
+      const isWrongState = this.revealMode === 'wrong-answers' && stage < wrongSequence.length;
+      
+      const displayValue = isWrongState ? wrongSequence[stage] : finalValue;
+      const isWrongOrCalc = isWrongState || this.isCalculating;
+      const valueClassName = `glowing-consensus-value${isWrongOrCalc ? ' is-wrong' : ''}`;
 
       const figureChildren = [
-        makeElement('div', { className: valueClassName }, displayValue)
+        makeElement('div', { className: valueClassName }, this.isCalculating ? 'Calculating...' : displayValue)
       ];
 
-      if (showWrongUI) {
-        figureChildren.push(
-          makeElement('button', {
-            className: 'recalculate-btn',
-            onclick: () => this.advanceWrongAnswer()
-          }, [
-            makeElement('span', { className: 'recalculate-icon' }, '✕'),
-            makeElement('span', {}, 'Incorrect answer - Recalculate')
-          ])
-        );
+      // Action node structurally rendered inside the stable spacer
+      let actionNode;
+      if (isWrongState) {
+        const isBtnActive = this.showRecalculateButton && !this.isCalculating;
+        actionNode = makeElement('button', {
+          className: `recalculate-btn ${isBtnActive ? 'is-visible' : 'is-hidden'}`,
+          onclick: () => this.advanceWrongAnswer()
+        }, [
+          makeElement('span', { className: 'recalculate-icon' }, '✕'),
+          makeElement('span', {}, 'Incorrect answer - Recalculate')
+        ]);
       } else {
-        figureChildren.push(
-          makeElement('span', {
-            className: `consensus-figure-subtext${this.justCorrected ? ' flash-correct' : ''}`
-          }, this.justCorrected ? '✓ Correct answer' : 'Consensus Contributed Midpoint')
-        );
+        const subtextText = this.justCorrected ? '✓ Correct answer' : 'Consensus Contributed Midpoint';
+        const subtextClass = `consensus-figure-subtext${this.justCorrected ? ' flash-correct' : ''}`;
+        actionNode = makeElement('span', { className: subtextClass }, subtextText);
       }
+
+      // Stable structural spacer that occupies space at all times to prevent height shifting
+      figureChildren.push(makeElement('div', { className: 'consensus-action-spacer' }, actionNode));
 
       return makeElement('div', { className: 'consensus-container' }, [
         makeElement('div', { className: 'consensus-info-pane' }, [
@@ -805,17 +815,28 @@ class AccuDrawValuation {
       }
     }
 
-  triggerReveal(buttonElement) {
+  // Handles the initial reveal timing and starts the delay for stage 0 if wrong-answers mode is selected
+    triggerReveal(buttonElement) {
       if (this.isTransitioning) return;
 
-      // Fresh reveal - reset any leftover wrong-answer cycle state
+      // Reset any active states
       this.wrongAnswerStage = 0;
       this.justCorrected = false;
+      this.isCalculating = false;
+      this.showRecalculateButton = false;
 
       if (this.revealMode === 'no-drama' || this.revealMode === 'wrong-answers') {
         this.resultsRevealed = true;
         this.renderApp();
         this._scrollToConsensusBlock();
+
+        if (this.revealMode === 'wrong-answers') {
+          // Prime the 1-second delayed slide-in for the "recalculate" warning button on stage 0
+          setTimeout(() => {
+            this.showRecalculateButton = true;
+            this.renderApp();
+          }, 1000);
+        }
         return;
       }
 
@@ -863,26 +884,60 @@ class AccuDrawValuation {
       return this.revealMode === 'wrong-answers' && (this.wrongAnswerStage || 0) < 3;
     }
 
-  advanceWrongAnswer() {
-      if (this.wrongAnswerStage >= 3) return;
+  // Interactive recalculation step: transitions through rapid random valuations over 1.5 seconds,
+    // and slide-shows the warning indicator strictly 1 second after the new digit resolves.
+    advanceWrongAnswer() {
+      if (this.wrongAnswerStage >= 3 || this.isCalculating) return;
 
-      this.wrongAnswerStage++;
-      if (this.wrongAnswerStage === 3) {
-        this.justCorrected = true;
-      }
-
+      // Clear the warning button and launch calculation animation
+      this.isCalculating = true;
+      this.showRecalculateButton = false;
       this.renderApp();
 
-      if (this.wrongAnswerStage === 3) {
-        setTimeout(() => {
-          this.justCorrected = false;
-          const subtext = this.targetElement.querySelector('.consensus-figure-subtext');
-          if (subtext) {
-            subtext.classList.remove('flash-correct');
-            subtext.textContent = 'Consensus Contributed Midpoint';
-          }
-        }, 1400);
-      }
+      const tickerPool = [
+        '$145K', '$2.8 Million', '$38 Million', '$620K', '$84.1 Million',
+        '$5.4 Million', '$115 Million', '$430K', '$1.8 Billion', '$72 Million',
+        '$9.1 Million', '$280K', '$2.4B', '$81.5M', '$4.2 Million', '$19.3 Million'
+      ];
+
+      // Spin numbers at high-speed every 90ms for a playful active calculation aesthetic
+      const tickInterval = setInterval(() => {
+        const valueNode = this.targetElement.querySelector('.glowing-consensus-value');
+        if (valueNode) {
+          valueNode.textContent = tickerPool[Math.floor(Math.random() * tickerPool.length)];
+        }
+      }, 90);
+
+      // Resolve the calculation sequence after 1.5 seconds
+      setTimeout(() => {
+        clearInterval(tickInterval);
+        this.isCalculating = false;
+        
+        this.wrongAnswerStage++;
+        if (this.wrongAnswerStage === 3) {
+          this.justCorrected = true;
+        }
+
+        this.renderApp();
+
+        if (this.wrongAnswerStage === 3) {
+          // Landing on correct Billions figure
+          setTimeout(() => {
+            this.justCorrected = false;
+            const subtext = this.targetElement.querySelector('.consensus-figure-subtext');
+            if (subtext) {
+              subtext.classList.remove('flash-correct');
+              subtext.textContent = 'Consensus Contributed Midpoint';
+            }
+          }, 1800);
+        } else {
+          // Wrong answer resolved, delay slide-in of the warning button by exactly 1.0 seconds
+          setTimeout(() => {
+            this.showRecalculateButton = true;
+            this.renderApp();
+          }, 1000);
+        }
+      }, 1500);
     }
 
   // Upgraded smart highlighter that fully covers the Claude transcript phrases
@@ -1351,7 +1406,9 @@ class AccuDrawValuation {
       `, 'cad-prompt-styles');
     }
 
-  applyConsensusStyles() {
+  // Upgraded styling that allocates stable grid column widths, isolates the left-side text wrapper,
+    // and adds a highly attractive, playful incorrect scale & glow breathing pulse to error states.
+    applyConsensusStyles() {
       applyCss(`
         .consensus-container {
           display: flex;
@@ -1382,17 +1439,44 @@ class AccuDrawValuation {
           color: #a5b4fc !important;
           border: 1px solid rgba(99, 102, 241, 0.2) !important;
         }
-        
+
+        /* Prevent left information pane wrapping or bouncing during calculations */
+        .consensus-info-pane {
+          flex: 1;
+          min-width: 0;
+        }
+
+        /* Stable, fixed column width for numbers pane to avoid squishing of adjacent text */
         .consensus-figure-pane {
+          width: 100%;
+          max-width: 100%;
           display: flex;
           flex-direction: column;
           align-items: center;
-          text-align: center;
+          justify-content: center;
+          flex-shrink: 0;
         }
         @media (min-width: 768px) {
           .consensus-figure-pane {
+            width: 320px;
             align-items: flex-end;
             text-align: right;
+          }
+        }
+
+        /* Playful breathing error animation for incorrect steps */
+        @keyframes playfulIncorrectPulse {
+          0% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.25));
+          }
+          50% {
+            transform: scale(1.04);
+            filter: drop-shadow(0 0 18px rgba(239, 68, 68, 0.7));
+          }
+          100% {
+            transform: scale(1);
+            filter: drop-shadow(0 0 4px rgba(239, 68, 68, 0.25));
           }
         }
 
@@ -1409,78 +1493,72 @@ class AccuDrawValuation {
           align-items: baseline;
           white-space: nowrap;
           overflow: visible !important;
+          transition: transform 0.2s ease;
         }
         @media (min-width: 768px) {
           .glowing-consensus-value { font-size: 48px; }
         }
-
         .glowing-consensus-value.is-wrong {
           color: #fca5a5 !important;
-          text-shadow: none !important;
-        }
-        .cad-container.theme-light .glowing-consensus-value.is-wrong {
-          color: #dc2626 !important;
+          animation: playfulIncorrectPulse 1.6s infinite ease-in-out;
+          display: inline-block;
         }
 
-        @keyframes wrongAnswerPulse {
-          0%   { transform: scale(0.9); opacity: 0.25; filter: blur(2px); }
-          55%  { transform: scale(1.05); opacity: 1; filter: blur(0); }
-          100% { transform: scale(1); opacity: 1; filter: blur(0); }
-        }
-        .value-pulse {
-          animation: wrongAnswerPulse 0.32s ease-out;
-        }
-
-        @keyframes recalcAppear {
-          0%   { opacity: 0; transform: translateY(-4px); }
-          100% { opacity: 1; transform: translateY(0); }
-        }
-        .recalculate-btn {
+        /* Action spacer keeps layout position perfectly stable when button is hidden vs shown */
+        .consensus-action-spacer {
+          height: 52px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          position: relative;
+          width: 100%;
           margin-top: 12px;
+        }
+        @media (min-width: 768px) {
+          .consensus-action-spacer {
+            justify-content: flex-end;
+          }
+        }
+
+        .recalculate-btn {
+          margin: 0;
           display: inline-flex;
           align-items: center;
           gap: 6px;
-          background: rgba(239, 68, 68, 0.1);
-          border: 1px solid rgba(239, 68, 68, 0.3);
+          background: rgba(239, 68, 68, 0.12);
+          border: 1px solid rgba(239, 68, 68, 0.35);
           color: #f87171;
           font-size: 11px;
           font-weight: 700;
           font-family: ui-monospace, monospace;
           text-transform: uppercase;
           letter-spacing: 0.04em;
-          padding: 6px 12px;
+          padding: 8px 14px;
           border-radius: 6px;
           cursor: pointer;
-          animation: recalcAppear 0.3s ease-out;
-          transition: background-color 0.2s ease, transform 0.15s ease;
+          outline: none;
+          transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, visibility 0.3s;
         }
         .recalculate-btn:hover {
-          background: rgba(239, 68, 68, 0.18);
+          background: rgba(239, 68, 68, 0.2);
           transform: translateY(-1px);
         }
-        .recalculate-btn:active {
+        .recalculate-btn.is-hidden {
+          opacity: 0;
+          visibility: hidden;
+          transform: translateY(8px);
+          pointer-events: none;
+        }
+        .recalculate-btn.is-visible {
+          opacity: 1;
+          visibility: visible;
           transform: translateY(0);
-        }
-        .recalculate-icon {
-          font-size: 12px;
-        }
-
-        @keyframes correctFlash {
-          0%   { opacity: 0; transform: scale(0.9); }
-          15%  { opacity: 1; transform: scale(1.08); }
-          30%  { opacity: 1; transform: scale(1); }
-          75%  { opacity: 1; }
-          100% { opacity: 0; }
-        }
-        .consensus-figure-subtext.flash-correct {
-          color: #34d399 !important;
-          font-weight: 800;
-          animation: correctFlash 1.4s ease-out forwards;
+          pointer-events: auto;
         }
 
         .consensus-figure-subtext {
           white-space: nowrap;
-          margin-top: 16px;
+          margin-top: 0;
           font-size: 11px;
           text-transform: uppercase;
           letter-spacing: 0.08em;
