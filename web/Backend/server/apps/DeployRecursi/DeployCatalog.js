@@ -68,8 +68,8 @@ class DeployCatalog {
         }
       }
 
-      // Added 'projectBrowserThumbnails' to enable automatic deployment of assets
-      const defaultDirs = ['frontPage', 'sharedLib', 'recursi', 'modules', 'library', 'projectBrowserThumbnails'];
+      // Added 'projectBrowserThumbnails' and 'accudraw' to enable automatic deployment of assets
+      const defaultDirs = ['frontPage', 'sharedLib', 'recursi', 'modules', 'library', 'projectBrowserThumbnails', 'accudraw'];
       for (const dir of defaultDirs) {
         if (seen.has(dir)) continue;
         const localAbs = path.resolve(webRoot, dir);
@@ -90,7 +90,6 @@ class DeployCatalog {
     }
 
     static _getWebRoot(options = {}, deps = {}) {
-      // Replaces the old path.resolve(__dirname, '..') logic
       if (options.webProjectsRoot) return options.webProjectsRoot;
       if (options.webRoot) return deps.path.resolve(options.webRoot, '..');
       return process.cwd();

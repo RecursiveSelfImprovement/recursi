@@ -233,6 +233,9 @@ class AccuDrawValuation {
       this.activeTab = 'all';
       this.resultsRevealed = false;
       this.isTransitioning = false;
+      this.revealMode = localStorage.getItem('accudraw-reveal-mode') || 'drum-roll';
+      this.wrongAnswerStage = 0;
+      this.justCorrected = false;
     }
 
   applyPremiumStyles() {
@@ -338,7 +341,7 @@ class AccuDrawValuation {
         .header-top {
           display: flex;
           justify-content: space-between;
-          align-items: center;
+          align-items: flex-start;
           gap: 16px;
         }
         .tags-wrapper {
@@ -411,6 +414,39 @@ class AccuDrawValuation {
         .theme-switcher button.active {
           background-color: #3b82f6;
           color: #ffffff;
+        }
+
+        /* Reveal Mode Select (subtle, tucked below the theme switcher) */
+        .reveal-mode-row {
+          margin-top: 10px;
+          display: flex;
+          justify-content: flex-end;
+        }
+        .reveal-mode-select {
+          appearance: none;
+          -webkit-appearance: none;
+          -moz-appearance: none;
+          background: transparent;
+          border: none;
+          color: var(--text-secondary);
+          font-size: 10.5px;
+          font-family: ui-monospace, monospace;
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          padding: 2px 4px;
+          cursor: pointer;
+          opacity: 0.5;
+          transition: opacity 0.2s ease, color 0.2s ease;
+          outline: none;
+        }
+        .reveal-mode-select:hover,
+        .reveal-mode-select:focus {
+          opacity: 0.9;
+          color: var(--text-primary);
+        }
+        .reveal-mode-select option {
+          background: var(--bg-panel);
+          color: var(--text-primary);
         }
 
         /* Backstory Block Styles */
@@ -651,7 +687,72 @@ class AccuDrawValuation {
         @media (min-width: 768px) {
           .glowing-consensus-value { font-size: 48px; }
         }
-        
+
+        /* Wrong Answers Mode */
+        .glowing-consensus-value.is-wrong {
+          color: #fca5a5 !important;
+          text-shadow: none !important;
+        }
+        .cad-container.theme-light .glowing-consensus-value.is-wrong {
+          color: #dc2626 !important;
+        }
+
+        @keyframes wrongAnswerPulse {
+          0%   { transform: scale(0.9); opacity: 0.25; filter: blur(2px); }
+          55%  { transform: scale(1.05); opacity: 1; filter: blur(0); }
+          100% { transform: scale(1); opacity: 1; filter: blur(0); }
+        }
+        .value-pulse {
+          animation: wrongAnswerPulse 0.32s ease-out;
+        }
+
+        @keyframes recalcAppear {
+          0%   { opacity: 0; transform: translateY(-4px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
+        .recalculate-btn {
+          margin-top: 12px;
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: rgba(239, 68, 68, 0.1);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #f87171;
+          font-size: 11px;
+          font-weight: 700;
+          font-family: ui-monospace, monospace;
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          padding: 6px 12px;
+          border-radius: 6px;
+          cursor: pointer;
+          animation: recalcAppear 0.3s ease-out;
+          transition: background-color 0.2s ease, transform 0.15s ease;
+        }
+        .recalculate-btn:hover {
+          background: rgba(239, 68, 68, 0.18);
+          transform: translateY(-1px);
+        }
+        .recalculate-btn:active {
+          transform: translateY(0);
+        }
+        .recalculate-icon {
+          font-size: 12px;
+        }
+
+        @keyframes correctFlash {
+          0%   { opacity: 0; transform: scale(0.9); }
+          15%  { opacity: 1; transform: scale(1.08); }
+          30%  { opacity: 1; transform: scale(1); }
+          75%  { opacity: 1; }
+          100% { opacity: 0; }
+        }
+        .consensus-figure-subtext.flash-correct {
+          color: #34d399 !important;
+          font-weight: 800;
+          animation: correctFlash 1.4s ease-out forwards;
+        }
+
         .consensus-figure-subtext {
           white-space: nowrap;
           margin-top: 16px; /* Plenty of room below the $2.3 Billion */
@@ -1106,16 +1207,10 @@ class AccuDrawValuation {
       const appContainer = makeElement("div", { className: themeClass });
       const innerWrapper = makeElement("div", { className: "cad-wrapper" });
 
-      // 1. Title & theme switcher (minimal header)
       innerWrapper.appendChild(this.buildMinimalHeader());
-
-      // 2. Explanation / Backstory block (process explanation first)
       innerWrapper.appendChild(this.buildBackstoryBlock());
-
-      // 3. Prompts section (second)
       innerWrapper.appendChild(this.buildPromptsSection());
 
-      // 4. Conditional results or simple Reveal CTA button
       if (this.resultsRevealed) {
         innerWrapper.appendChild(this.buildConsensusBlock());
         innerWrapper.appendChild(this.buildInteractiveSummaryGrid());
@@ -1129,8 +1224,9 @@ class AccuDrawValuation {
       appContainer.appendChild(innerWrapper);
       this.targetElement.appendChild(appContainer);
 
-      // Instantiate the real particle canvas AFTER layout mounts to the DOM
-      if (this.resultsRevealed) {
+      // Skip the ember/fire ignition while "Wrong Answers" mode is still cycling
+      // through incorrect figures - it only lights up once the real number lands.
+      if (this.resultsRevealed && !this._isAwaitingRecalculation()) {
         const emberValText = this.targetElement.querySelector('.glowing-consensus-value');
         if (emberValText) {
           if (this.valueEmberLogo) {
@@ -1143,6 +1239,9 @@ class AccuDrawValuation {
             emberSizeMultiplier: 0.4
           });
         }
+      } else if (this.valueEmberLogo) {
+        this.valueEmberLogo.destroy();
+        this.valueEmberLogo = null;
       }
     }
 
@@ -1472,6 +1571,35 @@ class AccuDrawValuation {
     }
 
   buildConsensusBlock() {
+      const wrongSequence = ['$2.3 Million', '$23 Million', '$230 Million'];
+      const finalValue = '$2.3 Billion';
+      const stage = this.wrongAnswerStage || 0;
+      const showWrongUI = this.revealMode === 'wrong-answers' && stage < wrongSequence.length;
+      const displayValue = showWrongUI ? wrongSequence[stage] : finalValue;
+      const valueClassName = `glowing-consensus-value${showWrongUI ? ' is-wrong' : ''}${this.revealMode === 'wrong-answers' ? ' value-pulse' : ''}`;
+
+      const figureChildren = [
+        makeElement('div', { className: valueClassName }, displayValue)
+      ];
+
+      if (showWrongUI) {
+        figureChildren.push(
+          makeElement('button', {
+            className: 'recalculate-btn',
+            onclick: () => this.advanceWrongAnswer()
+          }, [
+            makeElement('span', { className: 'recalculate-icon' }, '✕'),
+            makeElement('span', {}, 'Incorrect answer - Recalculate')
+          ])
+        );
+      } else {
+        figureChildren.push(
+          makeElement('span', {
+            className: `consensus-figure-subtext${this.justCorrected ? ' flash-correct' : ''}`
+          }, this.justCorrected ? '✓ Correct answer' : 'Consensus Contributed Midpoint')
+        );
+      }
+
       return makeElement('div', { className: 'consensus-container' }, [
         makeElement('div', { className: 'consensus-info-pane' }, [
           makeElement('span', { className: 'consensus-badge' }, 'Consensus Composite Estimate'),
@@ -1480,32 +1608,23 @@ class AccuDrawValuation {
             'By calculating the midpoint of each AI model\'s calculated range (Claude, Gemini, ChatGPT, and Grok), we arrive at a unified composite average of Bentley Systems enterprise valuation directly tied to the AccuDraw and SmartLine IP.'
           )
         ]),
-        makeElement('div', { className: 'consensus-figure-pane' }, [
-          makeElement('div', { className: 'glowing-consensus-value' }, '$2.3 Billion'),
-          makeElement('span', { className: 'consensus-figure-subtext' }, 'Consensus Contributed Midpoint')
-        ])
+        makeElement('div', { className: 'consensus-figure-pane' }, figureChildren)
       ]);
     }
 
   buildMinimalHeader() {
-      const dramaActive = localStorage.getItem('accudraw-extra-drama') !== 'false';
-
-      // Styled beautifully as a gray control button toggle that matches the switcher
-      const dramaToggleBtn = makeElement('button', {
-        className: `px-2.5 py-1 text-xs font-semibold rounded-lg transition-all flex items-center gap-1.5 border ${
-          dramaActive 
-            ? 'bg-indigo-600/10 text-indigo-400 border-indigo-500/20' 
-            : 'text-gray-400 hover:text-gray-200 border-transparent bg-transparent'
-        }`,
-        style: { fontSize: '11px', outline: 'none' },
-        onclick: () => {
-          localStorage.setItem('accudraw-extra-drama', dramaActive ? 'false' : 'true');
-          this.renderApp();
+      const revealModeSelect = makeElement('select', {
+        className: 'reveal-mode-select',
+        onchange: (e) => {
+          this.revealMode = e.target.value;
+          localStorage.setItem('accudraw-reveal-mode', this.revealMode);
         }
       }, [
-        makeElement('span', { innerHTML: dramaActive ? '🎭' : '🎬' }),
-        makeElement('span', {}, 'Dramatic')
+        makeElement('option', { value: 'drum-roll' }, 'Drum Roll'),
+        makeElement('option', { value: 'no-drama' }, 'No Drama'),
+        makeElement('option', { value: 'wrong-answers' }, 'Wrong Answers')
       ]);
+      revealModeSelect.value = this.revealMode;
 
       const themeToggle = makeElement('div', { className: 'theme-switcher' }, [
         makeElement('button', {
@@ -1525,10 +1644,12 @@ class AccuDrawValuation {
       ]);
 
       const controlsGroup = makeElement('div', {
-        className: 'flex items-center gap-4'
+        className: 'flex flex-col items-end'
       }, [
-        dramaToggleBtn,
-        themeToggle
+        themeToggle,
+        makeElement('div', { className: 'reveal-mode-row' }, [
+          revealModeSelect
+        ])
       ]);
 
       return makeElement('header', { className: 'minimal-header' }, [
@@ -1551,7 +1672,7 @@ class AccuDrawValuation {
       const button = makeElement('button', {
         className: 'reveal-main-button',
         onclick: (e) => {
-          this.triggerDrumrollReveal(e.currentTarget);
+          this.triggerReveal(e.currentTarget);
         }
       }, [
         makeElement('span', { className: 'reveal-title-large' }, 'Show Estimated Valuation'),
@@ -1561,62 +1682,7 @@ class AccuDrawValuation {
       return makeElement('div', { className: 'reveal-cta-row' }, button);
     }
 
-  triggerDrumrollReveal(buttonElement) {
-      if (this.isTransitioning) return;
-
-      const extraDramaChecked = localStorage.getItem('accudraw-extra-drama') !== 'false';
-
-      if (!extraDramaChecked) {
-        // Instant Reveal without animation lag
-        this.resultsRevealed = true;
-        this.renderApp();
-        setTimeout(() => {
-          const consensusBlock = this.targetElement.querySelector('.consensus-container');
-          if (consensusBlock) {
-            consensusBlock.scrollIntoView({ block: 'center', behavior: 'smooth' });
-          }
-        }, 80);
-        return;
-      }
-
-      this.isTransitioning = true;
-
-      // Keep button centered so the snare animation doesn't go below bottom boundary
-      buttonElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
-
-      buttonElement.style.opacity = '0.85';
-      buttonElement.style.pointerEvents = 'none';
-
-      // Delayed start to allow viewport centering scroll to complete
-      setTimeout(() => {
-        if (window.SnareDrumAnimation) {
-          const snare = new SnareDrumAnimation({
-            duration: 3000,
-            soundUrl: '/LogoExperiments/drumroll.mp4',
-            accentColor: '#3b82f6',
-            onComplete: () => {
-              this.resultsRevealed = true;
-              this.isTransitioning = false;
-              this.renderApp();
-              setTimeout(() => {
-                const consensusBlock = this.targetElement.querySelector('.consensus-container');
-                if (consensusBlock) {
-                  consensusBlock.scrollIntoView({ block: 'center', behavior: 'smooth' });
-                }
-              }, 100);
-            }
-          });
-          snare.trigger(buttonElement);
-        } else {
-          // Fallback if class is absent
-          setTimeout(() => {
-            this.resultsRevealed = true;
-            this.isTransitioning = false;
-            this.renderApp();
-          }, 1500);
-        }
-      }, 350);
-    }
+  
 
   startValueEmberSimulation(containerElement) {
       if (this.emberInterval) {
@@ -1685,6 +1751,86 @@ class AccuDrawValuation {
           href: 'https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700;900&display=swap',
         });
         document.head.appendChild(link);
+      }
+    }
+
+  triggerReveal(buttonElement) {
+      if (this.isTransitioning) return;
+
+      // Fresh reveal - reset any leftover wrong-answer cycle state
+      this.wrongAnswerStage = 0;
+      this.justCorrected = false;
+
+      if (this.revealMode === 'no-drama' || this.revealMode === 'wrong-answers') {
+        this.resultsRevealed = true;
+        this.renderApp();
+        this._scrollToConsensusBlock();
+        return;
+      }
+
+      // Default: 'drum-roll'
+      this.isTransitioning = true;
+
+      buttonElement.scrollIntoView({ block: 'center', behavior: 'smooth' });
+      buttonElement.style.opacity = '0.85';
+      buttonElement.style.pointerEvents = 'none';
+
+      setTimeout(() => {
+        if (window.SnareDrumAnimation) {
+          const snare = new SnareDrumAnimation({
+            duration: 3000,
+            soundUrl: '/LogoExperiments/drumroll.mp4',
+            accentColor: '#3b82f6',
+            onComplete: () => {
+              this.resultsRevealed = true;
+              this.isTransitioning = false;
+              this.renderApp();
+              this._scrollToConsensusBlock(100);
+            }
+          });
+          snare.trigger(buttonElement);
+        } else {
+          setTimeout(() => {
+            this.resultsRevealed = true;
+            this.isTransitioning = false;
+            this.renderApp();
+          }, 1500);
+        }
+      }, 350);
+    }
+
+  _scrollToConsensusBlock(delay = 80) {
+      setTimeout(() => {
+        const consensusBlock = this.targetElement.querySelector('.consensus-container');
+        if (consensusBlock) {
+          consensusBlock.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        }
+      }, delay);
+    }
+
+  _isAwaitingRecalculation() {
+      return this.revealMode === 'wrong-answers' && (this.wrongAnswerStage || 0) < 3;
+    }
+
+  advanceWrongAnswer() {
+      if (this.wrongAnswerStage >= 3) return;
+
+      this.wrongAnswerStage++;
+      if (this.wrongAnswerStage === 3) {
+        this.justCorrected = true;
+      }
+
+      this.renderApp();
+
+      if (this.wrongAnswerStage === 3) {
+        setTimeout(() => {
+          this.justCorrected = false;
+          const subtext = this.targetElement.querySelector('.consensus-figure-subtext');
+          if (subtext) {
+            subtext.classList.remove('flash-correct');
+            subtext.textContent = 'Consensus Contributed Midpoint';
+          }
+        }, 1400);
       }
     }
 }
