@@ -1,48 +1,18 @@
 class AccuDrawValuation {
-  async run(env) {
+  // Highly modular entrance routing context
+    async run(env) {
       if (!env || !env.container) {
         throw new Error("run() requires an environment object with a valid container.");
       }
       this.env = env;
       this.targetElement = env.container;
 
-      // Add active marker class to the body element
-      document.body.classList.add('js-active');
-
-      // Initialize theme from storage defaulting to light mode
-      this.currentTheme = localStorage.getItem('accudraw-valuation-theme') || 'light';
-
-      // 1. Load the Google Font Comfortaa
+      this.initializeTheme();
       this.loadGoogleFont();
-
-      // 2. Gather raw content from index.html (including conversations and synthesis)
-      const data = this.parseRawContent();
-
-      // 3. Setup state variables
-      this.setupState(data);
-
-      // 4. Split and apply modular CSS styles to avoid giant single chunks
-      this.applyBaseStyles();
-      this.applyHeaderThemeStyles();
-      this.applyBackstoryStoryStyles();
-      this.applyPromptCardStyles();
-      this.applyConsensusStyles();
-      this.applyDashboardGridStyles();
-      this.applySynthesisIntroStyles();
-      this.applyTranscriptsStyles();
-      this.applyHighlightAnimationStyles();
-      this.applyRevealCtaStyles(); // Re-apply the styled reveal CTA button block
-
-      // Preload drumroll resource proactively if class is available
-      if (window.SnareDrumAnimation) {
-        try {
-          SnareDrumAnimation.preload('/LogoExperiments/drumroll.mp4');
-        } catch (e) {
-          console.warn("Drumroll preloading fallback:", e);
-        }
-      }
-
-      // 5. Draw the application layout
+      this.setupState(this.parseRawContent());
+      this.loadAppStyles();
+      this.preloadResources();
+      this.setupKeyboardListeners();
       this.renderApp();
     }
 
@@ -101,9 +71,24 @@ class AccuDrawValuation {
         : null;
     }
 
-  destroy() {
+  // Upgraded destroy method to clear video playback fallbacks and players
+    destroy() {
       if (this.valueEmberLogo) {
         this.valueEmberLogo.destroy();
+      }
+      if (this.bfnPlayer) {
+        this.bfnPlayer.destroy();
+        this.bfnPlayer = null;
+      }
+      if (this.fallbackTimeout) {
+        clearTimeout(this.fallbackTimeout);
+      }
+      if (this.fallbackTriggerTimeout) {
+        clearTimeout(this.fallbackTriggerTimeout);
+      }
+      const overlay = document.getElementById('bfn-overlay');
+      if (overlay) {
+        overlay.remove();
       }
       if (this._currentKeydownHandler) {
         window.removeEventListener('keydown', this._currentKeydownHandler);
@@ -249,7 +234,7 @@ class AccuDrawValuation {
       }
     }
 
-  // Initialize clean state tracking variables for the playful calculation ticker and the 1-second warning delay
+  // Refactored setup state initialization with stored motion scale settings
     setupState(data) {
       this.data = data;
       this.activeTab = 'all';
@@ -260,6 +245,8 @@ class AccuDrawValuation {
       this.justCorrected = false;
       this.isCalculating = false;
       this.showRecalculateButton = false;
+      this.showBFNButton = false;
+      this.motionValue = parseFloat(localStorage.getItem('accudraw-motion-val') || '1.0');
     }
 
   
@@ -349,12 +336,15 @@ class AccuDrawValuation {
       });
     }
 
-  renderApp() {
+  // Render configuration with live motion properties
+    renderApp() {
       this.targetElement.innerHTML = "";
       
       const themeClass = this.currentTheme === 'light' ? 'cad-container cad-grid-bg theme-light' : 'cad-container cad-grid-bg';
       
       const appContainer = makeElement("div", { className: themeClass });
+      appContainer.style.setProperty('--motion-scale', String(this.motionValue));
+
       const innerWrapper = makeElement("div", { className: "cad-wrapper" });
 
       innerWrapper.appendChild(this.buildMinimalHeader());
@@ -362,12 +352,9 @@ class AccuDrawValuation {
       innerWrapper.appendChild(this.buildPromptsSection());
 
       if (this.resultsRevealed) {
-        // Core Summary sections left completely untouched at the top
         innerWrapper.appendChild(this.buildConsensusBlock());
         innerWrapper.appendChild(this.buildInteractiveSummaryGrid());
         innerWrapper.appendChild(this.buildTranscriptsBlock());
-        
-        // Brand new deep dive section added below containing the extended queries narrative and transcripts
         innerWrapper.appendChild(this.buildExtendedQueriesSection());
       } else {
         innerWrapper.appendChild(this.buildRevealCTA());
@@ -378,7 +365,6 @@ class AccuDrawValuation {
       appContainer.appendChild(innerWrapper);
       this.targetElement.appendChild(appContainer);
 
-      // Trigger Glowing Ember if active and not on the incorrect answers sequence
       if (this.resultsRevealed && !this._isAwaitingRecalculation()) {
         const emberValText = this.targetElement.querySelector('.glowing-consensus-value');
         if (emberValText) {
@@ -387,9 +373,9 @@ class AccuDrawValuation {
           }
           this.valueEmberLogo = new ValueEmberLogo(emberValText, {
             isAwake: true,
-            emberCountMultiplier: 0.4,
-            emberSpeedMultiplier: 0.3,
-            emberSizeMultiplier: 0.4
+            emberCountMultiplier: 0.4 * this.motionValue,
+            emberSpeedMultiplier: 0.3 * this.motionValue,
+            emberSizeMultiplier: 0.4 * this.motionValue
           });
         }
       } else if (this.valueEmberLogo) {
@@ -616,7 +602,7 @@ class AccuDrawValuation {
           "I've always believed this contribution was significant. But \"significant\" is easy to dismiss."
         ),
         makeElement('p', { className: 'backstory-paragraph' }, 
-          "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to assess the value independently. I didn't tell them it was me. I gave them the neutral facts and asked them to do the math. They arrived at a consensus midpoint of roughly $2.3 billion in contributed value."
+          "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to assess the value independently. I didn't tell them it was me. I gave them the neutral facts and asked them to do the math. They arrived at a consensus midpoint of a staggering portion of the industry's overall valuation."
         ),
         makeElement('p', { className: 'backstory-paragraph-bold' }, 
           "You don't have to take my word for it. The prompts are right here. Paste them into any chatbot yourself."
@@ -655,7 +641,19 @@ class AccuDrawValuation {
       } else {
         const subtextText = this.justCorrected ? '✓ Correct answer' : 'Consensus Contributed Midpoint';
         const subtextClass = `consensus-figure-subtext${this.justCorrected ? ' flash-correct' : ''}`;
-        actionNode = makeElement('span', { className: subtextClass }, subtextText);
+        
+        const bfnBtn = this.showBFNButton ? makeElement('button', {
+          className: 'visualize-bfn-btn animate-fade-in',
+          onclick: () => this.startBFNPlayback()
+        }, [
+          makeElement('span', { className: 'play-pulse-icon' }, '▶'),
+          makeElement('span', {}, 'Visualize the B.F.N.')
+        ]) : null;
+
+        actionNode = makeElement('div', { className: 'consensus-action-wrapper' }, [
+          makeElement('span', { className: subtextClass }, subtextText),
+          bfnBtn
+        ]);
       }
 
       // Stable structural spacer that occupies space at all times to prevent height shifting
@@ -673,7 +671,8 @@ class AccuDrawValuation {
       ]);
     }
 
-  buildMinimalHeader() {
+  // Refactored minimal header builder that maps extracted toggle widgets and motion sliders
+    buildMinimalHeader() {
       const revealModeSelect = makeElement('select', {
         className: 'reveal-mode-select',
         onchange: (e) => {
@@ -687,30 +686,14 @@ class AccuDrawValuation {
       ]);
       revealModeSelect.value = this.revealMode;
 
-      const themeToggle = makeElement('div', { className: 'theme-switcher' }, [
-        makeElement('button', {
-          className: this.currentTheme === 'light' ? 'active' : '',
-          onclick: () => this.setTheme('light')
-        }, [
-          makeElement('span', { innerHTML: '☀️' }),
-          makeElement('span', {}, 'Light')
-        ]),
-        makeElement('button', {
-          className: this.currentTheme === 'dark' ? 'active' : '',
-          onclick: () => this.setTheme('dark')
-        }, [
-          makeElement('span', { innerHTML: '🌙' }),
-          makeElement('span', {}, 'Dark')
-        ])
-      ]);
-
       const controlsGroup = makeElement('div', {
         className: 'flex flex-col items-end'
       }, [
-        themeToggle,
+        this.buildThemeToggle(),
         makeElement('div', { className: 'reveal-mode-row' }, [
           revealModeSelect
-        ])
+        ]),
+        this.buildMotionSlider()
       ]);
 
       return makeElement('header', { className: 'minimal-header' }, [
@@ -824,6 +807,7 @@ class AccuDrawValuation {
       this.justCorrected = false;
       this.isCalculating = false;
       this.showRecalculateButton = false;
+      this.showBFNButton = false;
 
       if (this.revealMode === 'no-drama' || this.revealMode === 'wrong-answers') {
         this.resultsRevealed = true;
@@ -836,6 +820,8 @@ class AccuDrawValuation {
             this.showRecalculateButton = true;
             this.renderApp();
           }, 1000);
+        } else {
+          this.triggerBFNButtonDelay();
         }
         return;
       }
@@ -858,6 +844,7 @@ class AccuDrawValuation {
               this.isTransitioning = false;
               this.renderApp();
               this._scrollToConsensusBlock(100);
+              this.triggerBFNButtonDelay();
             }
           });
           snare.trigger(buttonElement);
@@ -866,6 +853,7 @@ class AccuDrawValuation {
             this.resultsRevealed = true;
             this.isTransitioning = false;
             this.renderApp();
+            this.triggerBFNButtonDelay();
           }, 1500);
         }
       }, 350);
@@ -916,6 +904,7 @@ class AccuDrawValuation {
         this.wrongAnswerStage++;
         if (this.wrongAnswerStage === 3) {
           this.justCorrected = true;
+          this.triggerBFNButtonDelay();
         }
 
         this.renderApp();
@@ -1420,6 +1409,7 @@ class AccuDrawValuation {
           background: linear-gradient(135deg, #090d16, #0c111d) !important;
           box-shadow: 0 15px 35px rgba(0, 0, 0, 0.45) !important;
           color: #cbd5e1 !important;
+          transition: all 0.8s cubic-bezier(0.25, 1, 0.5, 1);
         }
         @media (min-width: 768px) {
           .consensus-container {
@@ -1506,7 +1496,8 @@ class AccuDrawValuation {
 
         /* Action spacer keeps layout position perfectly stable when button is hidden vs shown */
         .consensus-action-spacer {
-          height: 52px;
+          height: auto;
+          min-height: 52px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -2121,9 +2112,7 @@ class AccuDrawValuation {
       return container;
     }
 
-  // --- Elegant modular styling definitions ---
-
-    applyRevealCtaStyles() {
+  applyRevealCtaStyles() {
       applyCss(`
         .reveal-cta-row {
           display: flex;
@@ -2172,5 +2161,548 @@ class AccuDrawValuation {
           font-family: ui-monospace, monospace;
         }
       `, 'cad-reveal-cta-styles');
+    }
+
+  // BFN Video Preloading Logic with self-healing fallback listener and play state observer
+    preloadBFNPlayer() {
+      if (this.bfnPlayer) return;
+
+      this.buildBFNOverlay();
+
+      const videoFrame = document.getElementById('bfn-video-frame');
+      if (!videoFrame) return;
+
+      try {
+        this.bfnPlayer = new VideoPlayer({
+          container: videoFrame,
+          containerId: 'bfn-video-frame',
+          playerType: 'youtube',
+          videoId: 'ply26G4DdcM',
+          autoplay: false,
+          controls: false,
+          startTime: 0,
+          endTime: 22
+        }, (evt) => {
+          if (evt.type === 'ready') {
+            if (this.playPending) {
+              this.playPending = false;
+              this.executeBFNPlay();
+            }
+          }
+          if (evt.type === 'play') {
+            // Once YouTube transitions to playing, safely fade in the container to hide initial black flashes or thumbnails
+            const activeFrame = document.getElementById('bfn-video-frame');
+            if (activeFrame) {
+              activeFrame.style.opacity = '1';
+            }
+          }
+          if (evt.type === 'end') {
+            this.fadeAndCloseBFN();
+          }
+        });
+      } catch (e) {
+        console.warn("Failed to init VideoPlayer, direct fallback will be used", e);
+      }
+    }
+
+  // Centered theatrical background video overlay frame starting completely transparent
+    buildBFNOverlay() {
+      if (document.getElementById('bfn-overlay')) return;
+
+      const overlay = makeElement('div', {
+        id: 'bfn-overlay',
+        style: {
+          position: 'fixed',
+          top: '0',
+          left: '0',
+          width: '100vw',
+          height: '100vh',
+          backgroundColor: 'rgba(5, 7, 18, 0.95)',
+          zIndex: '9990',
+          opacity: '0',
+          pointerEvents: 'none',
+          transition: 'opacity 0.8s cubic-bezier(0.25, 1, 0.5, 1)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden'
+        }
+      }, [
+        makeElement('button', {
+          className: 'bfn-close-btn',
+          onclick: () => this.fadeAndCloseBFN(),
+          style: {
+            position: 'absolute',
+            top: '24px',
+            right: '24px',
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#ffffff',
+            borderRadius: '50%',
+            width: '44px',
+            height: '44px',
+            cursor: 'pointer',
+            fontSize: '20px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: '10001',
+            transition: 'all 0.2s'
+          }
+        }, '✕'),
+        
+        makeElement('div', {
+          id: 'bfn-video-frame',
+          style: {
+            width: '85vw',
+            height: '47.8vw',
+            maxWidth: '1200px',
+            maxHeight: '675px',
+            borderRadius: '12px',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)',
+            overflow: 'hidden',
+            backgroundColor: '#000000',
+            transition: 'transform 0.8s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.8s ease-in-out',
+            transform: 'scale(0.9) translateY(20px)',
+            opacity: '0' // Start transparent to block initial thumbnail flashes
+          }
+        })
+      ]);
+
+      document.body.appendChild(overlay);
+    }
+
+  // Begins dramatic background drone playback, showing overlay first and deferring video frame opacity
+    startBFNPlayback() {
+      this.buildBFNOverlay();
+      this.preloadBFNPlayer();
+
+      const overlay = document.getElementById('bfn-overlay');
+      const videoFrame = document.getElementById('bfn-video-frame');
+      const consensusContainer = this.targetElement.querySelector('.consensus-container');
+
+      if (consensusContainer) {
+        consensusContainer.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        
+        setTimeout(() => {
+          consensusContainer.classList.add('bfn-highlighted');
+          document.body.classList.add('bfn-active');
+          
+          if (overlay) {
+            overlay.style.opacity = '1';
+            overlay.style.pointerEvents = 'auto';
+          }
+          if (videoFrame) {
+            videoFrame.style.transform = 'scale(1) translateY(0)';
+          }
+
+          if (this.bfnPlayer && this.bfnPlayer.isReady) {
+            this.executeBFNPlay();
+          } else {
+            this.playPending = true;
+            // Fallback safety timeout: if player ready event never triggers, run direct fallback in 1.2s
+            if (this.fallbackTriggerTimeout) clearTimeout(this.fallbackTriggerTimeout);
+            this.fallbackTriggerTimeout = setTimeout(() => {
+              if (this.playPending) {
+                this.playPending = false;
+                this.executeBFNPlay();
+              }
+            }, 1200);
+          }
+        }, 500);
+      }
+    }
+
+  // Smoothly closes the BFN theatrical overlay after fading the video frame out to avoid flash stutters
+    fadeAndCloseBFN() {
+      const overlay = document.getElementById('bfn-overlay');
+      const videoFrame = document.getElementById('bfn-video-frame');
+      const consensusContainer = this.targetElement.querySelector('.consensus-container');
+
+      if (overlay) {
+        overlay.style.opacity = '0';
+        overlay.style.pointerEvents = 'none';
+      }
+      if (videoFrame) {
+        videoFrame.style.opacity = '0'; // Immediately fade the frame out
+        videoFrame.style.transform = 'scale(0.9) translateY(20px)';
+      }
+
+      if (this.fallbackTimeout) {
+        clearTimeout(this.fallbackTimeout);
+      }
+
+      // Defer video state changes/pause commands until the frame is fully transparent to conceal closing artifacts
+      setTimeout(() => {
+        if (this.bfnPlayer) {
+          try {
+            this.bfnPlayer.pause();
+          } catch (e) {}
+        }
+        document.body.classList.remove('bfn-active');
+        if (consensusContainer) {
+          consensusContainer.classList.remove('bfn-highlighted');
+        }
+      }, 800);
+    }
+
+  // Handles the delayed presentation of the BFN CTA shortly after revealing the number
+    triggerBFNButtonDelay() {
+      this.showBFNButton = false;
+      this.preloadBFNPlayer();
+      setTimeout(() => {
+        this.showBFNButton = true;
+        this.renderApp();
+      }, 1200);
+    }
+
+  // Upgraded BFN Style configurations that isolate ONLY the 2.3B figure on top, fading everything else
+    applyBFNStyles() {
+      applyCss(`
+        .consensus-action-wrapper {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          width: 100%;
+        }
+        @media (min-width: 768px) {
+          .consensus-action-wrapper {
+            align-items: flex-end;
+          }
+        }
+
+        .visualize-bfn-btn {
+          margin-top: 10px;
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          background: linear-gradient(135deg, #f59e0b, #ef4444);
+          border: none;
+          color: #ffffff;
+          font-size: 11px;
+          font-weight: 800;
+          font-family: ui-monospace, monospace;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          padding: 8px 16px;
+          border-radius: 20px;
+          cursor: pointer;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+          transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
+          outline: none;
+        }
+        .visualize-bfn-btn:hover {
+          transform: translateY(-2px) scale(1.03);
+          box-shadow: 0 6px 18px rgba(239, 68, 68, 0.45);
+        }
+        .visualize-bfn-btn:active {
+          transform: translateY(0);
+        }
+        .play-pulse-icon {
+          font-size: 9px;
+          display: inline-block;
+          animation: bfnPlayPulse 1.5s infinite;
+        }
+        @keyframes bfnPlayPulse {
+          0% { transform: scale(1); opacity: 1; }
+          50% { transform: scale(1.3); opacity: 0.7; }
+          100% { transform: scale(1); opacity: 1; }
+        }
+
+        .bfn-close-btn:hover {
+          background: rgba(255, 255, 255, 0.2) !important;
+          transform: scale(1.05);
+        }
+
+        .animate-fade-in {
+          animation: bfnBtnFadeIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+        }
+        @keyframes bfnBtnFadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Elevate only the 2.3 Billion figure on top of everything, hiding consensus box styling */
+        body.bfn-active .consensus-container {
+          position: relative !important;
+          z-index: 10000 !important;
+          background: transparent !important;
+          border-color: transparent !important;
+          border: none !important;
+          box-shadow: none !important;
+          backdrop-filter: none !important;
+        }
+
+        body.bfn-active .consensus-info-pane {
+          opacity: 0 !important;
+          pointer-events: none !important;
+          transition: opacity 0.5s ease !important;
+        }
+
+        body.bfn-active .consensus-action-spacer {
+          opacity: 0 !important;
+          pointer-events: none !important;
+          transition: opacity 0.5s ease !important;
+        }
+
+        body.bfn-active .glowing-consensus-value {
+          position: relative !important;
+          z-index: 10001 !important;
+        }
+
+        body.bfn-active {
+          overflow: hidden !important;
+        }
+      `, 'bfn-styles');
+    }
+
+  // Execution routine that verifies iframe availability or runs custom fast embed fallback
+    executeBFNPlay() {
+      const videoFrame = document.getElementById('bfn-video-frame');
+      if (!videoFrame) return;
+
+      const hasIframe = videoFrame.querySelector('iframe');
+      
+      if (this.bfnPlayer && this.bfnPlayer.isReady && hasIframe) {
+        try {
+          this.bfnPlayer.seekTo(0);
+          this.bfnPlayer.unMute();
+          this.bfnPlayer.setVolume(80);
+          this.bfnPlayer.play();
+        } catch (e) {
+          console.warn("Playback error, triggering direct fallback", e);
+          this.useDirectIframeFallback(videoFrame);
+        }
+      } else {
+        this.useDirectIframeFallback(videoFrame);
+      }
+    }
+
+  // Safe direct iframe embed helper with smooth delayed fade-in to bypass YouTube load flashes
+    useDirectIframeFallback(videoFrame) {
+      videoFrame.innerHTML = '';
+      const iframe = makeElement('iframe', {
+        src: 'https://www.youtube.com/embed/ply26G4DdcM?autoplay=1&controls=0&start=0&end=22&enablejsapi=1&rel=0&showinfo=0',
+        style: {
+          width: '100%',
+          height: '100%',
+          border: 'none'
+        },
+        allow: 'autoplay; encrypted-media',
+        allowfullscreen: 'true'
+      });
+      videoFrame.appendChild(iframe);
+
+      // Smoothly fade in the iframe after 1.5 seconds, bypassing loading flicker
+      setTimeout(() => {
+        const activeFrame = document.getElementById('bfn-video-frame');
+        if (activeFrame) {
+          activeFrame.style.opacity = '1';
+        }
+      }, 1500);
+
+      if (this.fallbackTimeout) clearTimeout(this.fallbackTimeout);
+      this.fallbackTimeout = setTimeout(() => {
+        this.fadeAndCloseBFN();
+      }, 22000);
+    }
+
+  // Isolate context active theme variables
+    initializeTheme() {
+      document.body.classList.add('js-active');
+      this.currentTheme = localStorage.getItem('accudraw-valuation-theme') || 'light';
+    }
+
+  // Isolate CSS injection chains
+    loadAppStyles() {
+      this.applyBaseStyles();
+      this.applyHeaderThemeStyles();
+      this.applyBackstoryStoryStyles();
+      this.applyPromptCardStyles();
+      this.applyConsensusStyles();
+      this.applyDashboardGridStyles();
+      this.applySynthesisIntroStyles();
+      this.applyTranscriptsStyles();
+      this.applyHighlightAnimationStyles();
+      this.applyRevealCtaStyles();
+      this.applyBFNStyles();
+    }
+
+  // Proactively preload media files and caches
+    preloadResources() {
+      if (window.SnareDrumAnimation) {
+        try {
+          SnareDrumAnimation.preload('/LogoExperiments/drumroll.mp4');
+        } catch (e) {
+          console.warn("Drumroll preloading fallback:", e);
+        }
+      }
+      if (this.resultsRevealed) {
+        this.preloadBFNPlayer();
+      }
+    }
+
+  // Extracted light/dark mode header button render helper
+    buildThemeToggle() {
+      return makeElement('div', { className: 'theme-switcher' }, [
+        makeElement('button', {
+          className: this.currentTheme === 'light' ? 'active' : '',
+          onclick: () => this.setTheme('light')
+        }, [
+          makeElement('span', { innerHTML: '☀️' }),
+          makeElement('span', {}, 'Light')
+        ]),
+        makeElement('button', {
+          className: this.currentTheme === 'dark' ? 'active' : '',
+          onclick: () => this.setTheme('dark')
+        }, [
+          makeElement('span', { innerHTML: '🌙' }),
+          makeElement('span', {}, 'Dark')
+        ])
+      ]);
+    }
+
+  // Dynamic slider to adjust animation frequency on text highlights and value embers
+    buildMotionSlider() {
+      const slider = makeElement('input', {
+        type: 'range',
+        min: '0.1',
+        max: '3.0',
+        step: '0.1',
+        value: String(this.motionValue || 1.0),
+        className: 'motion-slider',
+        oninput: (e) => {
+          this.updateMotionValue(parseFloat(e.target.value));
+        }
+      });
+
+      return makeElement('div', { className: 'motion-slider-row' }, [
+        makeElement('span', { className: 'motion-slider-label' }, 'Motion'),
+        slider
+      ]);
+    }
+
+  // Dynamic motion values broadcaster to styles and active instances
+    updateMotionValue(val) {
+      this.motionValue = val;
+      localStorage.setItem('accudraw-motion-val', String(val));
+      
+      const container = this.targetElement.querySelector('.cad-container');
+      if (container) {
+        container.style.setProperty('--motion-scale', String(val));
+      }
+
+      if (this.valueEmberLogo) {
+        this.valueEmberLogo.options.emberCountMultiplier = 0.4 * val;
+        this.valueEmberLogo.options.emberSpeedMultiplier = 0.3 * val;
+        this.valueEmberLogo.options.emberSizeMultiplier = 0.4 * val;
+      }
+    }
+
+  // Keyboard listener to dynamically capture selected text and generate clipboard highlight syntax
+    setupKeyboardListeners() {
+      if (this._currentKeydownHandler) {
+        window.removeEventListener('keydown', this._currentKeydownHandler);
+      }
+
+      this._currentKeydownHandler = (e) => {
+        const activeEl = document.activeElement;
+        if (activeEl && (activeEl.tagName === 'INPUT' || activeEl.tagName === 'TEXTAREA' || activeEl.isContentEditable)) {
+          return;
+        }
+
+        if (e.key === 't' || e.key === 'T') {
+          const selection = window.getSelection();
+          const text = selection.toString().trim();
+          if (text) {
+            const config = this.generateHighlightConfig(text);
+            if (config) {
+              const codeString = `{\n  id: "${config.id}",\n  start: "${config.start}",\n  end: "${config.end}",\n  className: "slick-glow-highlight"\n},`;
+              navigator.clipboard.writeText(codeString).then(() => {
+                this.showToastMessage(`Copied highlight config for:\n"${config.start}"`);
+              }).catch(err => {
+                console.warn("Clipboard copy failed:", err);
+              });
+            }
+          }
+        }
+      };
+
+      window.addEventListener('keydown', this._currentKeydownHandler);
+    }
+
+  // Dynamic pattern generation for text selection bounds
+    generateHighlightConfig(text) {
+      if (!text) return null;
+      const words = text.split(/\s+/).filter(w => w.trim().length > 0);
+      if (words.length === 0) return null;
+
+      let start = text;
+      let end = text;
+
+      if (words.length > 3) {
+        start = words.slice(0, 2).join(' ');
+        end = words.slice(-2).join(' ');
+      }
+
+      start = start.replace(/["']/g, '').trim();
+      end = end.replace(/["']/g, '').trim();
+
+      const cleanId = words.slice(0, 3)
+        .join('_')
+        .toLowerCase()
+        .replace(/[^a-z0-9_]/g, '')
+        .substring(0, 20);
+
+      return {
+        id: `custom_${cleanId || 'highlight'}`,
+        start: start,
+        end: end
+      };
+    }
+
+  // Dynamic, sleek status toast reporter
+    showToastMessage(msg) {
+      const existing = document.getElementById('bfn-toast');
+      if (existing) existing.remove();
+
+      const toast = makeElement('div', {
+        id: 'bfn-toast',
+        style: {
+          position: 'fixed',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%) translateY(20px)',
+          background: '#0f172a',
+          border: '1px solid #3b82f6',
+          color: '#ffffff',
+          padding: '12px 24px',
+          borderRadius: '8px',
+          zIndex: '100000',
+          fontSize: '12px',
+          fontFamily: 'ui-monospace, monospace',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.5)',
+          transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+          opacity: '0',
+          pointerEvents: 'none',
+          whiteSpace: 'pre-line',
+          textAlign: 'center'
+        }
+      }, msg);
+
+      document.body.appendChild(toast);
+      
+      requestAnimationFrame(() => {
+        toast.style.opacity = '1';
+        toast.style.transform = 'translateX(-50%) translateY(0)';
+      });
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateX(-50%) translateY(20px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 2500);
     }
 }
