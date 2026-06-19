@@ -862,7 +862,7 @@ class AccuDrawValuation {
       ]);
     }
 
-  // 4. Updated buildMinimalHeader to update titles dynamically
+  // Update title/subtitle values when viewing AI & Vibe Coding
     buildMinimalHeader() {
       const revealModeSelect = makeElement('select', {
         className: 'reveal-mode-select',
@@ -895,7 +895,7 @@ class AccuDrawValuation {
         headerSubtitle = 'A professional proposal and technical timeline';
       } else if (this.currentView === 'ai-perspective') {
         headerTitle = 'AI & Vibe Coding Perspective';
-        headerSubtitle = 'The future of rapid visual prototyping and software automation';
+        headerSubtitle = 'The velocity of digital automation and transitional urgency';
       }
 
       return makeElement('header', { className: 'minimal-header' }, [
@@ -2711,7 +2711,7 @@ class AccuDrawValuation {
       this.currentTheme = localStorage.getItem('accudraw-valuation-theme') || 'light';
     }
 
-  // Isolate CSS injection chains
+  // Include the new CSS rules in loadAppStyles
     loadAppStyles() {
       this.applyBaseStyles();
       this.applyHeaderThemeStyles();
@@ -2725,6 +2725,7 @@ class AccuDrawValuation {
       this.applyRevealCtaStyles();
       this.applyBFNStyles();
       this.applyElderAdvocacyStyles();
+      this.applyAIPerspectiveStyles(); // New dedicated CSS injector
     }
 
   // Proactively preload media files and caches
@@ -2758,7 +2759,7 @@ class AccuDrawValuation {
       this.renderApp();
     }
 
-  // 4. Updated buildGlobalNavigation to display all five links transparently
+  // Move "AI & Vibe Coding" to the last slot in global nav
     buildGlobalNavigation(activeRoute) {
       return makeElement('div', { className: 'global-nav-bar' }, [
         makeElement('a', {
@@ -2778,14 +2779,6 @@ class AccuDrawValuation {
           }
         }, 'Executive Summary'),
         makeElement('a', {
-          href: '#/ai-perspective',
-          className: `global-nav-link ${activeRoute === 'ai-perspective' ? 'active' : ''}`,
-          onclick: (e) => {
-            e.preventDefault();
-            window.location.hash = '#/ai-perspective';
-          }
-        }, 'AI & Vibe Coding'),
-        makeElement('a', {
           href: '#/elder-advocacy',
           className: `global-nav-link ${activeRoute === 'elder-advocacy' ? 'active' : ''}`,
           onclick: (e) => {
@@ -2800,7 +2793,15 @@ class AccuDrawValuation {
             e.preventDefault();
             window.location.hash = '#/caretaker-bias';
           }
-        }, 'Caretaker Bias & LinkedIn Exhibits')
+        }, 'Caretaker Bias & LinkedIn Exhibits'),
+        makeElement('a', {
+          href: '#/ai-perspective',
+          className: `global-nav-link ${activeRoute === 'ai-perspective' ? 'active' : ''}`,
+          onclick: (e) => {
+            e.preventDefault();
+            window.location.hash = '#/ai-perspective';
+          }
+        }, 'AI & Vibe Coding')
       ]);
     }
 
@@ -3851,39 +3852,373 @@ class AccuDrawValuation {
       ]);
     }
 
-  // 7. New AI Perspective Content Builder
-    buildAIPerspectivePanel() {
-      return makeElement('section', { className: 'cad-panel space-y-6' }, [
-        makeElement('div', { className: 'dashboard-header-group mb-4' }, [
-          makeElement('h3', {}, 'AI & Visual Interface Perspective'),
-          makeElement('p', {}, 'An evaluation of the ongoing shift from traditional software coding to high-level system design and creative "Vibe Coding."')
-        ]),
+  buildAIPerspectivePanel() {
+      return makeElement('div', { className: 'ai-editorial-container' }, [
         
-        makeElement('div', { className: 'transcript-quote-box leading-relaxed text-sm text-[var(--text-primary)] space-y-6' }, [
-          makeElement('p', {}, [
-            makeElement('strong', {}, 'The Automation of Syntax: '),
-            'As generative AI models automate standard, repetitive software engineering tasks, the critical bottleneck in technology development is shifting. The ability to manually write code is becoming secondary to the ability to invent, architect, and visually design intuitive interactive interfaces.'
-          ]),
-          
-          makeElement('p', {}, [
-            makeElement('strong', {}, 'Vibe Coding & Interface Design: '),
-            'Vibe Coding represents a major paradigm shift where developers guide AI systems to assemble, test, and dynamically refine code in real-time. This eliminates standard software maintenance bottlenecks and allows a single developer to build and deploy complex visual systems rapidly.'
-          ]),
-
-          makeElement('div', { className: 'border-t border-[var(--border-color)] pt-6 space-y-4' }, [
-            makeElement('h4', { className: 'font-bold text-[var(--text-title)] uppercase tracking-wide text-xs', style: { fontFamily: 'ui-monospace, monospace' } }, 'Next-Generation CAD & Interactive Systems (recursi.dev)'),
-            makeElement('p', { className: 'text-[var(--text-secondary)]' }, 
-              'The recursi.dev platform is a live, browser-based, recursive self-improving development environment. Designed to combine the principles of visual precision (derived from AccuDraw concepts) with real-time browser rendering (Three.js/3D CAD structures), this system enables rapid, visual prototyping that can bypass standard coding pipelines.'
-            ),
-            makeElement('p', { className: 'text-[var(--text-secondary)]' }, 
-              'By utilizing AI to manage raw coding syntax while the creator focuses entirely on system design and interaction, this environment represents a highly lucrative opportunity in the evolving AI development landscape-demonstrating that the tools to build next-generation interfaces are already operational and ready for deployment.'
-            )
-          ]),
-
-          makeElement('p', { className: 'font-bold text-[var(--text-title)] border-t border-[var(--border-color)] pt-4' }, 'Conclusion'),
-          makeElement('p', { className: 'text-[var(--text-secondary)] italic' }, 
-            'The rapid acceleration of generative AI makes this the optimal window to launch intuitive, visually-driven interaction tools. Leveraging past experience in CAD input design to build modern, browser-based visual layout engines represents a timely and high-value professional pivot.'
+        // Introductory case summary with first-person context
+        makeElement('div', { className: 'backstory-gradient-card' }, [
+          makeElement('h3', { className: 'text-xl font-bold text-[var(--text-title)]' }, 'The Core Thesis: Automation Timing & Career Recovery'),
+          makeElement('p', { className: 'backstory-paragraph-highlight' }, 
+            "Over the past few years, I have held a very strong public position based on my direct technical experience: AI and Robotics are causing a fundamental, irreversible upheaval in human labor. This is why the timing is so absolutely critical."
+          ),
+          makeElement('p', { className: 'backstory-paragraph' }, 
+            "Below is a comprehensive essay outlining why these technologies will eventually take almost all jobs, and why those jobs will not be replaced by new ones. This reality is exactly why it is extremely important for me to quickly secure the stable runway needed to return to my professional element-inventing, architecting, and building visual interface environments before standard syntax coding is completely automated."
           )
+        ]),
+
+        // Main Essay Card
+        makeElement('article', { className: 'ai-essay-card' }, [
+          
+          makeElement('h1', { className: 'ai-essay-title' }, 'The Great Convergence: Why AI and Robotics Will Replace All Human Labor'),
+          
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "I believe we are on the cusp of an era where AI and Robotics will replace almost every single job. This is an incredibly difficult thing for many to accept because it challenges our fundamental assumptions about society-specifically, the link between work, income, and basic survival. The assumption that we must sell our labor to live makes the prospect of widespread automation feel like an immediate sentence of starvation, but that is a structural issue we must solve, not an indictment of the technology's capability."
+          ),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "A common bias is to look at your own profession and assert: 'AI won't replace my job because my role has these unique, highly complex challenges.' This is a dangerous defense mechanism. I believe it is smarter to step back, analyze the larger trajectory across multiple industries, and look honestly at the rate of improvement."
+          ),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "To visually demonstrate this speed, I focus here on graphics, film, special effects, and animation. I select this domain not because it is more complex than other jobs, but because it communicates visually. Having spent over 45 years in this field-obsessing over 35mm in-camera effects in the late 70s, learning traditional industrial rendering in the 80s, and later developing advanced 3D systems-I have a deep understanding of what it conventionally takes to build these visuals."
+          ),
+
+          // Section 1: The Intuition Shift
+          makeElement('div', { className: 'ai-section-break' }, [
+            makeElement('h2', { className: 'ai-section-heading' }, '1. The Paradigm Shift from Algorithms to "Intuition"')
+          ]),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "What we are seeing today is not 'computer graphics' in the conventional sense. This is not the result of humans writing complex rendering equations or hardcoding lighting rules. These are generative models that have emerged with the ability to look at millions of data points, figure seriously complex structures out, and execute them perfectly on their own."
+          ),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "We understand how these models learn and compose outputs about as well as we understand how the human brain does-which is to say, very little. But the outputs are undeniable."
+          ),
+
+          // Star Wars Showcase
+          this.buildNewAIMediaCard(
+            "Star Wars De-Aging & Character Generation",
+            "De-aging actors via conventional 3D graphics is incredibly hard, expensive, and almost always looks slightly wrong, landing in the 'uncanny valley.' Today, AI models do it without missing a beat, and you simply cannot tell.",
+            "/AIImages/star_wars_deaged.png",
+            "Luke, Leia, and Lando young again-perfectly realized without human artists spent on years of painstaking manual work. It is done for dirt cheap, and it is orders of magnitude better than it was a year ago. Every small glitch you see today will be gone tomorrow."
+          ),
+
+          // Pigeon Showcase
+          this.buildNewAIMediaCard(
+            "The 24-Hour Hobbyist Pigeon Animation",
+            "This short sequence was put together by a hobbyist in a single afternoon. To produce this conventionally, an animation instructor notes it would take a talented student an entire semester to a year of intense labor.",
+            "/AIImages/pigeon_animation.png",
+            "While a keen eye can count a couple of minor glitches-a slight foot error or background change-it is staggeringly good. This is computer 'intuition' bypassing years of conventional training and thousands of hours of manual frame rendering."
+          ),
+
+          // Section 2: Trajectory
+          makeElement('div', { className: 'ai-section-break' }, [
+            makeElement('h2', { className: 'ai-section-heading' }, '2. Mapping the Trajectory')
+          ]),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "The key is to map the exponential curve. Below is a simple experiment I ran using the exact same prompt across a 14-month window. The leap in capability in just over a year is staggering:"
+          ),
+
+          makeElement('div', { className: 'ai-dual-grid' }, [
+            this.buildAIImageFrame("/AIImages/trajectory_14m_left.png", "14 Months Ago: Fragmented details, low visual cohesion"),
+            this.buildAIImageFrame("/AIImages/trajectory_14m_right.png", "Today: Photorealistic lighting, perfect composition")
+          ]),
+
+          makeElement('p', { className: 'ai-essay-p', style: { marginTop: '24px' } }, 
+            "We went from abstract, barely usable outlines to professional-grade illustrations in a little over a year. Next came the ability to feed the model an existing image and modify it dynamically with perfect contextual awareness."
+          ),
+
+          // Car Reflections Showcase
+          this.buildNewAIMediaCard(
+            "Google's 'Nano Banana' Reflection Experiment",
+            "I ran an experiment taking a photo of a car with an ugly background, asking a free model to replace it. It did not just swap the background-it calculated and painted photorealistic reflections on the car's body matching the new environment.",
+            "/AIImages/car_reflections_nano.png",
+            "This requires a deep, structural understanding of materials, lighting, and shape. To achieve this in Photoshop or Blender would require hours of tedious manual masks and ray-tracing. The AI did it instantly. This is not a 'collage' of existing internet photos-this is true spatial comprehension."
+          ),
+
+          // House Line Drawing Showcase
+          this.buildNewAIMediaCard(
+            "Pretty Row of Houses Reconstructed as a Line Drawing",
+            "Starting with a single photo I took of a row of houses, the model was asked to redraw the scene as a clean line drawing from a completely different perspective angle.",
+            "/AIImages/houses_line_drawing.png",
+            "To do this, the model must understand the three-dimensional geometry of the buildings, translate the textures into line weight, and project the objects accurately from a new virtual camera path. It did so without a single human drawing a line."
+          ),
+
+          // Section 3: The Universal Threat
+          makeElement('div', { className: 'ai-section-break' }, [
+            makeElement('h2', { className: 'ai-section-heading' }, '3. Connecting the Dots Across All Fields')
+          ]),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "It is easy to dismiss this as 'silly pictures and video tools' and assume your white-collar, spreadsheet-heavy, or programming-related job is safe. But you must connect the dots. The people who conventionally do this graphical work are brilliant, highly technical creatives-and today, the machine does their job better, faster, and for free."
+          ),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "I see this shift even more acutely in computer programming. The machine's ability to generate, debug, and refactor complex system code is expanding at a rate that is already automating traditional software maintenance. While programming syntax does not communicate as easily as film and animation, it is absolutely leading the pack of AI capabilities."
+          ),
+
+          makeElement('p', { className: 'ai-essay-p' }, 
+            "The researchers building these models are paid enormous sums today, but they are fully aware that they are actively training the very systems that will soon render their own coding jobs obsolete. The idea that automation will simply create 170 million 'new' jobs is a comfortable myth; those new jobs will themselves be automated almost instantly."
+          ),
+
+          // Physical robotics integration showcase
+          this.buildNewAIMediaCard(
+            "The Leap in Physical Robotics",
+            "While AI manages the digital realm, physical robots are improving just as fast. They are moving out of research labs and into structured warehouses, factories, and manual labor roles, closing the gap between digital and physical tasks.",
+            "/AIImages/robotics_one_minute.png",
+            "A compilation of the state of the art in physical robotics. Once these systems are fully integrated with localized multimodal AI models, the economic incentive to utilize human physical labor will disappear entirely."
+          ),
+
+          // Final Paragraph
+          makeElement('p', { className: 'ai-essay-p', style: { marginTop: '40px', fontWeight: '600', borderTop: '1px solid var(--border-color)', paddingTop: '24px' } }, 
+            "We are heading toward a convergence where every economically valuable human task will be done better, faster, and far cheaper by machines. Rather than hoping it won't happen or railing against energy usage, we must plan for it. For me, that means securing the transition runway now-putting my core skills in visual systems and conceptual design to work immediately before the window of standard software development is fully closed."
+          )
+
+        ])
+      ]);
+    }
+
+  // Builder for visual AI media cards (supports fallback graphics neatly)
+    buildAIMediaCard(title, text, imgSrc, videoId, footerText) {
+      return makeElement('div', { className: 'border-t border-[var(--border-color)] pt-8 space-y-4' }, [
+        makeElement('h3', { className: 'text-lg font-bold text-[var(--text-title)]' }, title),
+        makeElement('p', { className: 'text-sm text-[var(--text-primary)] leading-relaxed' }, text),
+        makeElement('div', { className: 'exhibit-item-row bg-slate-950/40 p-4 rounded-lg' }, [
+          makeElement('div', { className: 'exhibit-image-wrapper' }, [
+            makeElement('img', {
+              src: imgSrc,
+              alt: title,
+              className: 'exhibit-image',
+              onerror: (e) => {
+                e.target.style.display = 'none';
+                const fb = e.target.parentNode.querySelector('.exhibit-image-fallback');
+                if (fb) fb.style.display = 'flex';
+              }
+            }),
+            makeElement('div', {
+              className: 'exhibit-image-fallback',
+              style: {
+                display: 'none',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'var(--bg-panel-inner)',
+                border: '1px dashed var(--border-color)',
+                borderRadius: '8px',
+                width: '100%',
+                height: '200px',
+                color: 'var(--text-secondary)',
+                fontSize: '11px',
+                fontFamily: 'ui-monospace, monospace',
+                padding: '16px',
+                textAlign: 'center'
+              }
+            }, [
+              makeElement('span', { style: { fontSize: '20px', marginBottom: '6px' } }, '🎬'),
+              makeElement('span', { className: 'font-bold' }, `Media Placeholder: ${title}`),
+              makeElement('span', { style: { fontSize: '9px', marginTop: '4px', opacity: 0.7 } }, `Place asset at ${imgSrc}`)
+            ])
+          ]),
+          makeElement('div', { className: 'exhibit-content-wrapper text-sm text-[var(--text-secondary)] italic leading-relaxed pt-2 md:pt-0 pl-0 md:pl-4' }, [
+            makeElement('span', { className: 'font-bold not-italic text-[var(--text-title)] block mb-1 text-[10px] uppercase tracking-wider text-blue-400' }, 'Narrative Perspective'),
+            footerText
+          ])
+        ])
+      ]);
+    }
+
+  // Builder for AI image frames (comparison blocks)
+    buildAIImageFrame(imgSrc, caption) {
+      return makeElement('div', { className: 'flex flex-col gap-2 p-3 bg-slate-900/40 border border-[var(--border-color)] rounded-lg' }, [
+        makeElement('img', {
+          src: imgSrc,
+          alt: caption,
+          className: 'exhibit-image w-full h-auto object-cover rounded',
+          onerror: (e) => {
+            e.target.style.display = 'none';
+            const fb = e.target.parentNode.querySelector('.exhibit-image-fallback');
+            if (fb) fb.style.display = 'flex';
+          }
+        }),
+        makeElement('div', {
+          className: 'exhibit-image-fallback',
+          style: {
+            display: 'none',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: 'var(--bg-panel-inner)',
+            border: '1px dashed var(--border-color)',
+            borderRadius: '8px',
+            width: '100%',
+            height: '140px',
+            color: 'var(--text-secondary)',
+            fontSize: '11px',
+            fontFamily: 'ui-monospace, monospace',
+            padding: '12px',
+            textAlign: 'center'
+          }
+        }, [
+          makeElement('span', { style: { fontSize: '18px', marginBottom: '4px' } }, '📷'),
+          makeElement('span', { className: 'font-bold text-xs' }, caption)
+        ]),
+        makeElement('span', { className: 'text-xs text-[var(--text-secondary)] text-center font-semibold' }, caption)
+      ]);
+    }
+
+  applyAIPerspectiveStyles() {
+      applyCss(`
+        .ai-editorial-container {
+          display: flex;
+          flex-direction: column;
+          gap: 40px;
+        }
+        .ai-essay-card {
+          padding: 40px !important;
+          background-color: var(--bg-panel) !important;
+          border: 1px solid var(--border-color) !important;
+          border-radius: 16px !important;
+        }
+        .ai-essay-title {
+          font-size: 28px !important;
+          font-weight: 800 !important;
+          color: var(--text-title);
+          letter-spacing: -0.02em;
+          line-height: 1.3;
+          margin-bottom: 24px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 16px;
+        }
+        @media (min-width: 768px) {
+          .ai-essay-title { font-size: 36px !important; }
+        }
+        .ai-essay-p {
+          font-size: 16px !important;
+          line-height: 1.8 !important;
+          color: var(--text-primary) !important;
+          margin-bottom: 24px !important;
+        }
+        .ai-section-break {
+          border-left: 4px solid #3b82f6;
+          padding-left: 20px;
+          margin: 48px 0 24px 0;
+        }
+        .ai-section-heading {
+          font-size: 20px !important;
+          font-weight: 800 !important;
+          color: var(--text-title) !important;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+          font-family: ui-monospace, monospace;
+        }
+        .ai-media-block {
+          background-color: var(--bg-panel-inner);
+          border: 1px solid var(--border-color);
+          border-radius: 12px;
+          padding: 28px;
+          margin-top: 32px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+        }
+        @media (min-width: 1024px) {
+          .ai-media-block {
+            flex-direction: row;
+            align-items: flex-start;
+          }
+        }
+        .ai-media-block-img-area {
+          width: 100%;
+          max-width: 100%;
+          flex-shrink: 0;
+        }
+        @media (min-width: 1024px) {
+          .ai-media-block-img-area {
+            width: 380px;
+          }
+        }
+        .ai-media-block-desc {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+        }
+        .ai-media-block-title {
+          font-size: 18px !important;
+          font-weight: 700 !important;
+          color: var(--text-title);
+        }
+        .ai-media-block-body {
+          font-size: 14.5px !important;
+          line-height: 1.7 !important;
+          color: var(--text-primary);
+        }
+        .ai-media-block-footer {
+          font-size: 13.5px !important;
+          line-height: 1.6 !important;
+          color: var(--text-secondary);
+          font-style: italic;
+          border-left: 2px solid #3b82f6;
+          padding-left: 14px;
+        }
+        .ai-dual-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 24px;
+          margin-top: 16px;
+        }
+        @media (min-width: 768px) {
+          .ai-dual-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+      `, 'ai-perspective-styles');
+    }
+
+  // High fidelity, beautifully spaced visual row builder
+    buildNewAIMediaCard(title, bodyText, imgSrc, footerText) {
+      return makeElement('div', { className: 'ai-media-block' }, [
+        makeElement('div', { className: 'ai-media-block-img-area' }, [
+          makeElement('img', {
+            src: imgSrc,
+            alt: title,
+            className: 'exhibit-image w-full h-auto object-cover rounded-lg border border-[var(--border-color)] shadow-md',
+            onerror: (e) => {
+              e.target.style.display = 'none';
+              const fb = e.target.parentNode.querySelector('.exhibit-image-fallback');
+              if (fb) fb.style.display = 'flex';
+            }
+          }),
+          makeElement('div', {
+            className: 'exhibit-image-fallback',
+            style: {
+              display: 'none',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--bg-panel-inner)',
+              border: '1px dashed var(--border-color)',
+              borderRadius: '8px',
+              width: '100%',
+              height: '180px',
+              color: 'var(--text-secondary)',
+              fontSize: '11px',
+              fontFamily: 'ui-monospace, monospace',
+              padding: '16px',
+              textAlign: 'center'
+            }
+          }, [
+            makeElement('span', { style: { fontSize: '24px', marginBottom: '8px' } }, '🖼️'),
+            makeElement('span', { className: 'font-bold text-xs text-[var(--text-title)]' }, title),
+            makeElement('span', { style: { fontSize: '9px', marginTop: '4px', opacity: 0.6 } }, `Asset: ${imgSrc}`)
+          ])
+        ]),
+        makeElement('div', { className: 'ai-media-block-desc' }, [
+          makeElement('h4', { className: 'ai-media-block-title' }, title),
+          makeElement('p', { className: 'ai-media-block-body' }, bodyText),
+          makeElement('p', { className: 'ai-media-block-footer' }, footerText)
         ])
       ]);
     }
