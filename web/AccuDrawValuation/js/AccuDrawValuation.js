@@ -250,7 +250,7 @@ class AccuDrawValuation {
       }
     }
 
-  // Refactored setup state initialization supporting three sub-views
+  // 1. Updated setupState to ensure all five pages are fully active and accessible
     setupState(data) {
       this.data = data;
       this.activeTab = 'all';
@@ -265,7 +265,17 @@ class AccuDrawValuation {
       this.motionValue = parseFloat(localStorage.getItem('accudraw-motion-val') || '1.0');
       
       const hash = window.location.hash;
-      this.currentView = hash === '#/elder-advocacy' ? 'elder-advocacy' : (hash === '#/caretaker-bias' ? 'caretaker-bias' : 'valuation');
+      if (hash === '#/elder-advocacy') {
+        this.currentView = 'elder-advocacy';
+      } else if (hash === '#/caretaker-bias') {
+        this.currentView = 'caretaker-bias';
+      } else if (hash === '#/overview') {
+        this.currentView = 'overview';
+      } else if (hash === '#/ai-perspective') {
+        this.currentView = 'ai-perspective';
+      } else {
+        this.currentView = 'valuation';
+      }
       this.expandedMessages = {};
     }
 
@@ -389,7 +399,7 @@ class AccuDrawValuation {
         });
     }
 
-  // Dynamic rendering router context mapping all views
+  // 3. Updated renderApp to route cleanly to all five views
     renderApp() {
       this.targetElement.innerHTML = "";
       
@@ -400,7 +410,13 @@ class AccuDrawValuation {
 
       const innerWrapper = makeElement("div", { className: "cad-wrapper" });
 
-      if (this.currentView === 'elder-advocacy') {
+      if (this.currentView === 'overview') {
+        innerWrapper.appendChild(this.buildMinimalHeader());
+        innerWrapper.appendChild(this.buildProfessionalOverview());
+      } else if (this.currentView === 'ai-perspective') {
+        innerWrapper.appendChild(this.buildMinimalHeader());
+        innerWrapper.appendChild(this.buildAIPerspectivePanel());
+      } else if (this.currentView === 'elder-advocacy') {
         innerWrapper.appendChild(this.buildElderHeader());
         innerWrapper.appendChild(this.buildElderIntroBlock());
         innerWrapper.appendChild(this.buildGeminiLegalPanel());
@@ -786,56 +802,67 @@ class AccuDrawValuation {
       ]);
     }
 
-  // Upgraded Consensus block builder that allocates a stable structural action spacer below the digits
-    // and keeps the left information panel isolated so that width changes and button fades cause zero layout movement.
+  // Surgically restore the consensus action block containing the BFN visualizer CTA button
     buildConsensusBlock() {
-      const wrongSequence = ['$2.3 Million', '$23 Million', '$230 Million'];
-      const finalValue = '$2.3 Billion';
-      
+      const wrongSequence = ["$2.3 Million", "$23 Million", "$230 Million"];
+      const finalValue = "$2.3 Billion";
+
       const stage = this.wrongAnswerStage || 0;
-      const isWrongState = this.revealMode === 'wrong-answers' && stage < wrongSequence.length;
-      
+      const isWrongState = this.revealMode === "wrong-answers" && stage < wrongSequence.length;
+
       const displayValue = isWrongState ? wrongSequence[stage] : finalValue;
       const isWrongOrCalc = isWrongState || this.isCalculating;
-      const valueClassName = `glowing-consensus-value${isWrongOrCalc ? ' is-wrong' : ''}`;
+      const valueClassName = `glowing-consensus-value${isWrongOrCalc ? " is-wrong" : ""}`;
 
       const figureChildren = [
-        makeElement('div', { className: valueClassName }, this.isCalculating ? 'Calculating...' : displayValue)
+        makeElement("div", { className: valueClassName }, this.isCalculating ? "Calculating..." : displayValue)
       ];
 
       // Action node structurally rendered inside the stable spacer
       let actionNode;
       if (isWrongState) {
         const isBtnActive = this.showRecalculateButton && !this.isCalculating;
-        actionNode = makeElement('button', {
-          className: `recalculate-btn ${isBtnActive ? 'is-visible' : 'is-hidden'}`,
+        actionNode = makeElement("button", {
+          className: `recalculate-btn ${isBtnActive ? "is-visible" : "is-hidden"}`,
           onclick: () => this.advanceWrongAnswer()
         }, [
-          makeElement('span', { className: 'recalculate-icon' }, '✕'),
-          makeElement('span', {}, 'Incorrect answer - Recalculate')
+          makeElement("span", { className: "recalculate-icon" }, "✕"),
+          makeElement("span", {}, "Incorrect answer - Recalculate")
         ]);
       } else {
-        const subtextText = this.justCorrected ? '✓ Correct answer' : 'Consensus Contributed Midpoint';
-        const subtextClass = `consensus-figure-subtext${this.justCorrected ? ' flash-correct' : ''}`;
-        actionNode = makeElement('span', { className: subtextClass }, subtextText);
+        const subtextText = this.justCorrected ? "✓ Correct answer" : "Consensus Contributed Midpoint";
+        const subtextClass = `consensus-figure-subtext${this.justCorrected ? " flash-correct" : ""}`;
+        
+        const bfnBtn = this.showBFNButton ? makeElement("button", {
+          className: "visualize-bfn-btn animate-fade-in",
+          onclick: () => this.startBFNPlayback()
+        }, [
+          makeElement("span", { className: "play-pulse-icon" }, "▶"),
+          makeElement("span", {}, "Visualize the B.F.N.")
+        ]) : null;
+
+        actionNode = makeElement("div", { className: "consensus-action-wrapper" }, [
+          makeElement("span", { className: subtextClass }, subtextText),
+          bfnBtn
+        ]);
       }
 
       // Stable structural spacer that occupies space at all times to prevent height shifting
-      figureChildren.push(makeElement('div', { className: 'consensus-action-spacer' }, actionNode));
+      figureChildren.push(makeElement("div", { className: "consensus-action-spacer" }, actionNode));
 
-      return makeElement('div', { className: 'consensus-container' }, [
-        makeElement('div', { className: 'consensus-info-pane' }, [
-          makeElement('span', { className: 'consensus-badge' }, 'Consensus Composite Estimate'),
-          makeElement('h2', { className: 'consensus-headline' }, 'The Consolidated Valuation Footprint'),
-          makeElement('p', { className: 'consensus-description' }, 
-            'By calculating the midpoint of each AI model\'s calculated range (Claude, Gemini, ChatGPT, and Grok), we arrive at a unified composite average of Bentley Systems enterprise valuation directly tied to the AccuDraw and SmartLine IP.'
+      return makeElement("div", { className: "consensus-container" }, [
+        makeElement("div", { className: "consensus-info-pane" }, [
+          makeElement("span", { className: "consensus-badge" }, "Consensus Composite Estimate"),
+          makeElement("h2", { className: "consensus-headline" }, "The Consolidated Valuation Footprint"),
+          makeElement("p", { className: "consensus-description" }, 
+            "By calculating the midpoint of each AI model's calculated range (Claude, Gemini, ChatGPT, and Grok), we arrive at a unified composite average of Bentley Systems enterprise valuation directly tied to the AccuDraw and SmartLine IP."
           )
         ]),
-        makeElement('div', { className: 'consensus-figure-pane' }, figureChildren)
+        makeElement("div", { className: "consensus-figure-pane" }, figureChildren)
       ]);
     }
 
-  // Refactored minimal header mapping the active navigation tabs and the motion slider
+  // 4. Updated buildMinimalHeader to update titles dynamically
     buildMinimalHeader() {
       const revealModeSelect = makeElement('select', {
         className: 'reveal-mode-select',
@@ -860,6 +887,17 @@ class AccuDrawValuation {
         this.buildMotionSlider()
       ]);
 
+      let headerTitle = 'AccuDraw & SmartLine Value Assessment';
+      let headerSubtitle = 'A comparative analysis of enterprise value contribution';
+
+      if (this.currentView === 'overview') {
+        headerTitle = 'Executive Summary & Overview';
+        headerSubtitle = 'A professional proposal and technical timeline';
+      } else if (this.currentView === 'ai-perspective') {
+        headerTitle = 'AI & Vibe Coding Perspective';
+        headerSubtitle = 'The future of rapid visual prototyping and software automation';
+      }
+
       return makeElement('header', { className: 'minimal-header' }, [
         makeElement('div', { className: 'header-top' }, [
           makeElement('div', { className: 'tags-wrapper' }, [
@@ -870,10 +908,10 @@ class AccuDrawValuation {
         ]),
         
         makeElement('div', { className: 'title-group' }, [
-          makeElement('h1', {}, 'AccuDraw & SmartLine Value Assessment'),
-          makeElement('p', { className: 'title-subtitle' }, 'A comparative analysis of enterprise value contribution')
+          makeElement('h1', {}, headerTitle),
+          makeElement('p', { className: 'title-subtitle' }, headerSubtitle)
         ]),
-        this.buildGlobalNavigation('valuation')
+        this.buildGlobalNavigation(this.currentView)
       ]);
     }
 
@@ -2703,20 +2741,24 @@ class AccuDrawValuation {
       }
     }
 
-  // Hash route state update processor for all three distinct views
+  // 2. Updated handleRoute to route to all five views cleanly
     handleRoute() {
       const hash = window.location.hash;
       if (hash === '#/elder-advocacy') {
         this.currentView = 'elder-advocacy';
       } else if (hash === '#/caretaker-bias') {
         this.currentView = 'caretaker-bias';
+      } else if (hash === '#/overview') {
+        this.currentView = 'overview';
+      } else if (hash === '#/ai-perspective') {
+        this.currentView = 'ai-perspective';
       } else {
         this.currentView = 'valuation';
       }
       this.renderApp();
     }
 
-  // Unified global navigation header widget connecting all three core page sections
+  // 4. Updated buildGlobalNavigation to display all five links transparently
     buildGlobalNavigation(activeRoute) {
       return makeElement('div', { className: 'global-nav-bar' }, [
         makeElement('a', {
@@ -2727,6 +2769,22 @@ class AccuDrawValuation {
             window.location.hash = '#/value-assessment';
           }
         }, 'Valuation Assessment'),
+        makeElement('a', {
+          href: '#/overview',
+          className: `global-nav-link ${activeRoute === 'overview' ? 'active' : ''}`,
+          onclick: (e) => {
+            e.preventDefault();
+            window.location.hash = '#/overview';
+          }
+        }, 'Executive Summary'),
+        makeElement('a', {
+          href: '#/ai-perspective',
+          className: `global-nav-link ${activeRoute === 'ai-perspective' ? 'active' : ''}`,
+          onclick: (e) => {
+            e.preventDefault();
+            window.location.hash = '#/ai-perspective';
+          }
+        }, 'AI & Vibe Coding'),
         makeElement('a', {
           href: '#/elder-advocacy',
           className: `global-nav-link ${activeRoute === 'elder-advocacy' ? 'active' : ''}`,
@@ -3706,5 +3764,127 @@ class AccuDrawValuation {
         this.showBFNButton = true;
         this.renderApp();
       }, 1200);
+    }
+
+  buildProfessionalOverview() {
+      // Create the introductory block displaying the core thesis and the life preserver analogy
+      const headerCard = makeElement('div', { className: 'backstory-gradient-card' }, [
+        makeElement('h3', { className: 'text-xl font-bold text-[var(--text-title)]' }, 'Fiduciary Impasse & Restorative Runway Proposal'),
+        makeElement('p', { className: 'backstory-paragraph-highlight' }, 
+          'A clear summary of the current financial transition structure, outlining why the existing family trust arrangements are mathematically unworkable and how a targeted, front-loaded runway provides a logical path to complete self-sufficiency.'
+        ),
+        makeElement('div', { className: 'p-4 rounded-lg bg-blue-950/20 border border-blue-500/20 mt-4' }, [
+          makeElement('span', { className: 'font-bold text-[var(--text-title)] block text-xs uppercase tracking-wider mb-2' }, '⚓ The Life Preserver Analogy'),
+          makeElement('p', { className: 'text-sm text-[var(--text-primary)] italic leading-relaxed' }, 
+            '"I was drowning, and I was thrown a life preserver. That life preserver keeps me from going under immediately - for which I am grateful - but it does not take me anywhere. What I actually need is to be taken to that boat heading toward shore - my actual career and skills. Instead, I am expected to cling to this preserver indefinitely, guaranteeing eventual failure through debt, aging, or exhaustion."'
+          )
+        ])
+      ]);
+
+      // Systematic breakdown of the core structured concerns
+      const concerns = [
+        {
+          num: '1',
+          title: 'A Trust Signed Under Practical Duress',
+          desc: 'The current trust arrangement was not negotiated or designed with mutual consultation. It was presented as a fait accompli during a severe financial, housing, and mental health crisis. Declining would have meant immediate homelessness, leaving no practical alternative but to sign.'
+        },
+        {
+          num: '2',
+          title: 'Structural Impossibility of Long-Term Solvency',
+          desc: 'The mathematical reality of the proposed plan (taking low-paying, unrelated work) guarantees failure. It provides no path to cover debt, no ability to build retirement savings, and leaves no cushion against aging or illness, while causing me to entirely miss the current, highly time-sensitive generative AI wave.'
+        },
+        {
+          num: '3',
+          title: 'Explicit Refusal to Acknowledge Professional Value',
+          desc: 'The administrator has explicitly stated that my professional skills, career achievements, and earning potential are irrelevant to how support is structured. This stands in direct contrast to a career history of building products that generated hundreds of millions in value, and a past professional recommendation that helped build a $15B enterprise.'
+        },
+        {
+          num: '4',
+          title: 'Ideological Framing Over Practical Outcomes',
+          desc: 'The structure of the support is heavily influenced by an individualistic ideology that treats financial setback as a moral failure and views restorative support as an improper "handout." This produces a punitive environment that sustains survival but actively blocks professional recovery.'
+        },
+        {
+          num: '5',
+          title: 'Inconsistencies and Lack of Transparency',
+          desc: 'I was told that early financial modifications were impossible due to trust limitations and estate risks, and was denied financial transparency under the guise of privacy. Yet, when proposing to pay back the estate from future lucrative ventures, I was told nobody wanted the money back because everyone else is already wealthy.'
+        },
+        {
+          num: '6',
+          title: 'A Profound Lack of Empathy & Hostile Comments',
+          desc: 'Expressing vulnerability regarding family isolation was met with the dismissive comment that "at 61 years old, you shouldn\'t need family approval." This lack of empathy comes from an administrator who has not faced similar hardships and has previously used hostile verbal and physical intimidation (the late 2022 gun threat) to assert control.'
+        }
+      ];
+
+      const concernsContainer = makeElement('div', { className: 'elder-analysis-grid' }, 
+        concerns.map(c => {
+          return makeElement('div', { className: 'elder-analysis-card' }, [
+            makeElement('div', { className: 'flex justify-between items-center mb-3' }, [
+              makeElement('span', { className: 'elder-card-badge' }, `Concern #${c.num}`)
+            ]),
+            makeElement('h4', { className: 'text-base font-bold text-[var(--text-title)] mb-2' }, c.title),
+            makeElement('p', { className: 'text-sm text-[var(--text-secondary)] leading-relaxed' }, c.desc)
+          ]);
+        })
+      );
+
+      // What is being asked for
+      const requestBlock = makeElement('div', { className: 'transcript-quote-box leading-relaxed text-sm text-[var(--text-primary)] space-y-4' }, [
+        makeElement('h4', { className: 'font-bold text-[var(--text-title)] text-base border-b border-[var(--border-color)] pb-2 uppercase tracking-wider' }, 'The Restorative Alternative: A Strategic Runway'),
+        makeElement('p', {}, 'I am not asking for venture capital, indefinite support, or a way to avoid responsibility. I am asking for a short, front-loaded runway that acknowledges:'),
+        makeElement('ul', { className: 'list-disc pl-5 space-y-2 text-[var(--text-secondary)]' }, [
+          makeElement('li', {}, [makeElement('strong', {}, 'My Actual Skills: '), 'Leveraging world-class, documented experience in CAD input and DOM interaction tools to build high-leverage modern development tools.']),
+          makeElement('li', {}, [makeElement('strong', {}, 'The Timing Window: '), 'Recognizing that missing the current generative AI wave is a permanent loss of strategic opportunity.']),
+          makeElement('li', {}, [makeElement('strong', {}, 'Realism and Math: '), 'Accepting that the current plan ensures slow, mathematical insolvency, while a targeted runway offers a genuine path to recovery and long-term self-sufficiency.'])
+        ]),
+        makeElement('p', { className: 'text-xs text-[var(--text-secondary)] italic border-t border-[var(--border-color)] pt-3 mt-4' }, 
+          'Conclusion: The trust provides short-term survival while systematically foreclosing long-term viability. This petition is not about pride-it is about math, timing, and realism.'
+        )
+      ]);
+
+      return makeElement('div', { className: 'space-y-8' }, [
+        headerCard,
+        makeElement('section', { className: 'cad-panel space-y-6' }, [
+          makeElement('h2', { className: 'text-xl font-bold text-[var(--text-title)] uppercase tracking-wide', style: { fontFamily: 'ui-monospace, monospace' } }, 'Trust Arrangements & Systemic Roadblocks'),
+          concernsContainer
+        ]),
+        requestBlock
+      ]);
+    }
+
+  // 7. New AI Perspective Content Builder
+    buildAIPerspectivePanel() {
+      return makeElement('section', { className: 'cad-panel space-y-6' }, [
+        makeElement('div', { className: 'dashboard-header-group mb-4' }, [
+          makeElement('h3', {}, 'AI & Visual Interface Perspective'),
+          makeElement('p', {}, 'An evaluation of the ongoing shift from traditional software coding to high-level system design and creative "Vibe Coding."')
+        ]),
+        
+        makeElement('div', { className: 'transcript-quote-box leading-relaxed text-sm text-[var(--text-primary)] space-y-6' }, [
+          makeElement('p', {}, [
+            makeElement('strong', {}, 'The Automation of Syntax: '),
+            'As generative AI models automate standard, repetitive software engineering tasks, the critical bottleneck in technology development is shifting. The ability to manually write code is becoming secondary to the ability to invent, architect, and visually design intuitive interactive interfaces.'
+          ]),
+          
+          makeElement('p', {}, [
+            makeElement('strong', {}, 'Vibe Coding & Interface Design: '),
+            'Vibe Coding represents a major paradigm shift where developers guide AI systems to assemble, test, and dynamically refine code in real-time. This eliminates standard software maintenance bottlenecks and allows a single developer to build and deploy complex visual systems rapidly.'
+          ]),
+
+          makeElement('div', { className: 'border-t border-[var(--border-color)] pt-6 space-y-4' }, [
+            makeElement('h4', { className: 'font-bold text-[var(--text-title)] uppercase tracking-wide text-xs', style: { fontFamily: 'ui-monospace, monospace' } }, 'Next-Generation CAD & Interactive Systems (recursi.dev)'),
+            makeElement('p', { className: 'text-[var(--text-secondary)]' }, 
+              'The recursi.dev platform is a live, browser-based, recursive self-improving development environment. Designed to combine the principles of visual precision (derived from AccuDraw concepts) with real-time browser rendering (Three.js/3D CAD structures), this system enables rapid, visual prototyping that can bypass standard coding pipelines.'
+            ),
+            makeElement('p', { className: 'text-[var(--text-secondary)]' }, 
+              'By utilizing AI to manage raw coding syntax while the creator focuses entirely on system design and interaction, this environment represents a highly lucrative opportunity in the evolving AI development landscape-demonstrating that the tools to build next-generation interfaces are already operational and ready for deployment.'
+            )
+          ]),
+
+          makeElement('p', { className: 'font-bold text-[var(--text-title)] border-t border-[var(--border-color)] pt-4' }, 'Conclusion'),
+          makeElement('p', { className: 'text-[var(--text-secondary)] italic' }, 
+            'The rapid acceleration of generative AI makes this the optimal window to launch intuitive, visually-driven interaction tools. Leveraging past experience in CAD input design to build modern, browser-based visual layout engines represents a timely and high-value professional pivot.'
+          )
+        ])
+      ]);
     }
 }
