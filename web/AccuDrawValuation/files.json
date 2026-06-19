@@ -5,7 +5,13 @@
   ],
   "local": [
     "/LogoExperiments/js/SnareDrumAnimation.js",
-        "js/ValueEmberLogo.js"
+    "js/AiPerspectivePage.js",
+    "js/CaretakerBiasPage.js",
+    "js/CurrentWorkPage.js",
+    "js/ElderAdvocacyPage.js",
+    "js/OverviewPage.js",
+    "js/ValuationPage.js",
+    "js/ValueEmberLogo.js"
   ],
   "library": [
     "UITools.js",
