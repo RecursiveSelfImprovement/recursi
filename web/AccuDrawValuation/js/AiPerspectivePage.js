@@ -199,13 +199,15 @@ class AiPerspectivePage {
       ]);
     }
 
+    // Builder for visual AI media cards (supports fallback graphics neatly)
     buildNewAIMediaCard(title, bodyText, imgSrc, footerText) {
       return makeElement("div", { className: "ai-media-block" }, [
         makeElement("div", { className: "ai-media-block-img-area" }, [
           makeElement("img", {
             src: imgSrc,
             alt: title,
-            className: "exhibit-image w-full h-auto object-cover rounded-lg border border-[var(--border-color)] shadow-md",
+            className: "exhibit-image w-full h-auto object-cover rounded-lg border border-[var(--border-color)] shadow-md cursor-pointer",
+            onclick: () => this.openMediaModal('image', imgSrc, title, { subtitle: footerText }),
             onerror: (e) => {
               e.target.style.display = "none";
               const fb = e.target.parentNode.querySelector(".exhibit-image-fallback");
@@ -244,12 +246,14 @@ class AiPerspectivePage {
       ]);
     }
 
+    // Builder for AI image frames (comparison blocks)
     buildAIImageFrame(imgSrc, caption) {
       return makeElement("div", { className: "flex flex-col gap-2 p-3 bg-slate-900/40 border border-[var(--border-color)] rounded-lg" }, [
         makeElement("img", {
           src: imgSrc,
           alt: caption,
-          className: "exhibit-image w-full h-auto object-cover rounded",
+          className: "exhibit-image w-full h-auto object-cover rounded cursor-pointer",
+          onclick: () => this.openMediaModal('image', imgSrc, caption, { subtitle: caption }),
           onerror: (e) => {
             e.target.style.display = "none";
             const fb = e.target.parentNode.querySelector(".exhibit-image-fallback");
@@ -707,7 +711,8 @@ class AiPerspectivePage {
       ]);
     }
 
-  buildQuoraEssayContent() {
+  // Content assembler containing natural, streamlined trajectory commentary
+    buildQuoraEssayContent() {
       const stream = makeElement('div', { className: 'quora-essay-stream' });
 
       // First Quora paragraph
@@ -763,17 +768,17 @@ class AiPerspectivePage {
         'Staggering visual fidelity put together in a single afternoon (just a few hours) by a hobbyist. Click to expand full width.'
       ));
 
-      // Section 3: Trajectory DALL-E 2 vs DALL-E 3
+      // Section 3: Trajectory DALL-E 2 vs DALL-E 3 (Consolidated & Streamlined)
       stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '3. Mapping the Exponential Curve'));
       stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Let's talk about trajectory a bit, while sticking with the graphical side of AI. Below are images I prompted across a 14-month window. You can see the difference between the 2022 images and the 2023 images, using the exact same prompts, same product, just a newer version."
+        "Let's look at the rapid evolutionary trajectory. Below are two side-by-side prompt comparisons across a 14-month window. The prompts are identical, but the leap in rendering quality and coherence is staggering."
       ));
 
       // DALL-E grid
       stream.appendChild(this.buildDallEComparisonGrid());
 
       stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "The 2022 images represent Point A: abstract, fragmented outputs of 'glass sculpture of a dog', 'winged unicorn dog in the rain', and 'robot hand with wood and green soft material'. They are interesting, but barely usable. The 2023 images represent Point B: professional-grade outputs showing a 'cyborg girl with a ragged sweater playing an electronic piano' and a 'ceramic elephant sculpture'. Look at the improvement in such a short period."
+        "Comparing the older images with the newer ones makes the vertical rate of improvement undeniably clear. It highlights the shift from abstract, fragmented shapes to professional-grade compositions in a little over a year."
       ));
 
       stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
@@ -824,7 +829,6 @@ class AiPerspectivePage {
         "You may say 'this is just silly pictures and video stuff, not nearly as complex as what I do at my job.' But you also know deep down, that the people who work on this stuff (film, animation, 3d graphics and effects, architectural rendering... prior to AI getting involved) are really smart, really talented... and here they are just looking at it and saying 'oh shit... it just does my job better than I ever could do it. For free or nearly so.'"
       ));
 
-      // Bold and italic formatting request applied directly via HTML tags as requested
       const pClearWrapper = makeElement('p', { className: 'quora-paragraph' });
       pClearWrapper.innerHTML = "I have no doubt that hurts. <strong><em>And to be clear, I am in no way arguing that this is all positive.</em></strong>";
       stream.appendChild(pClearWrapper);
@@ -922,10 +926,19 @@ class AiPerspectivePage {
       ]);
     }
 
-  buildDallEComparisonGrid() {
+  // Builder for side-by-side prompt trajectory comparisons with concise, natural labels
+    buildDallEComparisonGrid() {
       return makeElement('div', { className: 'quora-dalle-grid' }, [
-        this.buildImageCard('/images/compareDallE_1.webp', '2022 Prompts (Point A)', 'Point A: glass sculpture of a dog, winged unicorn dog in the rain, robot hand with wood and green soft material'),
-        this.buildImageCard('/images/compareDallE_2.webp', '2023 Prompts (Point B)', 'Point B: cyborg girl with ragged sweater playing an electronic piano, ceramic elephant sculpture')
+        this.buildImageCard(
+          '/images/compareDallE_1.webp', 
+          'Prompt Comparisons: Group A', 
+          'Group A prompts (glass dog, winged unicorn dog, robot hand). Left column shows mid-2022 outputs; right column shows late-2023 outputs. Prompt example: "A hollow glass sculpture of a tricolor border collie with internal optical refractions, on a cobblestone street at twilight."'
+        ),
+        this.buildImageCard(
+          '/images/compareDallE_2.webp', 
+          'Prompt Comparisons: Group B', 
+          'Group B prompts (cyborg pianist, ceramic elephant). Left column shows mid-2022 outputs; right column shows late-2023 outputs. Prompt example: "A detailed cyborg girl with synthetic skin panels playing an electronic piano in a futuristic cyberpunk environment."'
+        )
       ]);
     }
 
@@ -937,69 +950,273 @@ class AiPerspectivePage {
       ]);
     }
 
-  openMediaModal(type, source, title, options = {}) {
+  // Main media modal controller with click-to-zoom, drag-to-pan, click-off closer, and isolated bubbling
+    openMediaModal(type, source, title, options = {}) {
       const existing = document.getElementById('ai-media-modal');
       if (existing) existing.remove();
 
+      let isFullRes = false;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let scrollLeft = 0;
+      let scrollTop = 0;
+      let dragThresholdMet = false;
+
       const modal = makeElement('div', {
         id: 'ai-media-modal',
-        className: 'ai-lightbox-overlay',
-        onclick: (e) => {
-          if (e.target.id === 'ai-media-modal') {
+        style: {
+          position: 'fixed',
+          inset: '0',
+          zIndex: '100002',
+          background: 'rgba(2, 2, 4, 0.98)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          transition: 'opacity 0.25s ease',
+          opacity: '0',
+          width: '100vw',
+          height: '100vh',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
+        },
+        onclick: () => this.closeMediaModal()
+      });
+
+      const topBar = makeElement('div', {
+        style: {
+          width: '100%',
+          boxSizing: 'border-box',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 24px',
+          background: 'rgba(10, 10, 15, 0.95)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          zIndex: '30'
+        }
+      }, [
+        makeElement('span', {
+          style: {
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            fontFamily: 'ui-monospace, monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }
+        }, title),
+        makeElement('button', {
+          style: {
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#ffffff',
+            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            marginRight: '8px'
+          },
+          onclick: (e) => {
+            e.stopPropagation();
             this.closeMediaModal();
           }
+        }, '✕')
+      ]);
+
+      const badge = makeElement('div', {
+        style: {
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(15, 23, 42, 0.9)',
+          color: '#3b82f6',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: '20px',
+          padding: '6px 16px',
+          fontSize: '11px',
+          fontFamily: 'ui-monospace, monospace',
+          pointerEvents: 'none',
+          zIndex: '30',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }
+      }, 'Click image for Full Resolution');
+
+      const contentContainer = makeElement('div', { 
+        style: {
+          flex: '1',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'auto',
+          position: 'relative',
+          padding: '12px',
+          background: '#010103',
+          cursor: 'zoom-in',
+          userSelect: 'none'
         }
       });
 
-      const closeBtn = makeElement('button', {
-        className: 'ai-lightbox-close',
-        onclick: () => this.closeMediaModal()
-      }, '✕');
+      // Implement mouse drag to pan on the container directly
+      contentContainer.onmousedown = (e) => {
+        if (!isFullRes) return;
+        isDragging = true;
+        dragThresholdMet = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        scrollLeft = contentContainer.scrollLeft;
+        scrollTop = contentContainer.scrollTop;
+        contentContainer.style.cursor = 'grabbing';
+      };
 
-      const contentContainer = makeElement('div', { className: 'ai-lightbox-content' });
+      contentContainer.onmousemove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          dragThresholdMet = true;
+        }
+        contentContainer.scrollLeft = scrollLeft - dx;
+        contentContainer.scrollTop = scrollTop - dy;
+      };
+
+      contentContainer.onmouseup = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
+      };
+
+      contentContainer.onmouseleave = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
+      };
 
       if (type === 'image') {
         const img = makeElement('img', {
           src: source,
           alt: title,
-          className: 'ai-lightbox-img'
+          style: {
+            width: '100%',
+            height: '100%',
+            maxWidth: '100%',
+            maxHeight: '100%',
+            objectFit: 'contain',
+            borderRadius: '4px',
+            pointerEvents: 'auto', // Re-enable pointer events to distinguish off-image clicks
+            display: 'block'
+          }
         });
+
+        // Toggle Zoom and Resolution using click event on the viewport
+        contentContainer.onclick = (e) => {
+          e.stopPropagation(); // Stop click bubbling up to the outer modal
+
+          // If the action was dragging, ignore toggle Zoom
+          if (dragThresholdMet) {
+            dragThresholdMet = false;
+            return;
+          }
+
+          // If click was on the empty background (not on the image), close the modal entirely!
+          if (e.target === contentContainer) {
+            this.closeMediaModal();
+            return;
+          }
+
+          isFullRes = !isFullRes;
+          if (isFullRes) {
+            contentContainer.style.display = 'block';
+            img.style.width = 'auto';
+            img.style.height = 'auto';
+            img.style.maxWidth = 'none';
+            img.style.maxHeight = 'none';
+            img.style.objectFit = 'none';
+            img.style.margin = '0 auto';
+            contentContainer.style.cursor = 'zoom-out';
+            badge.textContent = 'Click image to fit screen (Drag to pan)';
+          } else {
+            contentContainer.style.display = 'flex';
+            img.style.width = '100%';
+            img.style.height = '100%';
+            img.style.maxWidth = '100%';
+            img.style.maxHeight = '100%';
+            img.style.objectFit = 'contain';
+            img.style.margin = '0';
+            contentContainer.style.cursor = 'zoom-in';
+            badge.textContent = 'Click image for Full Resolution';
+          }
+        };
+
+        contentContainer.appendChild(badge);
         contentContainer.appendChild(img);
       } else if (type === 'video') {
         const videoContainer = makeElement('div', {
           id: 'ai-lightbox-video-frame',
-          className: 'ai-lightbox-video-frame'
+          style: {
+            width: '85vw',
+            height: '47.8vw',
+            maxWidth: '1200px',
+            maxHeight: '675px',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            backgroundColor: '#000000',
+            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.8)'
+          }
         });
         contentContainer.appendChild(videoContainer);
-
-        setTimeout(() => {
-          try {
-            if (window.VideoPlayer) {
-              this.activeModalPlayer = new VideoPlayer({
-                container: videoContainer,
-                containerId: 'ai-lightbox-video-frame',
-                playerType: 'youtube',
-                videoId: source,
-                autoplay: true,
-                controls: true,
-                startTime: options.startTime || 0
-              });
-            } else {
-              this.useIframeFallback(videoContainer, source, options.startTime);
-            }
-          } catch (err) {
-            this.useIframeFallback(videoContainer, source, options.startTime);
-          }
-        }, 50);
+        this.useIframeFallback(videoContainer, source, options.startTime || 0);
       }
 
-      const captionBar = makeElement('div', { className: 'ai-lightbox-caption' }, [
-        makeElement('span', { className: 'ai-lightbox-title' }, title),
-        options.subtitle ? makeElement('p', { className: 'ai-lightbox-subtitle' }, options.subtitle) : null
-      ]);
+      const captionBar = options.subtitle ? makeElement('div', {
+        style: {
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '90%',
+          maxWidth: '800px',
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          color: '#e2e8f0',
+          fontSize: '13px',
+          lineHeight: '1.5',
+          textAlign: 'center',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: '30'
+        },
+        onclick: (e) => e.stopPropagation()
+      }, options.subtitle) : null;
 
-      const dialogWrapper = makeElement('div', { className: 'ai-lightbox-dialog' }, [
-        closeBtn,
+      const dialogWrapper = makeElement('div', { 
+        style: {
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'transparent',
+          position: 'relative',
+          boxSizing: 'border-box'
+        }
+      }, [
+        topBar,
         contentContainer,
         captionBar
       ]);
@@ -1008,7 +1225,7 @@ class AiPerspectivePage {
       document.body.appendChild(modal);
 
       requestAnimationFrame(() => {
-        modal.classList.add('is-active');
+        modal.style.opacity = '1';
       });
     }
 

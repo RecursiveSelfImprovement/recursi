@@ -1,697 +1,809 @@
 class ValuationPage {
-    render(app) {
-      this.applyStyles();
-      const wrapper = makeElement("div", { className: "valuation-page-view space-y-8" });
-      wrapper.appendChild(this.buildBackstoryBlock(app));
-      
-      if (app.resultsRevealed) {
-        wrapper.appendChild(this.buildConsensusBlock(app));
-        wrapper.appendChild(this.buildInteractiveSummaryGrid(app));
-        wrapper.appendChild(this.buildPromptsSection(app)); // Display below results
-        wrapper.appendChild(this.buildTranscriptsBlock(app));
-        wrapper.appendChild(this.buildExtendedQueriesSection(app));
-      } else {
-        wrapper.appendChild(this.buildPromptsSection(app)); // Swapped to be above the button!
-        wrapper.appendChild(this.buildRevealCTA(app));      // The button is now at the bottom!
-      }
-      
-      return wrapper;
+  render(app) {
+    this.applyStyles();
+    const wrapper = makeElement('div', {
+      className: 'valuation-page-view space-y-8',
+    });
+    wrapper.appendChild(this.buildBackstoryBlock(app));
+
+    if (app.resultsRevealed) {
+      wrapper.appendChild(this.buildConsensusBlock(app));
+      wrapper.appendChild(this.buildInteractiveSummaryGrid(app));
+      wrapper.appendChild(this.buildPromptsSection(app)); // Display below results
+      wrapper.appendChild(this.buildTranscriptsBlock(app));
+      wrapper.appendChild(this.buildExtendedQueriesSection(app));
+    } else {
+      wrapper.appendChild(this.buildPromptsSection(app)); // Swapped to be above the button!
+      wrapper.appendChild(this.buildRevealCTA(app)); // The button is now at the bottom!
     }
 
-    buildBackstoryBlock(app) {
-      const p1 = [
-        "In 1994, I joined Bentley Systems and implemented two features ",
-        "- AccuDraw and SmartLine - that became the signature of their ",
-        "flagship product, MicroStation. Users still cite them thirty years ",
-        "later as the primary reason they stay on the platform. Bentley is ",
-        "now a $9 billion company. "
-      ].join("");
+    return wrapper;
+  }
 
-      const p2 = [
-        "The story behind them matters: I had originally conceived and patented ",
-        "a similar idea at Intergraph - which at the time owned fifty percent of ",
-        "Bentley. When it became clear Intergraph wasn't going to act on it, I went ",
-        "directly to Bentley and rebuilt the concept from scratch, earning their ",
-        "first ever patent in the process."
-      ].join("");
+  buildBackstoryBlock(app) {
+    const p1 = [
+      'In 1994, I joined Bentley Systems and implemented two features ',
+      '- AccuDraw and SmartLine - that became the signature of their ',
+      'flagship product, MicroStation. Users still cite them thirty years ',
+      'later as the primary reason they stay on the platform. Bentley is ',
+      'now a $9 billion company. ',
+    ].join('');
 
-      const p3 = [
-        "I've always believed this contribution was significant. But 'significant' ",
-        "is easy to dismiss."
-      ].join("");
+    const p2 = [
+      'I had originally conceived and patented ',
+      'a similar idea at Intergraph - which at the time owned fifty percent of ',
+      "Bentley. When it became clear Intergraph wasn't going to act on it, I went ",
+      'directly to Bentley and rebuilt the concept from scratch, earning their ',
+      'first ever patent in the process.',   // todo: link to patent
+    ].join('');
 
-      const p4 = [
-        "So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to ",
-        "assess the value independently. I didn't tell them it was me. I gave them ",
-        "the neutral facts and asked them to do the math. They arrived at a consensus ",
-        "midpoint of a staggering portion of the industry's overall valuation."
-      ].join("");
+    const p3 = [
+      "I've always believed this contribution was significant. But 'significant' ",
+      'is easy to dismiss.',
+    ].join('');
 
-      const p5 = [
-        "You don't have to take my word for it. The prompts are right here. ",
-        "Paste them into any chatbot yourself."
-      ].join("");
+    const p4 = [
+      'So I asked four leading AI systems - Claude, Gemini, ChatGPT, and Grok - to ',
+      "assess the value independently. I was careful to not say we were talking about me, and otherwise encourage objectivity. I gave them ",
+      'the neutral facts and asked them to look at the history and do the math. They arrived at a consensus ',
+      "midpoint of a staggering portion of the company's 9-10 billion dollar valuation.",
+    ].join('');
 
-      return makeElement("div", { className: "backstory-gradient-card" }, [
-        makeElement("div", { className: "space-y-4" }, [
-          makeElement("p", { className: "backstory-paragraph-highlight" }, [
-            p1,
-            makeElement(
-              "a",
-              {
-                href: "#accudraw-innovations",
-                className: "inline-link-highlight",
-                onclick: (e) => {
-                  e.preventDefault();
-                  const hashElement =
-                    document.getElementById("raw-prompts") || document.body;
-                  hashElement.scrollIntoView({ behavior: "smooth" });
-                },
+    const p5 = [
+      "You don't have to take my word for it. You can see the fuull output from each, linked below.  And, the prompts are right here. ",
+      'Paste them into any chatbot yourself, or modify them as you please.',
+    ].join('');
+
+    return makeElement('div', { className: 'backstory-gradient-card' }, [
+      makeElement('div', { className: 'space-y-4' }, [
+        makeElement('p', { className: 'backstory-paragraph-highlight' }, [
+          p1,
+          makeElement(
+            'a',
+            {
+              href: '#accudraw-innovations',  // todo:  youtube video popup
+              className: 'inline-link-highlight',
+              onclick: (e) => {
+                e.preventDefault();
+                const hashElement =
+                  document.getElementById('raw-prompts') || document.body;
+                hashElement.scrollIntoView({ behavior: 'smooth' });
               },
-              "Learn more about AccuDraw: see it in motion, see my new version with all its Innovations, and see accolades from over the years ↗"
-            ),
-          ]),
+            },
+            'Learn more about AccuDraw: see it in motion, see my new version with all its Innovations, and see accolades from over the years ↗'
+          ),
         ]),
-        makeElement("p", { className: "backstory-paragraph" }, p2),
-        makeElement("p", { className: "backstory-paragraph" }, p3),
-        makeElement("p", { className: "backstory-paragraph" }, p4),
-        makeElement("p", { className: "backstory-paragraph-bold" }, p5),
-      ]);
-    }
+      ]),
+      makeElement('p', { className: 'backstory-paragraph' }, p2),
+      makeElement('p', { className: 'backstory-paragraph' }, p3),
+      makeElement('p', { className: 'backstory-paragraph' }, p4),
+      makeElement('p', { className: 'backstory-paragraph-bold' }, p5),
+    ]);
+  }
 
-    buildRevealCTA(app) {
-      const button = makeElement(
-        "button",
+  buildRevealCTA(app) {
+    const button = makeElement(
+      'button',
+      {
+        className: 'reveal-main-button',
+        onclick: (e) => {
+          app.triggerReveal(e.currentTarget);
+        },
+      },
+      [
+        makeElement(
+          'span',
+          { className: 'reveal-title-large' },
+          'Show Estimated Valuation'
+        ),
+        makeElement(
+          'span',
+          { className: 'reveal-subtitle-small' },
+          'of AccuDraw and SmartLine'
+        ),
+      ]
+    );
+
+    return makeElement('div', { className: 'reveal-cta-row' }, button);
+  }
+
+  buildConsensusBlock(app) {
+    const wrongSequence = ['$2.3 Million', '$23 Million', '$230 Million'];
+    const finalValue = '$2.3 Billion';
+
+    const stage = app.wrongAnswerStage || 0;
+    const isWrongState =
+      app.revealMode === 'wrong-answers' && stage < wrongSequence.length;
+
+    const displayValue = isWrongState ? wrongSequence[stage] : finalValue;
+    const isWrongOrCalc = isWrongState || app.isCalculating;
+    const valueClassName = `glowing-consensus-value${
+      isWrongOrCalc ? ' is-wrong' : ''
+    }`;
+
+    const figureChildren = [
+      makeElement(
+        'div',
+        { className: valueClassName },
+        app.isCalculating ? 'Calculating...' : displayValue
+      ),
+    ];
+
+    let actionNode;
+    if (isWrongState) {
+      const isBtnActive = app.showRecalculateButton && !app.isCalculating;
+      actionNode = makeElement(
+        'button',
         {
-          className: "reveal-main-button",
-          onclick: (e) => {
-            app.triggerReveal(e.currentTarget);
-          },
+          className: `recalculate-btn ${
+            isBtnActive ? 'is-visible' : 'is-hidden'
+          }`,
+          onclick: () => app.advanceWrongAnswer(),
         },
         [
+          makeElement('span', { className: 'recalculate-icon' }, '✕'),
+          makeElement('span', {}, 'Incorrect answer - Recalculate'),
+        ]
+      );
+    } else {
+      const subtextText = app.justCorrected
+        ? '✓ Correct answer'
+        : 'Consensus Contributed Midpoint';
+      const subtextClass = `consensus-figure-subtext${
+        app.justCorrected ? ' flash-correct' : ''
+      }`;
+
+      const bfnBtn = app.showBFNButton
+        ? makeElement(
+            'button',
+            {
+              className: 'visualize-bfn-btn animate-fade-in',
+              onclick: () => app.startBFNPlayback(),
+            },
+            [
+              makeElement('span', { className: 'play-pulse-icon' }, '▶'),
+              makeElement('span', {}, 'Visualize the B.F.N.'),
+            ]
+          )
+        : null;
+
+      actionNode = makeElement(
+        'div',
+        { className: 'consensus-action-wrapper' },
+        [makeElement('span', { className: subtextClass }, subtextText), bfnBtn]
+      );
+    }
+
+    figureChildren.push(
+      makeElement('div', { className: 'consensus-action-spacer' }, actionNode)
+    );
+
+    return makeElement('div', { className: 'consensus-container' }, [
+      makeElement('div', { className: 'consensus-info-pane' }, [
+        makeElement(
+          'span',
+          { className: 'consensus-badge' },
+          'Consensus Composite Estimate'
+        ),
+        makeElement(
+          'h2',
+          { className: 'consensus-headline' },
+          'The Consolidated Valuation Footprint'
+        ),
+        makeElement(
+          'p',
+          { className: 'consensus-description' },
+          "By calculating the midpoint of each AI model's calculated range (Claude, Gemini, ChatGPT, and Grok), we arrive at a unified composite average of Bentley Systems enterprise valuation directly tied to the AccuDraw and SmartLine IP."
+        ),
+      ]),
+      makeElement(
+        'div',
+        { className: 'consensus-figure-pane' },
+        figureChildren
+      ),
+    ]);
+  }
+
+  buildInteractiveSummaryGrid(app) {
+    const container = makeElement('div', { className: 'cad-panel' }, [
+      makeElement('div', { className: 'dashboard-header-group' }, [
+        makeElement('h3', {}, 'Estimated Enterprise Value Contribution'),
+        makeElement(
+          'p',
+          {},
+          'A comparative projection of objective historical estimates across language models relative to Bentley Systems market valuation.'
+        ),
+      ]),
+    ]);
+
+    const modelsGrid = makeElement('div', {
+      className: 'dashboard-cards-grid',
+    });
+
+    const abbreviatedValuations = {
+      claude: '$2.0B - $5.0B',
+      gemini: '$1.5B - $3.5B',
+      chatgpt: '$1.0B - $3.0B',
+      grok: '$500M - $2.0B+',
+    };
+
+    app.data.models.forEach((model) => {
+      const displayValuation =
+        abbreviatedValuations[model.key] || `${model.min} - ${model.max}`;
+
+      const item = makeElement('div', { className: 'model-metric-card' }, [
+        makeElement('div', {}, [
+          makeElement('span', { className: 'metric-model-name' }, model.name),
           makeElement(
-            "span",
-            { className: "reveal-title-large" },
-            "Show Estimated Valuation"
+            'div',
+            {
+              className: 'metric-model-value',
+              style: { color: model.color },
+            },
+            displayValuation
           ),
-          makeElement(
-            "span",
-            { className: "reveal-subtitle-small" },
-            "of AccuDraw and SmartLine"
-          ),
+        ]),
+        makeElement(
+          'div',
+          { className: 'metric-footer-label' },
+          'Value Contribution Estimate'
+        ),
+      ]);
+      modelsGrid.appendChild(item);
+    });
+
+    container.appendChild(modelsGrid);
+    return container;
+  }
+
+  buildPromptsSection(app) {
+    const promptsWrapper = makeElement('div', { className: 'prompts-list' });
+
+    app.data.prompts.forEach((p) => {
+      const item = makeElement('div', { className: 'prompt-card' }, [
+        makeElement('div', { className: 'prompt-content-wrapper' }, [
+          makeElement('span', { className: 'prompt-tag' }, `Prompt #${p.id}`),
+          makeElement('p', { className: 'prompt-body' }, `"${p.text}"`),
+        ]),
+        makeElement(
+          'button',
+          {
+            className: 'copy-prompt-btn',
+            onclick: (e) => app.copyPromptText(p.text, e.currentTarget),
+          },
+          [
+            makeElement(
+              'svg',
+              {
+                className: 'w-4 h-4',
+                fill: 'none',
+                stroke: 'currentColor',
+                strokeWidth: '2',
+                viewBox: '0 0 24 24',
+              },
+              [
+                makeElement('path', {
+                  strokeLinecap: 'round',
+                  strokeLinejoin: 'round',
+                  d: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+                }),
+              ]
+            ),
+            makeElement('span', {}, 'Copy Prompt'),
+          ]
+        ),
+      ]);
+      promptsWrapper.appendChild(item);
+    });
+
+    return makeElement('section', { className: 'cad-panel' }, [
+      makeElement(
+        'h2',
+        { className: 'text-xl font-bold text-[var(--text-title)]' },
+        'Run the Experiment Yourself'
+      ),
+      makeElement(
+        'p',
+        { className: 'prompts-header-desc' },
+        'To show the objectivity of these evaluations, you can copy the exact historical prompts used to query the LLMs. Paste these into any AI chat application to see results generated without prior bias or context memory.'
+      ),
+      promptsWrapper,
+    ]);
+  }
+
+  buildTranscriptsBlock(app) {
+    const container = makeElement('section', { className: 'space-y-6' }, [
+      makeElement('div', { className: 'transcripts-bar' }, [
+        makeElement(
+          'h2',
+          { className: 'transcripts-bar-title' },
+          'Model Valuation Quotes'
+        ),
+
+        makeElement('div', { className: 'tab-filters' }, [
+          this.buildFilterButton(app, 'all', 'Show All'),
+          this.buildFilterButton(app, 'claude', 'Claude'),
+          this.buildFilterButton(app, 'gemini', 'Gemini'),
+          this.buildFilterButton(app, 'chatgpt', 'ChatGPT'),
+          this.buildFilterButton(app, 'grok', 'Grok'),
+        ]),
+      ]),
+    ]);
+
+    const transcriptsList = makeElement('div', {
+      className: 'transcripts-card-list',
+    });
+
+    app.data.models.forEach((model) => {
+      if (app.activeTab !== 'all' && app.activeTab !== model.key) return;
+
+      const card = makeElement(
+        'article',
+        { className: 'cad-panel transcript-detail-card' },
+        [
+          makeElement('div', {
+            className: 'transcript-card-stripe',
+            style: { backgroundColor: model.color },
+          }),
+
+          makeElement('div', { className: 'transcript-card-inner' }, [
+            makeElement('div', { className: 'transcript-card-main' }, [
+              makeElement('div', { className: 'transcript-author-group' }, [
+                makeElement('span', {
+                  className: 'transcript-author-circle',
+                  style: { backgroundColor: model.color },
+                }),
+                makeElement(
+                  'h3',
+                  { className: 'transcript-author-header' },
+                  model.name
+                ),
+              ]),
+
+              makeElement(
+                'div',
+                { className: 'transcript-quote-box' },
+                model.quotes.map((q) => {
+                  const highlightedHTML = this.highlightKeyPhrases(app, q);
+                  return makeElement(
+                    'p',
+                    { className: 'transcript-bullet-quote' },
+                    [
+                      makeElement(
+                        'span',
+                        { className: 'transcript-bullet-symbol' },
+                        '•'
+                      ),
+                      makeElement('span', { innerHTML: highlightedHTML }),
+                    ]
+                  );
+                })
+              ),
+            ]),
+
+            makeElement('div', { className: 'transcript-card-sidebar' }, [
+              makeElement('div', { className: 'sidebar-model-totals' }, [
+                makeElement(
+                  'span',
+                  { className: 'sidebar-total-label' },
+                  'Identified Valuation'
+                ),
+                makeElement(
+                  'span',
+                  {
+                    className: 'sidebar-total-number',
+                    style: { color: model.color },
+                  },
+                  `${model.min} - ${model.max}`
+                ),
+                makeElement(
+                  'span',
+                  { className: 'sidebar-total-percent' },
+                  `${model.pct}% Contribution of Bentley Cap`
+                ),
+              ]),
+              makeElement(
+                'a',
+                {
+                  href: model.url,
+                  target: '_blank',
+                  rel: 'noopener noreferrer',
+                  className: 'sidebar-link-btn',
+                  style: {
+                    color: model.color,
+                    borderColor: `${model.color}33`,
+                    backgroundColor: `${model.color}0a`,
+                  },
+                },
+                'Verify Original Transcript ↗'
+              ),
+            ]),
+          ]),
         ]
       );
 
-      return makeElement("div", { className: "reveal-cta-row" }, button);
-    }
+      transcriptsList.appendChild(card);
+    });
 
-    buildConsensusBlock(app) {
-      const wrongSequence = ["$2.3 Million", "$23 Million", "$230 Million"];
-      const finalValue = "$2.3 Billion";
+    container.appendChild(transcriptsList);
+    return container;
+  }
 
-      const stage = app.wrongAnswerStage || 0;
-      const isWrongState = app.revealMode === "wrong-answers" && stage < wrongSequence.length;
+  buildFilterButton(app, filterId, labelText) {
+    const isActive = app.activeTab === filterId;
+    return makeElement(
+      'button',
+      {
+        className: `tab-filter-btn ${isActive ? 'active' : ''}`,
+        onclick: () => {
+          app.activeTab = filterId;
+          app.renderApp();
+        },
+      },
+      labelText
+    );
+  }
 
-      const displayValue = isWrongState ? wrongSequence[stage] : finalValue;
-      const isWrongOrCalc = isWrongState || app.isCalculating;
-      const valueClassName = `glowing-consensus-value${isWrongOrCalc ? " is-wrong" : ""}`;
+  highlightKeyPhrases(app, text) {
+    if (!text) return '';
+    let res = text;
 
-      const figureChildren = [
-        makeElement("div", { className: valueClassName }, app.isCalculating ? "Calculating..." : displayValue)
-      ];
+    const mappings = [
+      {
+        search:
+          'competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most',
+        replace:
+          "<span class='highlight-merit'>competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most</span>",
+      },
+      {
+        search:
+          'among the highest-leverage individual technical contributions in the history of infrastructure software',
+        replace:
+          "<span class='highlight-merit'>among the highest-leverage individual technical contributions in the history of infrastructure software</span>",
+      },
+      {
+        search:
+          'ultimately created around a billion dollars or more of value for Bentley over several decades',
+        replace:
+          "<span class='highlight-value'>ultimately created around a billion dollars or more of value for Bentley over several decades</span>",
+      },
+      {
+        search:
+          "plausible range for their contribution to Bentley's long-term enterprise value",
+        replace:
+          "<span class='highlight-value'>plausible range for their contribution to Bentley's long-term enterprise value</span>",
+      },
+      {
+        search: 'muscle memory is a powerful lock-in mechanism',
+        replace:
+          "<span class='highlight-merit'>muscle memory is a powerful lock-in mechanism</span>",
+      },
+      {
+        search: 'highly efficient, hotkey-driven drafting system',
+        replace:
+          "<span class='highlight-merit'>highly efficient, hotkey-driven drafting system</span>",
+      },
+      {
+        search:
+          'solved the 3D input problem for Bentley years before many competitors had an elegant solution',
+        replace:
+          "<span class='highlight-merit'>solved the 3D input problem for Bentley years before many competitors had an elegant solution</span>",
+      },
+      {
+        search:
+          'serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption',
+        replace:
+          "<span class='highlight-value'>serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption</span>",
+      },
+      {
+        search:
+          'underpin user productivity claims that support the entire product line',
+        replace:
+          "<span class='highlight-merit'>underpin user productivity claims that support the entire product line</span>",
+      },
+      {
+        search:
+          "true 'company-making' innovation that paid dividends for decades",
+        replace:
+          "<span class='highlight-merit'>true 'company-making' innovation that paid dividends for decades</span>",
+      },
+    ];
 
-      let actionNode;
-      if (isWrongState) {
-        const isBtnActive = app.showRecalculateButton && !app.isCalculating;
-        actionNode = makeElement("button", {
-          className: `recalculate-btn ${isBtnActive ? "is-visible" : "is-hidden"}`,
-          onclick: () => app.advanceWrongAnswer()
-        }, [
-          makeElement("span", { className: "recalculate-icon" }, "✕"),
-          makeElement("span", {}, "Incorrect answer - Recalculate")
-        ]);
-      } else {
-        const subtextText = app.justCorrected ? "✓ Correct answer" : "Consensus Contributed Midpoint";
-        const subtextClass = `consensus-figure-subtext${app.justCorrected ? " flash-correct" : ""}`;
-        
-        const bfnBtn = app.showBFNButton ? makeElement("button", {
-          className: "visualize-bfn-btn animate-fade-in",
-          onclick: () => app.startBFNPlayback()
-        }, [
-          makeElement("span", { className: "play-pulse-icon" }, "▶"),
-          makeElement("span", {}, "Visualize the B.F.N.")
-        ]) : null;
-
-        actionNode = makeElement("div", { className: "consensus-action-wrapper" }, [
-          makeElement("span", { className: subtextClass }, subtextText),
-          bfnBtn
-        ]);
+    mappings.forEach((item) => {
+      if (res.includes(item.search)) {
+        res = res.replace(item.search, item.replace);
       }
+    });
 
-      figureChildren.push(makeElement("div", { className: "consensus-action-spacer" }, actionNode));
+    res = res.replace(
+      /(\$[0-9.]+\s*(?:billion|million|B|M)?\s*(?:and|to|-|-)\s*\$[0-9.]+\+?\s*(?:billion|million|B|M)?)/gi,
+      "<span class='highlight-range'>$1</span>"
+    );
+    res = res.replace(
+      /(\d+%\s*to\s*\d+%)/gi,
+      "<span class='highlight-percent'>$1</span>"
+    );
+    res = res.replace(
+      /(\d+%\s*of\s*Bentley)/gi,
+      "<span class='highlight-percent'>$1</span>"
+    );
 
-      return makeElement("div", { className: "consensus-container" }, [
-        makeElement("div", { className: "consensus-info-pane" }, [
-          makeElement("span", { className: "consensus-badge" }, "Consensus Composite Estimate"),
-          makeElement("h2", { className: "consensus-headline" }, "The Consolidated Valuation Footprint"),
-          makeElement("p", { className: "consensus-description" }, 
-            "By calculating the midpoint of each AI model's calculated range (Claude, Gemini, ChatGPT, and Grok), we arrive at a unified composite average of Bentley Systems enterprise valuation directly tied to the AccuDraw and SmartLine IP."
-          )
-        ]),
-        makeElement("div", { className: "consensus-figure-pane" }, figureChildren)
-      ]);
-    }
+    return res;
+  }
 
-    buildInteractiveSummaryGrid(app) {
-      const container = makeElement("div", { className: "cad-panel" }, [
-        makeElement("div", { className: "dashboard-header-group" }, [
-          makeElement("h3", {}, "Estimated Enterprise Value Contribution"),
+  buildSynthesisIntroBlock(app) {
+    if (!app.data.introHTML) return null;
+
+    const card = makeElement('div', { className: 'synthesis-intro-card' });
+    card.innerHTML = app.data.introHTML;
+
+    const title = card.querySelector('h2');
+    if (title) title.className = 'synthesis-intro-title';
+
+    card.querySelectorAll('p').forEach((p) => {
+      p.className = 'synthesis-intro-p';
+    });
+
+    const badgeRow = makeElement('div', { className: 'synthesis-badge-row' }, [
+      makeElement(
+        'span',
+        { className: 'synthesis-badge' },
+        '🔍 Extended Dialogue Analysis'
+      ),
+      makeElement(
+        'span',
+        { className: 'synthesis-badge synthesis-badge-purple' },
+        '⚖️ Historical Uniqueness'
+      ),
+    ]);
+    card.appendChild(badgeRow);
+
+    return card;
+  }
+
+  buildExtendedQueriesSection(app) {
+    const container = makeElement(
+      'section',
+      {
+        className:
+          'space-y-8 mt-12 pt-12 border-t border-[var(--border-color)]',
+      },
+      [
+        makeElement('div', { className: 'space-y-2' }, [
           makeElement(
-            "p",
-            {},
-            "A comparative projection of objective historical estimates across language models relative to Bentley Systems market valuation."
-          ),
-        ]),
-      ]);
-
-      const modelsGrid = makeElement("div", {
-        className: "dashboard-cards-grid",
-      });
-
-      const abbreviatedValuations = {
-        claude: "$2.0B - $5.0B",
-        gemini: "$1.5B - $3.5B",
-        chatgpt: "$1.0B - $3.0B",
-        grok: "$500M - $2.0B+",
-      };
-
-      app.data.models.forEach((model) => {
-        const displayValuation =
-          abbreviatedValuations[model.key] || `${model.min} - ${model.max}`;
-
-        const item = makeElement("div", { className: "model-metric-card" }, [
-          makeElement("div", {}, [
-            makeElement("span", { className: "metric-model-name" }, model.name),
-            makeElement(
-              "div",
-              {
-                className: "metric-model-value",
-                style: { color: model.color },
-              },
-              displayValuation
-            ),
-          ]),
-          makeElement(
-            "div",
-            { className: "metric-footer-label" },
-            "Value Contribution Estimate"
-          ),
-        ]);
-        modelsGrid.appendChild(item);
-      });
-
-      container.appendChild(modelsGrid);
-      return container;
-    }
-
-    buildPromptsSection(app) {
-      const promptsWrapper = makeElement("div", { className: "prompts-list" });
-
-      app.data.prompts.forEach((p) => {
-        const item = makeElement("div", { className: "prompt-card" }, [
-          makeElement("div", { className: "prompt-content-wrapper" }, [
-            makeElement("span", { className: "prompt-tag" }, `Prompt #${p.id}`),
-            makeElement("p", { className: "prompt-body" }, `"${p.text}"`),
-          ]),
-          makeElement(
-            "button",
+            'h2',
             {
-              className: "copy-prompt-btn",
-              onclick: (e) => app.copyPromptText(p.text, e.currentTarget),
+              className:
+                'text-2xl font-black text-[var(--text-title)] uppercase tracking-wider',
+              style: { fontFamily: 'ui-monospace, monospace' },
             },
-            [
-              makeElement(
-                "svg",
-                {
-                  className: "w-4 h-4",
-                  fill: "none",
-                  stroke: "currentColor",
-                  strokeWidth: "2",
-                  viewBox: "0 0 24 24",
-                },
-                [
-                  makeElement("path", {
-                    strokeLinecap: "round",
-                    strokeLinejoin: "round",
-                    d: "M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2",
-                  }),
-                ]
-              ),
-              makeElement("span", {}, "Copy Prompt"),
-            ]
+            'Extended Queries & Historical Rarity Analysis'
           ),
-        ]);
-        promptsWrapper.appendChild(item);
-      });
-
-      return makeElement("section", { className: "cad-panel" }, [
-        makeElement(
-          "h2",
-          { className: "text-xl font-bold text-[var(--text-title)]" },
-          "Run the Experiment Yourself"
-        ),
-        makeElement(
-          "p",
-          { className: "prompts-header-desc" },
-          "To show the objectivity of these evaluations, you can copy the exact historical prompts used to query the LLMs. Paste these into any AI chat application to see results generated without prior bias or context memory."
-        ),
-        promptsWrapper,
-      ]);
-    }
-
-    buildTranscriptsBlock(app) {
-      const container = makeElement("section", { className: "space-y-6" }, [
-        makeElement("div", { className: "transcripts-bar" }, [
           makeElement(
-            "h2",
-            { className: "transcripts-bar-title" },
-            "Model Valuation Quotes"
+            'p',
+            { className: 'text-sm text-[var(--text-secondary)]' },
+            'Deep dive dialogues assessing the exceptional rarity of high-leverage single-hire innovations in technology history.'
           ),
-
-          makeElement("div", { className: "tab-filters" }, [
-            this.buildFilterButton(app, "all", "Show All"),
-            this.buildFilterButton(app, "claude", "Claude"),
-            this.buildFilterButton(app, "gemini", "Gemini"),
-            this.buildFilterButton(app, "chatgpt", "ChatGPT"),
-            this.buildFilterButton(app, "grok", "Grok"),
-          ]),
         ]),
-      ]);
+      ]
+    );
 
-      const transcriptsList = makeElement("div", {
-        className: "transcripts-card-list",
+    const introCard = this.buildSynthesisIntroBlock(app);
+    if (introCard) {
+      container.appendChild(introCard);
+    }
+
+    const dialogueList = makeElement('div', {
+      className: 'transcripts-card-list mt-8',
+    });
+
+    ['claude', 'gemini'].forEach((key) => {
+      const model = app.data.models.find((m) => m.key === key);
+      const convHTML = app.data.conversations[key];
+      if (!model || !convHTML) return;
+
+      const card = makeElement(
+        'article',
+        { className: 'cad-panel transcript-detail-card' },
+        [
+          makeElement('div', {
+            className: 'transcript-card-stripe',
+            style: { backgroundColor: model.color },
+          }),
+        ]
+      );
+
+      const cardInner = makeElement('div', {
+        className: 'transcript-card-inner',
+      });
+      const cardMain = makeElement('div', {
+        className: 'transcript-card-main',
       });
 
-      app.data.models.forEach((model) => {
-        if (app.activeTab !== "all" && app.activeTab !== model.key) return;
+      const authorGroup = makeElement(
+        'div',
+        { className: 'transcript-author-group' },
+        [
+          makeElement('span', {
+            className: 'transcript-author-circle',
+            style: { backgroundColor: model.color },
+          }),
+          makeElement(
+            'h3',
+            { className: 'transcript-author-header' },
+            `${model.name} - Extended Dialogue`
+          ),
+        ]
+      );
+      cardMain.appendChild(authorGroup);
 
-        const card = makeElement(
-          "article",
-          { className: "cad-panel transcript-detail-card" },
-          [
-            makeElement("div", {
-              className: "transcript-card-stripe",
-              style: { backgroundColor: model.color },
-            }),
+      const flowWrapper = makeElement('div', {
+        className: 'conversation-flow',
+        innerHTML: convHTML,
+      });
 
-            makeElement("div", { className: "transcript-card-inner" }, [
-              makeElement("div", { className: "transcript-card-main" }, [
-                makeElement("div", { className: "transcript-author-group" }, [
-                  makeElement("span", {
-                    className: "transcript-author-circle",
-                    style: { backgroundColor: model.color },
-                  }),
-                  makeElement(
-                    "h3",
-                    { className: "transcript-author-header" },
-                    model.name
-                  ),
-                ]),
+      flowWrapper.querySelectorAll('.turn').forEach((turn) => {
+        const isUser = turn.classList.contains('speaker-user');
+        turn.className = `conversation-turn ${
+          isUser ? 'speaker-user' : 'speaker-model'
+        }`;
+        turn.style.setProperty('--accent-color', model.color);
 
-                makeElement(
-                  "div",
-                  { className: "transcript-quote-box" },
-                  model.quotes.map((q) => {
-                    const highlightedHTML = this.highlightKeyPhrases(app, q);
-                    return makeElement(
-                      "p",
-                      { className: "transcript-bullet-quote" },
-                      [
-                        makeElement(
-                          "span",
-                          { className: "transcript-bullet-symbol" },
-                          "•"
-                        ),
-                        makeElement("span", { innerHTML: highlightedHTML }),
-                      ]
-                    );
-                  })
-                ),
-              ]),
-
-              makeElement("div", { className: "transcript-card-sidebar" }, [
-                makeElement("div", { className: "sidebar-model-totals" }, [
-                  makeElement(
-                    "span",
-                    { className: "sidebar-total-label" },
-                    "Identified Valuation"
-                  ),
-                  makeElement(
-                    "span",
-                    {
-                      className: "sidebar-total-number",
-                      style: { color: model.color },
-                    },
-                    `${model.min} - ${model.max}`
-                  ),
-                  makeElement(
-                    "span",
-                    { className: "sidebar-total-percent" },
-                    `${model.pct}% Contribution of Bentley Cap`
-                  ),
-                ]),
-                makeElement(
-                  "a",
-                  {
-                    href: model.url,
-                    target: "_blank",
-                    rel: "noopener noreferrer",
-                    className: "sidebar-link-btn",
-                    style: {
-                      color: model.color,
-                      borderColor: `${model.color}33`,
-                      backgroundColor: `${model.color}0a`,
-                    },
-                  },
-                  "Verify Original Transcript ↗"
-                ),
-              ]),
-            ]),
-          ]
+        const labelText = isUser ? 'Prompt' : model.name;
+        const headerLabel = makeElement(
+          'div',
+          { className: 'turn-header' },
+          labelText
         );
+        turn.insertBefore(headerLabel, turn.firstChild);
 
-        transcriptsList.appendChild(card);
-      });
+        const bodyWrapper = makeElement('div', { className: 'turn-body' });
+        const originalChildren = Array.from(turn.children).slice(1);
 
-      container.appendChild(transcriptsList);
-      return container;
-    }
+        originalChildren.forEach((child) => {
+          const tagName = child.tagName.toLowerCase();
+          const childText = child.textContent.trim().toLowerCase();
 
-    buildFilterButton(app, filterId, labelText) {
-      const isActive = app.activeTab === filterId;
-      return makeElement(
-        "button",
-        {
-          className: `tab-filter-btn ${isActive ? "active" : ""}`,
-          onclick: () => {
-            app.activeTab = filterId;
-            app.renderApp();
-          },
-        },
-        labelText
-      );
-    }
-
-    highlightKeyPhrases(app, text) {
-      if (!text) return "";
-      let res = text;
-
-      const mappings = [
-        {
-          search: "competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most",
-          replace: "<span class='highlight-merit'>competitive foundation that let MicroStation win and hold the professional infrastructure CAD market during the decade that mattered most</span>"
-        },
-        {
-          search: "among the highest-leverage individual technical contributions in the history of infrastructure software",
-          replace: "<span class='highlight-merit'>among the highest-leverage individual technical contributions in the history of infrastructure software</span>"
-        },
-        {
-          search: "ultimately created around a billion dollars or more of value for Bentley over several decades",
-          replace: "<span class='highlight-value'>ultimately created around a billion dollars or more of value for Bentley over several decades</span>"
-        },
-        {
-          search: "plausible range for their contribution to Bentley's long-term enterprise value",
-          replace: "<span class='highlight-value'>plausible range for their contribution to Bentley's long-term enterprise value</span>"
-        },
-        {
-          search: "muscle memory is a powerful lock-in mechanism",
-          replace: "<span class='highlight-merit'>muscle memory is a powerful lock-in mechanism</span>"
-        },
-        {
-          search: "highly efficient, hotkey-driven drafting system",
-          replace: "<span class='highlight-merit'>highly efficient, hotkey-driven drafting system</span>"
-        },
-        {
-          search: "solved the 3D input problem for Bentley years before many competitors had an elegant solution",
-          replace: "<span class='highlight-merit'>solved the 3D input problem for Bentley years before many competitors had an elegant solution</span>"
-        },
-        {
-          search: "serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption",
-          replace: "<span class='highlight-value'>serving as the core usability engine that prevented customer churn to Autodesk during the peak years of CAD adoption</span>"
-        },
-        {
-          search: "underpin user productivity claims that support the entire product line",
-          replace: "<span class='highlight-merit'>underpin user productivity claims that support the entire product line</span>"
-        },
-        {
-          search: "true 'company-making' innovation that paid dividends for decades",
-          replace: "<span class='highlight-merit'>true 'company-making' innovation that paid dividends for decades</span>"
-        }
-      ];
-
-      mappings.forEach((item) => {
-        if (res.includes(item.search)) {
-          res = res.replace(item.search, item.replace);
-        }
-      });
-
-      res = res.replace(
-        /(\$[0-9.]+\s*(?:billion|million|B|M)?\s*(?:and|to|-|-)\s*\$[0-9.]+\+?\s*(?:billion|million|B|M)?)/gi,
-        "<span class='highlight-range'>$1</span>"
-      );
-      res = res.replace(
-        /(\d+%\s*to\s*\d+%)/gi,
-        "<span class='highlight-percent'>$1</span>"
-      );
-      res = res.replace(
-        /(\d+%\s*of\s*Bentley)/gi,
-        "<span class='highlight-percent'>$1</span>"
-      );
-
-      return res;
-    }
-
-    buildSynthesisIntroBlock(app) {
-      if (!app.data.introHTML) return null;
-
-      const card = makeElement("div", { className: "synthesis-intro-card" });
-      card.innerHTML = app.data.introHTML;
-
-      const title = card.querySelector("h2");
-      if (title) title.className = "synthesis-intro-title";
-
-      card.querySelectorAll("p").forEach((p) => {
-        p.className = "synthesis-intro-p";
-      });
-
-      const badgeRow = makeElement("div", { className: "synthesis-badge-row" }, [
-        makeElement(
-          "span",
-          { className: "synthesis-badge" },
-          "🔍 Extended Dialogue Analysis"
-        ),
-        makeElement(
-          "span",
-          { className: "synthesis-badge synthesis-badge-purple" },
-          "⚖️ Historical Uniqueness"
-        ),
-      ]);
-      card.appendChild(badgeRow);
-
-      return card;
-    }
-
-    buildExtendedQueriesSection(app) {
-      const container = makeElement("section", {
-        className: "space-y-8 mt-12 pt-12 border-t border-[var(--border-color)]"
-      }, [
-        makeElement("div", { className: "space-y-2" }, [
-          makeElement("h2", { 
-            className: "text-2xl font-black text-[var(--text-title)] uppercase tracking-wider",
-            style: { fontFamily: "ui-monospace, monospace" }
-          }, "Extended Queries & Historical Rarity Analysis"),
-          makeElement("p", { className: "text-sm text-[var(--text-secondary)]" }, 
-            "Deep dive dialogues assessing the exceptional rarity of high-leverage single-hire innovations in technology history."
-          )
-        ])
-      ]);
-
-      const introCard = this.buildSynthesisIntroBlock(app);
-      if (introCard) {
-        container.appendChild(introCard);
-      }
-
-      const dialogueList = makeElement("div", { className: "transcripts-card-list mt-8" });
-
-      ["claude", "gemini"].forEach(key => {
-        const model = app.data.models.find(m => m.key === key);
-        const convHTML = app.data.conversations[key];
-        if (!model || !convHTML) return;
-
-        const card = makeElement("article", { className: "cad-panel transcript-detail-card" }, [
-          makeElement("div", { className: "transcript-card-stripe", style: { backgroundColor: model.color } })
-        ]);
-
-        const cardInner = makeElement("div", { className: "transcript-card-inner" });
-        const cardMain = makeElement("div", { className: "transcript-card-main" });
-
-        const authorGroup = makeElement("div", { className: "transcript-author-group" }, [
-          makeElement("span", { className: "transcript-author-circle", style: { backgroundColor: model.color } }),
-          makeElement("h3", { className: "transcript-author-header" }, `${model.name} - Extended Dialogue`)
-        ]);
-        cardMain.appendChild(authorGroup);
-
-        const flowWrapper = makeElement("div", { className: "conversation-flow", innerHTML: convHTML });
-        
-        flowWrapper.querySelectorAll(".turn").forEach(turn => {
-          const isUser = turn.classList.contains("speaker-user");
-          turn.className = `conversation-turn ${isUser ? "speaker-user" : "speaker-model"}`;
-          turn.style.setProperty("--accent-color", model.color);
-
-          const labelText = isUser ? "Prompt" : model.name;
-          const headerLabel = makeElement("div", { className: "turn-header" }, labelText);
-          turn.insertBefore(headerLabel, turn.firstChild);
-
-          const bodyWrapper = makeElement("div", { className: "turn-body" });
-          const originalChildren = Array.from(turn.children).slice(1);
-          
-          originalChildren.forEach(child => {
-            const tagName = child.tagName.toLowerCase();
-            const childText = child.textContent.trim().toLowerCase();
-
-            if ((tagName === "h3" || tagName === "h4") && 
-                (childText === "rob" || 
-                 childText === "claude" || 
-                 childText === "gemini" || 
-                 childText.includes("assessment") || 
-                 childText.includes("response") || 
-                 childText.includes("reveal") || 
-                 childText.includes("question") || 
-                 childText.includes("summary estimate"))) {
-              return;
-            }
-            bodyWrapper.appendChild(child);
-          });
-
-          turn.appendChild(bodyWrapper);
-        });
-
-        this.applySmartHighlights(flowWrapper);
-        cardMain.appendChild(flowWrapper);
-
-        cardInner.appendChild(cardMain);
-        card.appendChild(cardInner);
-        dialogueList.appendChild(card);
-      });
-
-      container.appendChild(dialogueList);
-      return container;
-    }
-
-    applySmartHighlights(containerElement) {
-      const rules = [
-        {
-          id: "claude_valuation",
-          start: "directly contributed",
-          end: "between $1.5B and $3B",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "claude_trajectory",
-          start: "one of the highest individual contributions",
-          end: "trajectory",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "claude_rarity",
-          start: "extremely rare",
-          end: "few dozen plausible cases",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "claude_productivity_tool",
-          start: "A productivity/workflow tool",
-          end: "retention and differentiation",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_pivotal_figure",
-          start: "He was a pivotal figure in the UX and drafting history",
-          end: "quietly shaped the modern tech landscape",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_astronomical",
-          start: "contribution to Bentley Systems yielded",
-          end: "astronomical return on investment",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_disproportionate",
-          start: "An individual hire bringing",
-          end: "extraordinarily rare",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_inspect_element",
-          start: "Inspect Element",
-          end: "developer console used by millions of web developers",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_most_successful",
-          start: "this represents one of the most successful product-design returns",
-          end: "CAD industry",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_most_profitable",
-          start: "highly reasonable and defensible to argue",
-          end: "hires in tech history",
-          className: "slick-glow-highlight",
-        },
-        {
-          id: "gemini_multiplier",
-          start: "return of",
-          end: "3,000x on the initial cost of employment",
-          className: "slick-glow-highlight",
-        },
-      ];
-
-      const usedRules = new Set();
-      const elements = containerElement.querySelectorAll("p, li, blockquote, td");
-      
-      elements.forEach((el) => {
-        let html = el.innerHTML;
-        let text = el.textContent || "";
-
-        rules.forEach((rule) => {
-          if (usedRules.has(rule.id)) return;
-
-          const startIdx = text.indexOf(rule.start);
-          const endIdx = text.indexOf(rule.end, startIdx);
-
-          if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
-            const matchedPhrase = text.substring(
-              startIdx,
-              endIdx + rule.end.length
-            );
-            const escapedPhrase = matchedPhrase.replace(
-              /[-\/\\^$*+?.()|[\]{}]/g,
-              "\\$&"
-            );
-            const regex = new RegExp(escapedPhrase, "g");
-            html = html.replace(regex, `<span class="${rule.className}">${matchedPhrase}</span>`);
-            usedRules.add(rule.id);
+          if (
+            (tagName === 'h3' || tagName === 'h4') &&
+            (childText === 'rob' ||
+              childText === 'claude' ||
+              childText === 'gemini' ||
+              childText.includes('assessment') ||
+              childText.includes('response') ||
+              childText.includes('reveal') ||
+              childText.includes('question') ||
+              childText.includes('summary estimate'))
+          ) {
+            return;
           }
+          bodyWrapper.appendChild(child);
         });
 
-        el.innerHTML = html;
+        turn.appendChild(bodyWrapper);
       });
-    }
 
-    applyStyles() {
-      applyCss(`
+      this.applySmartHighlights(flowWrapper);
+      cardMain.appendChild(flowWrapper);
+
+      cardInner.appendChild(cardMain);
+      card.appendChild(cardInner);
+      dialogueList.appendChild(card);
+    });
+
+    container.appendChild(dialogueList);
+    return container;
+  }
+
+  applySmartHighlights(containerElement) {
+    const rules = [
+      {
+        id: 'claude_valuation',
+        start: 'directly contributed',
+        end: 'between $1.5B and $3B',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'claude_trajectory',
+        start: 'one of the highest individual contributions',
+        end: 'trajectory',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'claude_rarity',
+        start: 'extremely rare',
+        end: 'few dozen plausible cases',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'claude_productivity_tool',
+        start: 'A productivity/workflow tool',
+        end: 'retention and differentiation',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_pivotal_figure',
+        start: 'He was a pivotal figure in the UX and drafting history',
+        end: 'quietly shaped the modern tech landscape',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_astronomical',
+        start: 'contribution to Bentley Systems yielded',
+        end: 'astronomical return on investment',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_disproportionate',
+        start: 'An individual hire bringing',
+        end: 'extraordinarily rare',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_inspect_element',
+        start: 'Inspect Element',
+        end: 'developer console used by millions of web developers',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_most_successful',
+        start:
+          'this represents one of the most successful product-design returns',
+        end: 'CAD industry',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_most_profitable',
+        start: 'highly reasonable and defensible to argue',
+        end: 'hires in tech history',
+        className: 'slick-glow-highlight',
+      },
+      {
+        id: 'gemini_multiplier',
+        start: 'return of',
+        end: '3,000x on the initial cost of employment',
+        className: 'slick-glow-highlight',
+      },
+    ];
+
+    const usedRules = new Set();
+    const elements = containerElement.querySelectorAll('p, li, blockquote, td');
+
+    elements.forEach((el) => {
+      let html = el.innerHTML;
+      let text = el.textContent || '';
+
+      rules.forEach((rule) => {
+        if (usedRules.has(rule.id)) return;
+
+        const startIdx = text.indexOf(rule.start);
+        const endIdx = text.indexOf(rule.end, startIdx);
+
+        if (startIdx !== -1 && endIdx !== -1 && endIdx > startIdx) {
+          const matchedPhrase = text.substring(
+            startIdx,
+            endIdx + rule.end.length
+          );
+          const escapedPhrase = matchedPhrase.replace(
+            /[-\/\\^$*+?.()|[\]{}]/g,
+            '\\$&'
+          );
+          const regex = new RegExp(escapedPhrase, 'g');
+          html = html.replace(
+            regex,
+            `<span class="${rule.className}">${matchedPhrase}</span>`
+          );
+          usedRules.add(rule.id);
+        }
+      });
+
+      el.innerHTML = html;
+    });
+  }
+
+  applyStyles() {
+    applyCss(
+      `
         .prompts-header-desc {
           font-size: 14px;
           color: var(--text-secondary);
@@ -1387,6 +1499,8 @@ class ValuationPage {
           font-weight: 700;
           font-family: ui-monospace, monospace;
         }
-      `, "valuation-page-styles");
-    }
+      `,
+      'valuation-page-styles'
+    );
   }
+}

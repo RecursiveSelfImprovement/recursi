@@ -901,130 +901,271 @@ class AccuDrawValuation {
 
   
 
-  // --- Modular CSS Injection Functions ---
-    // Splitting CSS styling to support simple modifications of individual components
-
-    
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  
-
-  // New dedicated bottom section holding the narrative introduction and the extended transcript queries
-    
-
-  // --- Elegant modular styling definitions ---
-
-    
-
-  // Corrected timeline representation of the 2022-2026 gatekeeping grudge sequence
-    // Updated with detailed aftermath, year-long isolations, and recent gatekeeping details
-    
-
-  // Historical refusals panel documenting care inconsistencies
-    
-
-  // LinkedIn captured exhibits index mapping sibling root images
-    
-
-  
-
-  // Interactive high-end modal popups for viewing screenshots closely
-    openExhibitModal(imgSrc, title) {
+  // High resolution modal popup to view screenshots closely with zoom toggle, scrollbars, click-off closer, and isolated drag-to-pan
+    openExhibitModal(imgSrc, title, caption) {
       const existing = document.getElementById('logo-exhibit-overlay');
       if (existing) existing.remove();
 
+      let isFullRes = false;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let scrollLeft = 0;
+      let scrollTop = 0;
+      let dragThresholdMet = false;
+
+      const badge = makeElement('div', {
+        style: {
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(15, 23, 42, 0.9)',
+          color: '#3b82f6',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: '20px',
+          padding: '6px 16px',
+          fontSize: '11px',
+          fontFamily: 'ui-monospace, monospace',
+          pointerEvents: 'none',
+          zIndex: '30',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }
+      }, 'Click image for Full Resolution');
+
+      const contentContainer = makeElement('div', {
+        style: {
+          flex: '1',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'auto',
+          position: 'relative',
+          padding: '16px',
+          background: '#020204',
+          cursor: 'zoom-in',
+          userSelect: 'none'
+        }
+      });
+
+      // Implement mouse drag to pan on the container directly
+      contentContainer.onmousedown = (e) => {
+        if (!isFullRes) return;
+        isDragging = true;
+        dragThresholdMet = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        scrollLeft = contentContainer.scrollLeft;
+        scrollTop = contentContainer.scrollTop;
+        contentContainer.style.cursor = 'grabbing';
+      };
+
+      contentContainer.onmousemove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          dragThresholdMet = true;
+        }
+        contentContainer.scrollLeft = scrollLeft - dx;
+        contentContainer.scrollTop = scrollTop - dy;
+      };
+
+      contentContainer.onmouseup = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
+      };
+
+      contentContainer.onmouseleave = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
+      };
+
+      const img = makeElement('img', {
+        src: imgSrc,
+        alt: title,
+        style: {
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain',
+          borderRadius: '4px',
+          pointerEvents: 'auto', // Re-enable pointer events to distinguish off-image clicks
+          display: 'block'
+        },
+        onerror: (e) => {
+          e.target.style.display = 'none';
+          const errorMsg = makeElement(
+            'div',
+            {
+              style: {
+                color: '#f87171',
+                fontFamily: 'ui-monospace, monospace',
+                fontSize: '14px',
+                padding: '24px',
+                background: '#0f172a',
+                borderRadius: '8px',
+                border: '1px solid #ef4444'
+              }
+            },
+            `Image Fallback: ${title}\n(Place file in /images/${imgSrc.split('/').pop()})`
+          );
+          contentContainer.appendChild(errorMsg);
+        }
+      });
+
+      // Toggle Zoom and Resolution using click event on the viewport
+      contentContainer.onclick = (e) => {
+        e.stopPropagation(); // Stop click from bubbling up to the outer overlay that closes the modal!
+
+        // If the action was dragging, ignore toggle Zoom
+        if (dragThresholdMet) {
+          dragThresholdMet = false;
+          return;
+        }
+
+        // If click was on the empty background (not on the image), close the modal entirely!
+        if (e.target === contentContainer) {
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 250);
+          return;
+        }
+
+        isFullRes = !isFullRes;
+        if (isFullRes) {
+          contentContainer.style.display = 'block';
+          img.style.width = 'auto';
+          img.style.height = 'auto';
+          img.style.maxWidth = 'none';
+          img.style.maxHeight = 'none';
+          img.style.objectFit = 'none';
+          img.style.margin = '0 auto';
+          contentContainer.style.cursor = 'zoom-out';
+          badge.textContent = 'Click image to fit screen (Drag to pan)';
+        } else {
+          contentContainer.style.display = 'flex';
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          img.style.objectFit = 'contain';
+          img.style.margin = '0';
+          contentContainer.style.cursor = 'zoom-in';
+          badge.textContent = 'Click image for Full Resolution';
+        }
+      };
+
+      contentContainer.appendChild(badge);
+      contentContainer.appendChild(img);
+
+      const topBar = makeElement('div', {
+        style: {
+          width: '100%',
+          boxSizing: 'border-box',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 24px',
+          background: 'rgba(10, 10, 15, 0.95)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          zIndex: '30'
+        }
+      }, [
+        makeElement('span', {
+          style: {
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            fontFamily: 'ui-monospace, monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }
+        }, title),
+        makeElement('button', {
+          style: {
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#ffffff',
+            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            marginRight: '8px'
+          },
+          onclick: (e) => {
+            e.stopPropagation();
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 250);
+          }
+        }, '✕')
+      ]);
+
+      const captionBar = caption ? makeElement('div', {
+        style: {
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '90%',
+          maxWidth: '800px',
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          color: '#e2e8f0',
+          fontSize: '13px',
+          lineHeight: '1.5',
+          textAlign: 'center',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: '30'
+        },
+        onclick: (e) => e.stopPropagation()
+      }, caption) : null;
+
       const overlay = makeElement('div', {
         id: 'logo-exhibit-overlay',
-        className: 'logo-diag-overlay',
         style: {
           position: 'fixed',
           inset: '0',
           zIndex: '100002',
-          background: 'rgba(5, 5, 8, 0.9)',
-          backdropFilter: 'blur(10px)',
+          background: 'rgba(5, 5, 8, 0.98)',
+          backdropFilter: 'blur(12px)',
           display: 'flex',
+          flexDirection: 'column',
           alignItems: 'center',
-          justifyContent: 'center',
+          justifyContent: 'flex-start',
           transition: 'opacity 0.25s ease',
-          opacity: '0'
+          opacity: '0',
+          width: '100vw',
+          height: '100vh',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
         },
         onclick: () => {
           overlay.style.opacity = '0';
           setTimeout(() => overlay.remove(), 250);
         }
       }, [
-        makeElement('button', {
-          style: {
-            position: 'absolute',
-            top: '24px',
-            right: '24px',
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            color: '#ffffff',
-            borderRadius: '50%',
-            width: '44px',
-            height: '44px',
-            cursor: 'pointer',
-            fontSize: '20px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s'
-          }
-        }, '✕'),
-        
-        makeElement('img', {
-          src: imgSrc,
-          alt: title,
-          style: {
-            maxWidth: '90vw',
-            maxHeight: '85vh',
-            borderRadius: '8px',
-            boxShadow: '0 25px 50px rgba(0, 0, 0, 0.75)',
-            border: '1px solid rgba(255, 255, 255, 0.15)',
-            transition: 'transform 0.25s cubic-bezier(0.25, 1, 0.5, 1)',
-            transform: 'scale(0.95)'
-          },
-          onload: (e) => {
-            e.target.style.transform = 'scale(1)';
-          },
-          onerror: (e) => {
-            e.target.style.display = 'none';
-            const errorMsg = makeElement(
-              'div',
-              {
-                style: {
-                  color: '#f87171',
-                  fontFamily: 'ui-monospace, monospace',
-                  fontSize: '14px',
-                  padding: '24px',
-                  background: '#0f172a',
-                  borderRadius: '8px',
-                  border: '1px solid #ef4444'
-                }
-              },
-              `Image Fallback: ${title}\n(Place file in /LegalImages/${imgSrc.split('/').pop()})`
-            );
-            overlay.appendChild(errorMsg);
-          }
-        })
+        topBar,
+        contentContainer,
+        captionBar
       ]);
 
       document.body.appendChild(overlay);
-      
+
       requestAnimationFrame(() => {
         overlay.style.opacity = '1';
       });
@@ -1463,7 +1604,7 @@ class AccuDrawValuation {
       }, 22000);
     }
 
-  // Smoothly closes the BFN theatrical overlay after fading the video frame out to avoid flash stutters
+  // Center theatrical background video overlay cleanup method
     fadeAndCloseBFN() {
       const overlay = document.getElementById('bfn-overlay');
       const videoFrame = document.getElementById('bfn-video-frame');
@@ -1474,7 +1615,7 @@ class AccuDrawValuation {
         overlay.style.pointerEvents = 'none';
       }
       if (videoFrame) {
-        videoFrame.style.opacity = '0'; // Immediately fade the frame out
+        videoFrame.style.opacity = '0';
         videoFrame.style.transform = 'scale(0.9) translateY(20px)';
       }
 
@@ -1482,12 +1623,16 @@ class AccuDrawValuation {
         clearTimeout(this.fallbackTimeout);
       }
 
-      // Defer video state changes/pause commands until the frame is fully transparent to conceal closing artifacts
+      // Defer video state changes and clean up completely to prevent state pollution on next play
       setTimeout(() => {
         if (this.bfnPlayer) {
           try {
-            this.bfnPlayer.pause();
+            this.bfnPlayer.destroy();
           } catch (e) {}
+          this.bfnPlayer = null;
+        }
+        if (overlay) {
+          overlay.remove();
         }
         document.body.classList.remove('bfn-active');
         if (consensusContainer) {
