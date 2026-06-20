@@ -1,7 +1,9 @@
 class AiPerspectivePage {
     render(app) {
+      this.app = app;
+      this.activeModalPlayer = null;
       this.applyStyles();
-      return this.buildAIPerspectivePanel(app);
+      return this.buildPage();
     }
 
     buildAIPerspectivePanel(app) {
@@ -282,123 +284,760 @@ class AiPerspectivePage {
 
     applyStyles() {
       applyCss(`
-        .ai-editorial-container {
+        .quora-reader-container {
           display: flex;
           flex-direction: column;
-          gap: 48px;
+          gap: 40px;
+          max-width: 800px;
+          margin: 0 auto;
+          width: 100%;
         }
-        .ai-essay-card {
-          padding: 48px !important;
-          background-color: var(--bg-panel) !important;
-          border: 1px solid var(--border-color) !important;
-          border-radius: 16px !important;
+        
+        .quora-post-card {
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-color);
+          border-radius: 16px;
+          padding: 24px;
+          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
-        .ai-essay-title {
-          font-size: 28px !important;
-          font-weight: 800 !important;
-          color: var(--text-title);
-          letter-spacing: -0.02em;
-          line-height: 1.35;
-          margin-bottom: 28px;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 20px;
-        }
+        
         @media (min-width: 768px) {
-          .ai-essay-title { font-size: 36px !important; }
+          .quora-post-card {
+            padding: 48px;
+          }
         }
-        .ai-essay-p {
-          font-size: 16px !important;
-          line-height: 1.85 !important;
-          color: var(--text-primary) !important;
-          margin-bottom: 1.75rem !important;
+
+        .quora-question-title {
+          font-size: 24px;
+          font-weight: 800;
+          color: var(--text-title);
+          line-height: 1.35;
+          margin-bottom: 24px;
+          letter-spacing: -0.01em;
         }
-        .ai-essay-p:last-of-type {
-          margin-bottom: 0 !important;
+        
+        @media (min-width: 768px) {
+          .quora-question-title {
+            font-size: 30px;
+          }
         }
-        .ai-section-break {
-          border-left: 4px solid #3b82f6;
-          padding-left: 20px;
-          margin: 64px 0 32px 0 !important;
+
+        .quora-author-row {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+          border-bottom: 1px solid var(--border-color);
+          padding-bottom: 24px;
+          margin-bottom: 32px;
         }
-        .ai-section-heading {
-          font-size: 20px !important;
-          font-weight: 800 !important;
-          color: var(--text-title) !important;
+
+        .quora-author-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 50%;
+          background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+          color: #ffffff;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 16px;
+          flex-shrink: 0;
+          box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+        }
+
+        .quora-author-info {
+          display: flex;
+          flex-direction: column;
+          min-width: 0;
+        }
+
+        .quora-author-name {
+          font-size: 15px;
+          font-weight: 700;
+          color: var(--text-title);
+        }
+
+        .quora-author-bio {
+          font-size: 13px;
+          color: var(--text-secondary);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
+
+        .quora-post-date {
+          font-size: 11px;
+          color: var(--text-secondary);
+          margin-top: 2px;
+        }
+
+        .quora-essay-stream {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .quora-paragraph {
+          font-size: 16px;
+          line-height: 1.85;
+          color: var(--text-primary);
+          margin-bottom: 24px;
+        }
+
+        .quora-paragraph strong {
+          color: var(--text-title);
+        }
+
+        .quora-section-title {
+          font-size: 18px;
+          font-weight: 800;
+          color: var(--text-title);
+          margin: 44px 0 20px 0;
           text-transform: uppercase;
-          letter-spacing: 0.05em;
+          letter-spacing: 0.08em;
           font-family: ui-monospace, monospace;
+          border-left: 4px solid #3b82f6;
+          padding-left: 16px;
         }
-        .ai-media-block {
+
+        .quora-image-card, .quora-video-card {
           background-color: var(--bg-panel-inner);
           border: 1px solid var(--border-color);
           border-radius: 12px;
-          padding: 32px !important;
-          margin-top: 36px !important;
-          margin-bottom: 36px !important;
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
+          overflow: hidden;
+          margin: 32px 0;
+          transition: border-color 0.2s ease, transform 0.2s ease;
         }
-        @media (min-width: 1024px) {
-          .ai-media-block {
-            flex-direction: row;
-            align-items: flex-start;
-          }
+
+        .quora-image-card:hover, .quora-video-card:hover {
+          border-color: var(--border-hover);
         }
-        .ai-media-block-img-area {
+
+        .quora-image-wrapper, .quora-video-thumbnail-wrapper {
+          position: relative;
+          cursor: pointer;
+          overflow: hidden;
+          background-color: #000;
+        }
+
+        .quora-image {
           width: 100%;
-          max-width: 100%;
-          flex-shrink: 0;
+          height: auto;
+          display: block;
+          transition: transform 0.3s ease;
         }
-        @media (min-width: 1024px) {
-          .ai-media-block-img-area {
-            width: 380px;
-          }
+
+        .quora-image-wrapper:hover .quora-image {
+          transform: scale(1.02);
         }
-        .ai-media-block-desc {
-          flex: 1;
+
+        .quora-image-hover-overlay, .quora-video-play-overlay {
+          position: absolute;
+          inset: 0;
+          background-color: rgba(5, 7, 18, 0.4);
           display: flex;
-          flex-direction: column;
-          gap: 20px;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          transition: opacity 0.2s ease;
         }
-        .ai-media-block-title {
-          font-size: 18px !important;
-          font-weight: 700 !important;
-          color: var(--text-title);
+
+        .quora-image-wrapper:hover .quora-image-hover-overlay {
+          opacity: 1;
         }
-        .ai-media-block-body {
-          font-size: 14.5px !important;
-          line-height: 1.75 !important;
-          color: var(--text-primary);
-          margin-bottom: 1rem !important;
+
+        .quora-image-hover-overlay span {
+          background-color: rgba(15, 23, 42, 0.85);
+          color: #ffffff;
+          padding: 8px 18px;
+          border-radius: 20px;
+          font-size: 12px;
+          font-weight: 700;
+          backdrop-filter: blur(4px);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
         }
-        .ai-media-block-footer {
-          font-size: 13.5px !important;
-          line-height: 1.75 !important;
+
+        .quora-image-info, .quora-video-info {
+          padding: 20px 24px;
+          border-top: 1px solid var(--border-color);
+        }
+
+        .quora-image-caption {
+          font-size: 13.5px;
           color: var(--text-secondary);
+          line-height: 1.6;
           font-style: italic;
-          border-left: 2px solid #3b82f6;
-          padding-left: 16px;
+          display: block;
         }
-        .ai-dual-grid {
+
+        .quora-video-thumbnail {
+          width: 100%;
+          height: auto;
+          aspect-ratio: 16 / 9;
+          object-fit: cover;
+          display: block;
+          transition: transform 0.3s ease;
+        }
+
+        .quora-video-thumbnail-wrapper:hover .quora-video-thumbnail {
+          transform: scale(1.02);
+        }
+
+        .quora-video-thumbnail-wrapper .quora-video-play-overlay {
+          opacity: 1;
+        }
+
+        .quora-video-play-btn {
+          width: 64px;
+          height: 64px;
+          background: radial-gradient(circle, #3b82f6 0%, #1d4ed8 100%);
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          box-shadow: 0 6px 20px rgba(29, 78, 216, 0.4);
+          transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.2s ease;
+          border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .quora-video-thumbnail-wrapper:hover .quora-video-play-btn {
+          transform: scale(1.1);
+          box-shadow: 0 10px 28px rgba(29, 78, 216, 0.65);
+        }
+
+        .quora-video-play-icon {
+          color: #ffffff;
+          font-size: 22px;
+          margin-left: 4px;
+        }
+
+        .quora-video-title {
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--text-title);
+          margin-bottom: 6px;
+        }
+
+        .quora-video-caption {
+          font-size: 13.5px;
+          color: var(--text-secondary);
+          line-height: 1.6;
+        }
+
+        .quora-dalle-grid {
           display: grid;
           grid-template-columns: 1fr;
-          gap: 28px;
-          margin-top: 24px;
-          margin-bottom: 24px;
+          gap: 20px;
+          margin: 32px 0;
         }
-        @media (min-width: 768px) {
-          .ai-dual-grid {
+        
+        @media (min-width: 640px) {
+          .quora-dalle-grid {
             grid-template-columns: repeat(2, 1fr);
           }
         }
-        .backstory-paragraph, .backstory-paragraph-highlight {
-          margin-bottom: 1.5rem !important;
-          line-height: 1.8 !important;
+
+        .quora-car-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 16px;
+          margin: 32px 0;
         }
-        .backstory-paragraph:last-child, .backstory-paragraph-highlight:last-child {
-          margin-bottom: 0 !important;
+        
+        @media (min-width: 768px) {
+          .quora-car-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
         }
-      `, "ai-perspective-page-styles");
+
+        .ai-lightbox-overlay {
+          position: fixed;
+          inset: 0;
+          z-index: 99999;
+          background-color: rgba(5, 7, 18, 0.85);
+          backdrop-filter: blur(12px);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          opacity: 0;
+          pointer-events: none;
+          transition: opacity 0.25s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        .ai-lightbox-overlay.is-active {
+          opacity: 1;
+          pointer-events: auto;
+        }
+
+        .ai-lightbox-dialog {
+          width: 90vw;
+          max-width: 1000px;
+          background-color: var(--bg-panel);
+          border: 1px solid var(--border-color);
+          border-radius: 16px;
+          box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);
+          overflow: hidden;
+          position: relative;
+          transform: scale(0.9) translateY(20px);
+          opacity: 0;
+          transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.3s ease;
+        }
+
+        .ai-lightbox-overlay.is-active .ai-lightbox-dialog {
+          transform: scale(1) translateY(0);
+          opacity: 1;
+        }
+
+        .ai-lightbox-close {
+          position: absolute;
+          top: 16px;
+          right: 16px;
+          background-color: rgba(255, 255, 255, 0.1);
+          border: 1px solid rgba(255, 255, 255, 0.15);
+          color: #ffffff;
+          font-size: 18px;
+          width: 36px;
+          height: 36px;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          z-index: 10;
+          transition: all 0.2s ease;
+        }
+
+        .ai-lightbox-close:hover {
+          background-color: rgba(255, 255, 255, 0.25);
+          transform: scale(1.05);
+        }
+
+        .ai-lightbox-content {
+          background-color: #000000;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+
+        .ai-lightbox-img {
+          max-width: 100%;
+          max-height: 70vh;
+          object-fit: contain;
+          display: block;
+        }
+
+        .ai-lightbox-video-frame {
+          width: 100%;
+          aspect-ratio: 16 / 9;
+          background-color: #000;
+        }
+
+        .ai-lightbox-caption {
+          padding: 20px 24px;
+          background-color: var(--bg-panel);
+          border-top: 1px solid var(--border-color);
+        }
+
+        .ai-lightbox-title {
+          font-size: 16px;
+          font-weight: 800;
+          color: var(--text-title);
+          display: block;
+          margin-bottom: 4px;
+        }
+
+        .ai-lightbox-subtitle {
+          font-size: 13px;
+          color: var(--text-secondary);
+          line-height: 1.5;
+        }
+      `, 'ai-perspective-quora-styles');
     }
-  }
+  
+  buildPage() {
+      return makeElement('div', { className: 'quora-reader-container' }, [
+        this.buildContextCard(),
+        this.buildQuoraPost()
+      ]);
+    }
+
+  buildContextCard() {
+      const pIntroHighlight = [
+        "The velocity of AI automation has created an urgent, narrow window for career restoration. ",
+        "The conventional advice to 'take any low-level, menial job now and rebuild your career later' ",
+        "is mathematically and structurally blind to this timeline. Spending a year in survival-level labor ",
+        "at this critical juncture means missing the foundational generative AI transition entirely. ",
+        "By the time one tries to return, standard software syntax and interaction modeling will be ",
+        "fully automated, permanently closing the door on my ability to leverage my extremely rare visual systems engineering skills."
+      ].join("");
+
+      const pIntroBody = [
+        "With technology changing faster than at any point in human history, the opportunity cost of forced ",
+        "professional exile is absolute. Below is one of my typical Quora posts on the subject. In this post, ",
+        "I concentrate mostly on a particular side of AI - graphics and video - focusing on the Star Wars fan ",
+        "creations to illustrate the sheer velocity of change, and why establishing an immediate, focused ",
+        "technical runway is a matter of urgent survival."
+      ].join("");
+
+      return makeElement('div', { className: 'backstory-gradient-card' }, [
+        makeElement('h3', { className: 'text-xl font-bold text-[var(--text-title)]' }, 'The Core Thesis: Automation Timing & Career Recovery'),
+        makeElement('p', { className: 'backstory-paragraph-highlight' }, pIntroHighlight),
+        makeElement('p', { className: 'backstory-paragraph' }, pIntroBody)
+      ]);
+    }
+
+  buildQuoraPost() {
+      return makeElement('article', { className: 'quora-post-card' }, [
+        makeElement('h1', { className: 'quora-question-title' }, 'Do you believe AI will replace most all professions?'),
+        this.buildQuoraAuthorRow(),
+        this.buildQuoraEssayContent()
+      ]);
+    }
+
+  buildQuoraAuthorRow() {
+      return makeElement('div', { className: 'quora-author-row' }, [
+        makeElement('div', { className: 'quora-author-avatar' }, 'RB'),
+        makeElement('div', { className: 'quora-author-info' }, [
+          makeElement('span', { className: 'quora-author-name' }, 'Rob Brown'),
+          makeElement('span', { className: 'quora-author-bio' }, 'Software developer with a whole lot of other interests'),
+          makeElement('span', { className: 'quora-post-date' }, 'Updated June 19, 2026')
+        ])
+      ]);
+    }
+
+  buildQuoraEssayContent() {
+      const stream = makeElement('div', { className: 'quora-essay-stream' });
+
+      // First Quora paragraph
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph font-medium' }, 
+        "Yes, I believe AI will replace most all professions. This is an incredibly difficult thing for many to accept because it challenges our fundamental assumptions about society - specifically, the link between work, income, and basic survival. The assumption that we must sell our labor to live makes the prospect of widespread automation feel like an immediate sentence of starvation, but that is a structural issue we must solve, not an indictment of the technology's capability."
+      ));
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "A common bias is to look at your own profession and assert: 'AI won't replace my job because my role has these unique, highly complex challenges.' This is a dangerous defense mechanism. I believe it is smarter to step back, analyze the larger trajectory across multiple industries, and look honestly at the rate of improvement."
+      ));
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "To visually demonstrate this speed, I focus here on graphics, film, special effects, and animation. I select this domain not because it is more complex than other jobs, but because it communicates visually. Having spent over 45 years in this field - obsessing over 35mm in-camera effects in the late 70s, learning traditional industrial rendering in the 80s, and later developing advanced 3D systems - I have a deep understanding of what it conventionally takes to build these visuals."
+      ));
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "What we are seeing today is not 'computer graphics' in the conventional sense. This is not the result of humans writing complex rendering equations or hardcoding lighting rules. These are generative AI models that have emerged with the ability to look at millions of data points, figure seriously complex structures out, and execute them perfectly on their own."
+      ));
+
+      // Section 1: Star Wars De-aging
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '1. The Star Wars Paradigm Shift'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "Notice how AI already massively exceeds the ability of special effects professionals to do things like show an actor how they looked 50 years ago. It isn't just the de-aging; it's the special effects, environments, and complete scene composites that are just done on the cheap - done for almost nothing, with probably a 5,000 to 1 ratio as far as cost compared to traditional Hollywood studio production. To do this conventionally via 3D graphics is incredibly hard, expensive, and almost always lands in the 'uncanny valley.' Today, AI models do it without missing a beat, and you simply cannot tell."
+      ));
+
+      // Star Wars image
+      stream.appendChild(this.buildImageCard(
+        '/images/starWarsDeAging.webp',
+        'Luke, Leia, and Lando Young Again',
+        'Luke, Leia, Lando, etc. young again - perfectly realized without spending millions on studio rendering. The special effects are executed instantly on the cheap, with a cost disruption ratio exceeding 5,000 to 1 compared to legacy Hollywood techniques.'
+      ));
+
+      // Star Wars videos
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "I suggest looking closely at these fan-made special effect restorations. Think about what is actually going on under the hood of these renders:"
+      ));
+      
+      const swVideoGrid = makeElement('div', { className: 'quora-dalle-grid' }, [
+        this.buildVideoCard('KlVPwny_1qw', 'Beggar\'s Canyon Dead Man\'s Run', 'Generative fan reconstruction of classical Star Wars canyon navigation'),
+        this.buildVideoCard('Oyd_xFKbkw8', 'Beggar\'s Canyon Shadows of the Empire', 'Atmospheric and volumetric lighting restoration from classical conceptual frames')
+      ]);
+      stream.appendChild(swVideoGrid);
+
+      // Section 2: Pigeon Animation
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '2. Bypassing Traditional Craft Training'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "Here is another sequence, done by a hobbyist in just a few hours - a single afternoon. The animation is darn close to movie quality. I count three glitches (extra foot, left pigeon mouthing right pigeon's words at one point, buildings different in one shot). But come on. An animation instructor explains how this would take a really good student a semester to a year of intensive labor to put together. It is staggeringly good for something done by 'computer intuition' rather than by human written algorithms and a ton of human work."
+      ));
+
+      stream.appendChild(this.buildVideoCard(
+        '-nZD4XLMrNw', 
+        'The 24-Hour Hobbyist Pigeon Animation', 
+        'Staggering visual fidelity put together in a single afternoon (just a few hours) by a hobbyist. Click to expand full width.'
+      ));
+
+      // Section 3: Trajectory DALL-E 2 vs DALL-E 3
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '3. Mapping the Exponential Curve'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "Let's talk about trajectory a bit, while sticking with the graphical side of AI. Below are images I prompted across a 14-month window. You can see the difference between the 2022 images and the 2023 images, using the exact same prompts, same product, just a newer version."
+      ));
+
+      // DALL-E grid
+      stream.appendChild(this.buildDallEComparisonGrid());
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "The 2022 images represent Point A: abstract, fragmented outputs of 'glass sculpture of a dog', 'winged unicorn dog in the rain', and 'robot hand with wood and green soft material'. They are interesting, but barely usable. The 2023 images represent Point B: professional-grade outputs showing a 'cyborg girl with a ragged sweater playing an electronic piano' and a 'ceramic elephant sculpture'. Look at the improvement in such a short period."
+      ));
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "There are things that are a bit... off... in even the images from 2023. But then it got better, and allowed you to modify or be 'inspired by' existing images."
+      ));
+
+      // Section 4: Car Reflections
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '4. Spatial Material Understanding & Light Transport'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "Here is an experiment I did a year ago, starting with a nice photo of a car with an ugly background, and having a free image generator (Google's Nano Banana) replace the background, while somehow making incredibly realistic reflections... good luck doing that in Photoshop. And then, well, having some fun. How did it do this, short of magic? What degree of understanding of the subject matter is needed to do this? What would it have taken to do this using pre-AI technology such as Photoshop or Blender?"
+      ));
+
+      // Car grid
+      stream.appendChild(this.buildCarReflectionGrid());
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph italic text-[var(--text-secondary)]' }, 
+        "(and, for all those who say it is just doing some sort of 'collage' from images it has seen on the internet... uhhhhh. No. You are in denial.)"
+      ));
+
+      // Section 5: Row of Houses
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '5. True Spatial Coherence'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "Or how about this. Starting with a single photo I took of a pretty row of houses, the model was asked to redraw the scene as a clean line drawing from a completely different perspective angle. Again... how does it know how to do this short of truly understanding what it is seeing? If it can do this, we are probably very close to it actually being able to do real architecture work, because it seems to have the sort of structural and spatial understanding necessary."
+      ));
+
+      stream.appendChild(this.buildImageCard(
+        '/images/housePhotoAndIllustration.webp',
+        'Pretty Row of Houses Reconstructed as a Line Drawing',
+        'From a single photographic input, the model accurately projects a perfect line drawing from a completely new virtual perspective angle, hinting at the automation of architectural modeling.'
+      ));
+
+      // Section 6: Physical Robotics (NEW)
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '6. The Physical Frontier: Humanoid Robotics'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "While generative models rapidly replace digital and creative labor, physical robotics is progressing on an equally vertical trajectory. State-of-the-art humanoid systems are stepping out of research labs and transitioning directly into structured factory floors, logistics centers, and manual workflows. Within the next decade, the integration of physical humanoid robotics with localized multimodal AI models will establish an undeniable economic incentive to automate traditional physical labor, closing the circle of complete workforce automation."
+      ));
+
+      stream.appendChild(this.buildVideoCard(
+        '7VV6poSrk3Y',
+        'State of the Art Humanoid Robotics Frontier',
+        'Demonstrating recent breakthroughs in balance, motor control, and task execution in physical humanoid robotics (1-minute compilation).',
+        39
+      ));
+
+      // Concluding thoughts
+      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '7. Connecting the Dots'));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "You may say 'this is just silly pictures and video stuff, not nearly as complex as what I do at my job.' But you also know deep down, that the people who work on this stuff (film, animation, 3d graphics and effects, architectural rendering... prior to AI getting involved) are really smart, really talented... and here they are just looking at it and saying 'oh shit... it just does my job better than I ever could do it. For free or nearly so.'"
+      ));
+
+      // Bold and italic formatting request applied directly via HTML tags as requested
+      const pClearWrapper = makeElement('p', { className: 'quora-paragraph' });
+      pClearWrapper.innerHTML = "I have no doubt that hurts. <strong><em>And to be clear, I am in no way arguing that this is all positive.</em></strong>";
+      stream.appendChild(pClearWrapper);
+
+      const pExpWrapper = makeElement('p', { className: 'quora-paragraph font-bold text-emerald-400' });
+      pExpWrapper.innerHTML = "There's going to be a moment like this for just about everyone. I see it mostly in programming, where it has even more superhuman capabilities than in film and animation. (programming doesn't communicate as easily as film and animation, hence my examples, but it is <strong><em>absolutely</em></strong> at the front of the pack of AI skills, and I have an <strong><em>immense amount of direct experience</em></strong> with it doing stupendously complex things).";
+      stream.appendChild(pExpWrapper);
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
+        "You can hope for it to not happen, for AI to just go away. You can rail against the data centers on the basis of how they use too much water and drive up the prices of electricity. Good luck."
+      ));
+
+      const pFinalWrapper = makeElement('p', { className: 'quora-paragraph text-xl font-bold border-t border-[var(--border-color)] pt-6 mt-8' });
+      pFinalWrapper.innerHTML = "I think it's smarter to take a close look, not just in your own field but in others, and especially, map the trajectory. And plan for - what all the evidence suggests - is going to happen in the near future. Which is that it is going to converge on being able to do <strong><em>ALL ECONOMICALLY VALUABLE HUMAN TASKS</em></strong>, better and faster and far cheaper than humans. Within the next few years.";
+      stream.appendChild(pFinalWrapper);
+
+      return stream;
+    }
+
+  buildVideoCard(videoId, title, caption, startTime = 0) {
+      const thumbnailSrc = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+
+      return makeElement('div', { className: 'quora-video-card' }, [
+        makeElement('div', {
+          className: 'quora-video-thumbnail-wrapper',
+          onclick: () => this.openMediaModal('video', videoId, title, { subtitle: caption, startTime })
+        }, [
+          makeElement('img', {
+            src: thumbnailSrc,
+            alt: title,
+            className: 'quora-video-thumbnail',
+            onerror: (e) => {
+              e.target.src = 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=800';
+            }
+          }),
+          makeElement('div', { className: 'quora-video-play-overlay' }, [
+            makeElement('div', { className: 'quora-video-play-btn' }, [
+              makeElement('span', { className: 'quora-video-play-icon' }, '▶')
+            ])
+          ])
+        ]),
+        makeElement('div', { className: 'quora-video-info' }, [
+          makeElement('h4', { className: 'quora-video-title' }, title),
+          makeElement('p', { className: 'quora-video-caption' }, caption)
+        ])
+      ]);
+    }
+
+  buildImageCard(imgSrc, title, caption) {
+      return makeElement('div', { className: 'quora-image-card' }, [
+        makeElement('div', {
+          className: 'quora-image-wrapper',
+          onclick: () => this.openMediaModal('image', imgSrc, title, { subtitle: caption })
+        }, [
+          makeElement('img', {
+            src: imgSrc,
+            alt: title,
+            className: 'quora-image',
+            onerror: (e) => {
+              e.target.style.display = 'none';
+              const fb = e.target.parentNode.querySelector('.quora-image-fallback');
+              if (fb) fb.style.display = 'flex';
+            }
+          }),
+          makeElement('div', {
+            className: 'quora-image-fallback',
+            style: {
+              display: 'none',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'var(--bg-panel-inner)',
+              border: '1px dashed var(--border-color)',
+              borderRadius: '8px',
+              width: '100%',
+              height: '240px',
+              color: 'var(--text-secondary)',
+              fontSize: '12px',
+              fontFamily: 'ui-monospace, monospace',
+              padding: '24px',
+              textAlign: 'center'
+            }
+          }, [
+            makeElement('span', { style: { fontSize: '28px', marginBottom: '8px' } }, '📷'),
+            makeElement('span', { className: 'font-bold text-sm text-[var(--text-title)]' }, title),
+            makeElement('span', { style: { fontSize: '10px', marginTop: '6px', opacity: 0.6 } }, `Asset: ${imgSrc}`)
+          ]),
+          makeElement('div', { className: 'quora-image-hover-overlay' }, [
+            makeElement('span', {}, 'Click to expand 🔍')
+          ])
+        ]),
+        makeElement('div', { className: 'quora-image-info' }, [
+          makeElement('span', { className: 'quora-image-caption' }, caption)
+        ])
+      ]);
+    }
+
+  buildDallEComparisonGrid() {
+      return makeElement('div', { className: 'quora-dalle-grid' }, [
+        this.buildImageCard('/images/compareDallE_1.webp', '2022 Prompts (Point A)', 'Point A: glass sculpture of a dog, winged unicorn dog in the rain, robot hand with wood and green soft material'),
+        this.buildImageCard('/images/compareDallE_2.webp', '2023 Prompts (Point B)', 'Point B: cyborg girl with ragged sweater playing an electronic piano, ceramic elephant sculpture')
+      ]);
+    }
+
+  buildCarReflectionGrid() {
+      return makeElement('div', { className: 'quora-car-grid' }, [
+        this.buildImageCard('/images/carOriginal.webp', 'Original Red Car', 'Used as input: Clear photo of a classic red car'),
+        this.buildImageCard('/images/carStreetArt.png', 'Street Art Swap', 'Seemingly accurate reflections on the body that would be incredibly hard to do short of a full 3D model'),
+        this.buildImageCard('/images/carMossy.png', 'Forest Moss Swap', 'Completely transformed forest environment: not on a red metallic chassis because that isn\'t even there anymore, but just using elements of the original picture to completely transform it')
+      ]);
+    }
+
+  openMediaModal(type, source, title, options = {}) {
+      const existing = document.getElementById('ai-media-modal');
+      if (existing) existing.remove();
+
+      const modal = makeElement('div', {
+        id: 'ai-media-modal',
+        className: 'ai-lightbox-overlay',
+        onclick: (e) => {
+          if (e.target.id === 'ai-media-modal') {
+            this.closeMediaModal();
+          }
+        }
+      });
+
+      const closeBtn = makeElement('button', {
+        className: 'ai-lightbox-close',
+        onclick: () => this.closeMediaModal()
+      }, '✕');
+
+      const contentContainer = makeElement('div', { className: 'ai-lightbox-content' });
+
+      if (type === 'image') {
+        const img = makeElement('img', {
+          src: source,
+          alt: title,
+          className: 'ai-lightbox-img'
+        });
+        contentContainer.appendChild(img);
+      } else if (type === 'video') {
+        const videoContainer = makeElement('div', {
+          id: 'ai-lightbox-video-frame',
+          className: 'ai-lightbox-video-frame'
+        });
+        contentContainer.appendChild(videoContainer);
+
+        setTimeout(() => {
+          try {
+            if (window.VideoPlayer) {
+              this.activeModalPlayer = new VideoPlayer({
+                container: videoContainer,
+                containerId: 'ai-lightbox-video-frame',
+                playerType: 'youtube',
+                videoId: source,
+                autoplay: true,
+                controls: true,
+                startTime: options.startTime || 0
+              });
+            } else {
+              this.useIframeFallback(videoContainer, source, options.startTime);
+            }
+          } catch (err) {
+            this.useIframeFallback(videoContainer, source, options.startTime);
+          }
+        }, 50);
+      }
+
+      const captionBar = makeElement('div', { className: 'ai-lightbox-caption' }, [
+        makeElement('span', { className: 'ai-lightbox-title' }, title),
+        options.subtitle ? makeElement('p', { className: 'ai-lightbox-subtitle' }, options.subtitle) : null
+      ]);
+
+      const dialogWrapper = makeElement('div', { className: 'ai-lightbox-dialog' }, [
+        closeBtn,
+        contentContainer,
+        captionBar
+      ]);
+
+      modal.appendChild(dialogWrapper);
+      document.body.appendChild(modal);
+
+      requestAnimationFrame(() => {
+        modal.classList.add('is-active');
+      });
+    }
+
+  closeMediaModal() {
+      const modal = document.getElementById('ai-media-modal');
+      if (modal) {
+        modal.classList.remove('is-active');
+        if (this.activeModalPlayer) {
+          try {
+            this.activeModalPlayer.destroy();
+          } catch (e) {}
+          this.activeModalPlayer = null;
+        }
+        setTimeout(() => modal.remove(), 250);
+      }
+    }
+
+  useIframeFallback(container, videoId, startTime = 0) {
+      container.innerHTML = '';
+      const iframe = makeElement('iframe', {
+        src: `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&start=${startTime}`,
+        style: {
+          width: '100%',
+          height: '100%',
+          border: 'none'
+        },
+        allow: 'autoplay; encrypted-media',
+        allowfullscreen: 'true'
+      });
+      container.appendChild(iframe);
+    }
+}
