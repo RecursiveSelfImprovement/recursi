@@ -6,6 +6,7 @@ class CaretakerBiasPage {
       container.appendChild(this.buildCaretakerTimelineBlock(app));
       container.appendChild(this.buildLinkedInExhibitsPanel(app));
       container.appendChild(this.buildVotingContrastPanel(app));
+      container.appendChild(this.buildQuoraPolarizationIframe(app)); // Reading and mounting
       container.appendChild(this.buildCaretakerHistoryGrid(app));
       return container;
     }
@@ -23,10 +24,10 @@ class CaretakerBiasPage {
       ].join("");
 
       const p2 = [
-        "This analysis demonstrates that the systemic gatekeeping of our mother ",
-        "and the abrupt termination of my transition runway are motivated by a ",
-        "long-standing personal grudge, fueled by radicalized tribal beliefs that ",
-        "justify demonizing close family members."
+        "This analysis demonstrates that the initial design of the plan, the systemic ",
+        "gatekeeping of our mother and the termination of my transition runway are ",
+        "motivated by a long-standing personal grudge, fueled by radicalized tribal ",
+        "beliefs that justify demonizing close family members."
       ].join("");
 
       return makeElement('div', { className: 'backstory-gradient-card' }, [
@@ -38,19 +39,20 @@ class CaretakerBiasPage {
 
     buildCaretakerTimelineBlock(app) {
       const item1Text = [
-        "During a late-night discussion in Virginia regarding intellectual property economics, ",
-        "Kathy's husband Jack asserted: 'If it doesn't make you money, it doesn't have value.' ",
-        "Kathy escalated the argument, stating: 'We've got a lot of guns and we're not afraid to use them.' ",
-        "Rob's query ('Is that a threat?') was met with complete silence as she walked out. This extreme ",
-        "hostility initiated a profound period of personal distress."
+        "During a seemingly non-political and otherwise benign late-night discussion in Virginia ",
+        "regarding intellectual property economics, Kathy's husband Jack asserted: 'If it doesn't make you money, it doesn't have value.' ",
+        "something Rob was quietly hurt by after, for instance, making so much money for Bentley ",
+        "systems without much recognition or compensation.",
+        "Kathy became agitated at some of Rob's thoughts on the subject, and suddenly stated: 'We've got a lot of guns and we're not afraid to use them.' ",
+        "Rob's query ('Is that a threat?') was met with complete silence as she walked out."
       ].join("");
 
       const item2Text = [
         "Shortly after the Virginia incident, Rob discovered that Kathy had been publicly posting ",
         "condescending and hostile comments on her professional LinkedIn profile (such as the 'Owes You' exhibit). ",
-        "Realizing she was publicly denigrating his character soon after his multi-billion dollar CAD contributions ",
-        "were dismissed, combined with the active gun threat, devastated Rob's emotional health and necessitated ",
-        "professional therapy. This breakdown in family communication occurred in early 2022 (around March)."
+        "The realization that she was publicly denigrating his character ", 
+        "combined with the active gun threat, devastated Rob's emotional health and necessitated ",
+        "professional therapy. This breakdown in family communication occurred in early 2022."
       ].join("");
 
       const item3Text = [
@@ -92,7 +94,7 @@ class CaretakerBiasPage {
           style: { fontFamily: 'ui-monospace, monospace' } 
         }, 'Historical Inconsistencies of "Self-Reliance"'),
         makeElement('p', { className: 'text-sm text-[var(--text-secondary)]' }, 
-          "A record of past instances where Kathy refused family assistance based on extreme individualism, contrasted with Rob's immediate personal support."
+          "A record of past instances where Kathy refused family assistance  based on extreme individualism, contrasted with Rob's immediate personal support."
         ),
         
         makeElement('div', { className: 'elder-analysis-grid' }, [
@@ -100,19 +102,21 @@ class CaretakerBiasPage {
             'Refusal to Support Mother (20 Years Ago)',
             [
               "When their mother experienced controlling behavior from their father, ",
-              "Rob proposed a unified sibling alliance to protect her. Kathy refused ",
-              "to assist, stating that their mother got herself into the situation and ",
-              "'asked for it'. She has now assumed complete control over her care."
+              "Rob,  proposed a unified sibling alliance to protect her, something their mother ",
+              "had previously described as being \"her hero\".  Kathy refused ",
+              "to assist and discouraged the other siblings from doing so, stating that ",
+              "their mother brought the situation on herself. This shut down the discussion."
             ].join(""),
             '❌ Refusal of Aid'
           ),
           this.buildHistoryCard(
             'Refusal of Mediation in San Francisco',
             [
-              "During a looming custody and residential crisis, Rob asked Kathy (who was ",
-              "visiting SF) to spend just an hour speaking with his ex-wife and her mother ",
-              "to help mediate and prevent a custody disaster. Citing individual responsibility, ",
-              "she flatly refused to help, worsening the outcome."
+              "During a looming custody crisis, Rob asked Kathy (who was ",
+              "visiting SF) to spend just an hour speaking with his then-wife Eve and her mother ",
+              "to help mediate and hopefully prevent a custody disaster. Citing individual responsibility, ",
+              "she flatly refused to help.  Later than night, Eve and her mother snuck away to Chico with the baby, ",
+              "starting a years long custody battle that likely could have been avoided."
             ].join(""),
             '❌ Refusal of Mediation'
           ),
@@ -120,7 +124,7 @@ class CaretakerBiasPage {
             'Refusal to Assist with Family Interference',
             [
               "When their late father was micromanaging Rob's legal defense while showing early ",
-              "cognitive decline, Rob asked Kathy to ask him to stop interfering. She refused, ",
+              "cognitive decline, Rob asked Kathy talk with their father to discourage him from interfering. She refused, ",
               "stating: 'If you accept help, it's going to have strings attached.' While some ",
               "strings are expected, using that as an excuse to allow his defense case to be ruined ",
               "is an absurd and harmful refusal."
@@ -132,7 +136,9 @@ class CaretakerBiasPage {
             [
               "When their father's brother Gene sent an abusive email slamming Kathy, ",
               "Rob immediately wrote a strong, unhesitating defense of her, showing loyalty ",
-              "that Kathy has consistently failed to return."
+              "that Kathy has consistently failed to return. Notably, this was as personal risk to Rob,",
+              "given that Gene was at the time designated by their father with making decisions ",
+              "with regard to allocation of their father's estate, in stark contrast to those things that Kathy could have helped with at near zero cost or risk to herself."
             ].join(""),
             '💚 Rob\'s Loyal Defense'
           )
@@ -155,10 +161,10 @@ class CaretakerBiasPage {
         "This yellow notepad graphic remains active on Kathleen Brown's professional LinkedIn profile, ",
         "representing her core philosophy of extreme self-reliance. When Rob was forced to negotiate a ",
         "transition runway, she asked condescendingly on the phone: 'Do you think they owe you something?' ",
-        "This was in reference to his inventions making Bentley Systems billions of dollars. Rob was later ",
-        "laid off due to corporate management changes. Kathy reacted with utter condescension and zero empathy, ",
+        "This was in reference to his inventions making Bentley Systems billions of dollars, and the fact that Rob was later ",
+        "laid off due to corporate politics. Kathy reacted with utter condescension and zero empathy, ",
         "completely ignoring his historic technical legacy. This occurred while Rob was simultaneously ",
-        "navigating a painful custody battle where his daughter's mother turned her against him - yet Kathy ",
+        "navigating a painful custody battle where his daughter's mother turned Rob's daughter against him - yet Kathy ",
         "exhibited a total absence of family support."
       ].join("");
 
@@ -171,16 +177,18 @@ class CaretakerBiasPage {
       ].join("");
 
       const e3Text = [
-        "Following a visit with Rob and his daughter, Kathy publicly commented on the Gavin Newsom recall ",
-        "election, claiming rumored election fraud and asserting that the recall's failure 'tells you something ",
+        "Following a visit with Rob and his daughter in California where she was attending a conference, ",
+        "Kathy publicly commented on the Gavin Newsom recall ",
+        "election, asserting that the recall's failure 'tells you something ",
         "about the people who do live there.' She viewed California through a deeply hostile political lens, ",
-        "publicly insulting her brother's home immediately after enjoying his hospitality."
+        "publicly insulting her brother's home immediately after enjoying his hospitality.  She also spread rumors online that ", 
+        "Newsom really was recalled, one of her extreme conspiracy theories given that he beat the recall by 3 million votes."
       ].join("");
 
       const e4Text = [
         "Kathleen Brown publicly liked and promoted a publication by QAnon conspiracist Martin Geddes. ",
         "The article she endorsed focuses on demonizing family members who hold standard, mainstream views, ",
-        "declaring relatives as 'satanic' or trapped in a 'cult' because they chose to vaccinate. This get to ",
+        "declaring relatives as 'satanic' or trapped in a 'cult' because they chose to vaccinate. This gets to ",
         "the absolute heart of our current care situation: it shows she normalizes a mindset of discarding ",
         "and isolating close family members over tribal ideological differences."
       ].join("");
@@ -499,5 +507,240 @@ class CaretakerBiasPage {
           ])
         ])
       ]);
+    }
+
+  // Method 1: Strictly reads the clean file and mounts the sandboxed iframe
+    buildQuoraPolarizationIframe(app) {
+      const iframe = makeElement('iframe', {
+        id: 'quora-inspector-iframe',
+        style: {
+          width: '100%',
+          height: '650px',
+          border: 'none',
+          display: 'block'
+        }
+      });
+
+      // Fetch your newly-saved, unstyled clean production HTML file from disk
+      fetch('/AccuDrawValuation/quoraPolarization.html')
+        .then(res => res.text())
+        .then(html => {
+          const iframeWindow = iframe.contentWindow || iframe.contentDocument.defaultView;
+          if (iframeWindow) {
+            iframeWindow.document.open();
+            iframeWindow.document.write(html);
+            iframeWindow.document.close();
+
+            // Programmatically style the document using our completely separate visual method
+            this.applyQuoraStyles(iframeWindow.document);
+          }
+        })
+        .catch(err => console.error("Error loading clean Quora HTML:", err));
+
+      return makeElement('section', { className: 'cad-panel space-y-6' }, [
+        makeElement('div', { className: 'dashboard-header-group' }, [
+          makeElement('h3', {}, "Rob's Public Advocacy: Antipolarization & Structural Reforms"),
+          makeElement('p', {}, "An interactive mirror of Rob Brown's archived Quora answers. This page mounts your programmatically cleaned production file on startup and injects your separate styling block dynamically at runtime.")
+        ]),
+        makeElement('div', {
+          style: {
+            border: '1px solid var(--border-color)',
+            borderRadius: '12px',
+            overflow: 'hidden',
+            backgroundColor: 'var(--bg-panel-inner)',
+            boxShadow: 'inset 0 2px 8px rgba(0, 0, 0, 0.4)'
+          }
+        }, [
+          iframe
+        ])
+      ]);
+    }
+
+  // Method 2: Completely separate styling engine containing only CSS declarations for downstream iteration
+    applyQuoraStyles(doc) {
+      const styleBlock = doc.createElement('style');
+      styleBlock.id = 'q-injected-stylesheet';
+      styleBlock.textContent = 
+        ":root {" +
+        "  --q-red: #b92b27;" +
+        "  --q-bg: #f8fafc;" +
+        "  --q-card-bg: #ffffff;" +
+        "  --q-border: #e2e8f0;" +
+        "  --q-text: #334155;" +
+        "  --q-text-sub: #64748b;" +
+        "  --q-link: #2563eb;" +
+        "  --q-badge: #f1f5f9;" +
+        "}" +
+        "@media (prefers-color-scheme: dark) {" +
+        "  :root {" +
+        "    --q-bg: #0c111d;" +
+        "    --q-card-bg: #141c2b;" +
+        "    --q-border: #1e293b;" +
+        "    --q-text: #cbd5e1;" +
+        "    --q-text-sub: #94a3b8;" +
+        "    --q-link: #3b82f6;" +
+        "    --q-badge: #1e293b;" +
+        "  }" +
+        "}" +
+        "body {" +
+        "  font-family: -apple-system, BlinkMacSystemFont, \\\"Segoe UI\\\", Roboto, Helvetica, Arial, sans-serif;" +
+        "  color: var(--q-text);" +
+        "  background-color: var(--q-bg);" +
+        "  margin: 0;" +
+        "  padding: 24px 16px;" +
+        "  display: flex;" +
+        "  flex-direction: column;" +
+        "  align-items: center;" +
+        "}" +
+        ".q-card {" +
+        "  background-color: var(--q-card-bg) !important;" +
+        "  border: 1px solid var(--q-border) !important;" +
+        "  border-radius: 12px !important;" +
+        "  width: 100% !important;" +
+        "  max-width: 650px !important;" +
+        "  padding: 24px !important;" +
+        "  margin-bottom: 24px !important;" +
+        "  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;" +
+        "  box-sizing: border-box !important;" +
+        "  display: block !important;" +
+        "}" +
+        ".q-tags {" +
+        "  display: flex !important;" +
+        "  flex-wrap: wrap !important;" +
+        "  gap: 6px !important;" +
+        "  margin-bottom: 14px !important;" +
+        "  width: 100% !important;" +
+        "}" +
+        ".q-tag {" +
+        "  background-color: var(--q-badge) !important;" +
+        "  border: 1px solid var(--q-border) !important;" +
+        "  color: var(--q-text-sub) !important;" +
+        "  font-size: 11px !important;" +
+        "  padding: 4px 10px !important;" +
+        "  border-radius: 9999px !important;" +
+        "  text-decoration: none !important;" +
+        "  font-weight: 600 !important;" +
+        "  display: inline-block !important;" +
+        "}" +
+        ".puppeteer_test_question_title, .puppeteer_test_question_title * {" +
+        "  font-size: 19px !important;" +
+        "  font-weight: 800 !important;" +
+        "  line-height: 1.4 !important;" +
+        "  margin: 12px 0 !important;" +
+        "  color: var(--q-text) !important;" +
+        "  display: block !important;" +
+        "}" +
+        "a, .puppeteer_test_link, .puppeteer_test_link * {" +
+        "  text-decoration: none !important;" +
+        "  color: inherit !important;" +
+        "}" +
+        "p a, span a, a.q-explicit-link, p a *, span a * {" +
+        "  color: var(--q-link) !important;" +
+        "  text-decoration: underline !important;" +
+        "}" +
+        ".q-author-row {" +
+        "  display: flex !important;" +
+        "  flex-direction: row !important;" +
+        "  align-items: center !important;" +
+        "  gap: 12px !important;" +
+        "  margin: 14px 0 !important;" +
+        "  width: 100% !important;" +
+        "}" +
+        ".q-avatar {" +
+        "  width: 40px !important;" +
+        "  height: 40px !important;" +
+        "  border-radius: 50% !important;" +
+        "  object-fit: cover !important;" +
+        "  border: 1px solid var(--q-border) !important;" +
+        "  display: inline-block !important;" +
+        "  flex-shrink: 0 !important;" +
+        "}" +
+        ".q-author-meta {" +
+        "  display: flex !important;" +
+        "  flex-direction: column !important;" +
+        "  font-size: 13px !important;" +
+        "  line-height: 1.4 !important;" +
+        "  min-width: 0 !important;" +
+        "}" +
+        ".q-author-name {" +
+        "  font-weight: 700 !important;" +
+        "  color: var(--q-text) !important;" +
+        "  display: inline-block !important;" +
+        "}" +
+        ".q-author-bio {" +
+        "  color: var(--q-text-sub) !important;" +
+        "  display: block !important;" +
+        "  font-size: 12px !important;" +
+        "}" +
+        ".q-timestamp {" +
+        "  color: var(--q-text-sub) !important;" +
+        "  font-size: 11px !important;" +
+        "  display: inline-block !important;" +
+        "}" +
+        "img {" +
+        "  max-width: 100% !important;" +
+        "  max-height: 380px !important;" +
+        "  border-radius: 8px !important;" +
+        "  border: 1px solid var(--q-border) !important;" +
+        "  margin: 16px auto !important;" +
+        "  display: block !important;" +
+        "}" +
+        ".q-paragraph {" +
+        "  font-size: 15px !important;" +
+        "  line-height: 1.65 !important;" +
+        "  color: var(--q-text) !important;" +
+        "}" +
+        "/* --- PREVIEW LINK CARDS FIXES --- */" +
+        "a[href*=\\\"/Whats-so-bad-about-plurality-voting/\\\"], a[href*=\\\"/answer/\\\"], a[href*=\\\"wikipedia.org\\\"], a[title] {" +
+        "  display: flex !important;" +
+        "  flex-direction: row !important;" +
+        "  align-items: center !important;" +
+        "  border: 1px solid var(--q-border) !important;" +
+        "  border-radius: 8px !important;" +
+        "  margin: 16px 0 !important;" +
+        "  padding: 12px !important;" +
+        "  background-color: var(--q-badge) !important;" +
+        "  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;" +
+        "  overflow: hidden !important;" +
+        "  max-height: 120px !important;" +
+        "  width: 100% !important;" +
+        "  box-sizing: border-box !important;" +
+        "}" +
+        "a[href*=\\\"/answer/\\\"] p, a[href*=\\\"/answer/\\\"] div, a[title] p, a[title] div, [class*=\\\"truncateLines\\\"] {" +
+        "  display: -webkit-box !important;" +
+        "  -webkit-line-clamp: 2 !important;" +
+        "  -webkit-box-orient: vertical !important;" +
+        "  overflow: hidden !important;" +
+        "  text-overflow: ellipsis !important;" +
+        "  font-size: 13px !important;" +
+        "  color: var(--q-text-sub) !important;" +
+        "  line-height: 1.42 !important;" +
+        "  margin: 0 !important;" +
+        "}" +
+        "a[href*=\\\"/answer/\\\"] div[style*=\\\"background-image\\\"], a[title] div[style*=\\\"background-image\\\"] {" +
+        "  width: 80px !important;" +
+        "  height: 80px !important;" +
+        "  background-size: cover !important;" +
+        "  background-position: center !important;" +
+        "  border-radius: 6px !important;" +
+        "  flex-shrink: 0 !important;" +
+        "  border: 1px solid var(--q-border) !important;" +
+        "  margin-right: 12px !important;" +
+        "  display: block !important;" +
+        "}" +
+        "a[href*=\\\"/answer/\\\"] .q-author-row, a[title] .q-author-row {" +
+        "  margin: 4px 0 !important;" +
+        "  gap: 6px !important;" +
+        "}" +
+        "a[href*=\\\"/answer/\\\"] .q-avatar, a[title] .q-avatar {" +
+        "  width: 22px !important;" +
+        "  height: 22px !important;" +
+        "  margin-right: 4px !important;" +
+        "}" +
+        "a[href*=\\\"/answer/\\\"] .q-author-bio, a[title] .q-author-bio {" +
+        "  display: none !important;" +
+        "}";
+
+      doc.head.appendChild(styleBlock);
     }
 }
