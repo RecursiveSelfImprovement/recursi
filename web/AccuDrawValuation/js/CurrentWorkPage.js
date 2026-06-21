@@ -25,8 +25,8 @@ class CurrentWorkPage {
 
     buildIntroBlock(app) {
       const p1 = [
-        "This section showcases the prototype system I have spent the last year ",
-        "developing. While officially labeled as 'incomplete,' it represents an absolutely ",
+        "This section showcases the environment I have spent the last year ",
+        "developing. It represents an absolutely ",
         "state-of-the-art recursively self-improving Vibe Coding environment. By integrating ",
         "my foundational 1994 AccuDraw and SmartLine paradigms with modern generative language models, ",
         "this tool allows developers to build systems that actively write and refactor themselves."
@@ -47,9 +47,9 @@ class CurrentWorkPage {
         makeElement("h3", { className: "text-xl font-bold text-[var(--text-title)]" }, "Recursively Self-Improving Vibe Coding Environment"),
         makeElement("p", { className: "backstory-paragraph-highlight" }, p1),
         makeElement("p", { className: "backstory-paragraph" }, p2),
-        makeElement("div", { className: "flex items-center gap-2 text-amber-500 font-mono text-xs bg-amber-950/20 border border-amber-500/20 p-3 rounded" }, [
-          makeElement("span", {}, "⚠️ Status: In-Progress State-of-the-Art Prototype"),
-          makeElement("span", { className: "text-amber-500/60" }, "|"),
+        makeElement("div", { className: "flex items-center gap-2 text-blue-400 font-mono text-xs bg-blue-950/20 border border-blue-500/20 p-3 rounded" }, [
+          makeElement("span", {}, "Status: In-Progress Vibe Coding Environment"),
+          makeElement("span", { className: "text-blue-500/60" }, "|"),
           makeElement("span", {}, "AccuDraw & SmartLine Unified Core")
         ])
       ]);
@@ -69,15 +69,14 @@ class CurrentWorkPage {
               "The system writes, refactors, and deploys its own codebase in real-time. ",
               "Instead of just writing static code, the application uses AI to recursively ",
               "expand its own capabilities, making it one of the unique tools in the hot ",
-              "Vibe Coding space - which was recently highlighted by Collins Dictionary as ",
-              "the technical Word of the Year last year."
+              "Vibe Coding space."
             ].join(""),
             "⚙️ Self-Improving Code"
           ),
           this.buildHighlightCard(
             "AccuDraw & SmartLine Core Bridge",
             [
-              "Tying the prototype back to my 1994 CAD interface innovations. ",
+              "Tying the workspace back to my 1994 CAD interface innovations. ",
               "By combining real-time coordinate guidance and hotkey drafting ",
               "with natural language inputs, the tool creates an incredibly fast ",
               "visual engineering environment."
@@ -97,7 +96,7 @@ class CurrentWorkPage {
             "Passive Income Generation",
             [
               "Hourly software engineering is highly vulnerable to rapid AI automation. ",
-              "By creating an independent visual development platform, this prototype ",
+              "By creating an independent visual development platform, this workspace ",
               "creates a path toward subscription and license-based passive income, ",
               "safeguarding against future labor shifts."
             ].join(""),
@@ -270,24 +269,17 @@ class CurrentWorkPage {
   `, "current-work-editorial-styles");
     }
   
-  // =========================================================================
-    // EDITABLE CONTENT CONFIGURATION
-    // All text narratives, status updates, and video parameters are defined here.
-    // Strings are split into readable arrays for easy manual editing in the code.
-    // =========================================================================
-    static get PAGE_CONTENT() {
+  static get PAGE_CONTENT() {
       return {
-        // YouTube video ID register - easily find and update all video links here
         videoIds: {
-          mainWalkthrough: "sDSFBj6MuzY",  // Video 1: Primary lengthy walkthrough
-          playlistAndPiano: "ply26G4DdcM", // Video 2: Ad-free playlists & piano interface
-          rickAstleyPlaceholder: "dQw4w9WgXcQ", // Video 3: Rick Astley placeholder / extra demo
-          additionalAIOverview: "7VV6poSrk3Y"  // Video 4: Conceptual robotics & future integration
+          mainWalkthrough: "sDSFBj6MuzY",
+          playlistAndPiano: "ply26G4DdcM",
+          loremIpsumDemo: "dQw4w9WgXcQ",
+          digitalArtDemo: "7VV6poSrk3Y"
         },
 
-        // Status banner at the beginning of the page
         statusBanner: {
-          title: "⚠️ Status Update: Presentation Enhancements In Progress",
+          title: "Presentation Enhancements In Progress",
           paragraphs: [
             [
               "Please note that this section is actively being enhanced. The explanatory ",
@@ -300,7 +292,6 @@ class CurrentWorkPage {
           ]
         },
 
-        // Narrative Section: Subtly integrating personal context and the $2.3B contrast
         narrativeColumn: {
           heading: "Foundational Moats, Earning Potential, and Personal Horizons",
           paragraphs: [
@@ -326,7 +317,6 @@ class CurrentWorkPage {
           ]
         },
 
-        // Spacious, narrative-oriented editorial sections matching the style of the AI Perspective page
         sections: [
           {
             id: "main-walkthrough",
@@ -356,29 +346,28 @@ class CurrentWorkPage {
               "it highlights an ad-free YouTube playlist aggregator that allows users to stream, organize, ",
               "and play video feeds completely within the terms of service while bypassing standard distraction overlays. ",
               "Second, it highlights my proprietary digital piano software, featuring sub-millisecond visual latency ",
-              "and a beautifully optimized layout built using visual coordinate principles first established in my early CAD days."
+              "built using visual layouts first established in my early CAD days."
             ].join("")
           },
           {
-            id: "rick-astley-demo",
-            title: "3. Classical Interactive Rendering & Testing Baseline",
-            videoIdKey: "rickAstleyPlaceholder",
+            id: "lorem-ipsum-demo",
+            title: "3. Lorem Ipsum Workspace Environment",
+            videoIdKey: "loremIpsumDemo",
             isLengthy: false,
             description: [
-              "An interactive sandbox test leveraging classical web streams to verify playback stability and frame ",
-              "synchronization across different network environments. This slot serves as an open diagnostic player ",
-              "frequently used to test audio-to-video alignment."
+              "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Cras interdum pretium tempor. ",
+              "Donec rhoncus elit non accumsan scelerisque. Vivamus scelerisque tempus arcu, ac eleifend ",
+              "ex semper a. Aliquam id arcu sit amet erat ultrices congue ut ac lorem."
             ].join("")
           },
           {
-            id: "ai-overview",
-            title: "4. Physical Robotics & Multimodal Coordinate Alignment",
-            videoIdKey: "additionalAIOverview",
+            id: "visual-art-demo",
+            title: "4. Interactive Screen Layouts & Media Player Showcase",
+            videoIdKey: "digitalArtDemo",
             isLengthy: false,
             description: [
-              "A technical demonstration mapping the intersection of coordinate alignment loops with physical robotics ",
-              "baselines. This analysis demonstrates how localized, precision layout frameworks act as a translation ",
-              "bridge between natural language inputs and real-world spatial actions."
+              "This workspace showcases responsive, full-screen layouts that dynamically adjust viewports ",
+              "and interactive media streams to build a highly engaging client-side application interface."
             ].join("")
           }
         ]
@@ -388,7 +377,6 @@ class CurrentWorkPage {
   buildStatusCard(statusData) {
       return makeElement("div", {className: "current-work-status-banner mb-6"}, [
         makeElement("div", {className: "flex items-center gap-2 mb-3"}, [
-          makeElement("span", {className: "status-alert-icon"}, "⚠️"),
           makeElement("h3", {className: "text-base font-bold text-amber-500 uppercase tracking-wider"}, statusData.title)
         ]),
         ...statusData.paragraphs.map(p => makeElement("p", {className: "text-sm text-[var(--text-secondary)] leading-relaxed"}, p))

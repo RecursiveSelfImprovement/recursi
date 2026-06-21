@@ -169,19 +169,20 @@ class CaretakerBiasPage {
       ].join("");
 
       const e2Text = [
-        "Kathleen Brown endorsed a post describing public health guidelines as a 'Bizarro World' and ",
-        "promoting fringe COVID-19 conspiracies. While this and the other conspiracy screenshots were later ",
-        "removed or flagged by LinkedIn for spreading misinformation, they were captured beforehand. As a ",
-        "practicing medical doctor, Kathy used her credentials to promote highly unscientific positions that ",
-        "she knew her brother strongly disagreed with, violating basic medical and professional standards."
+        "Kathleen Brown endorsed and commented in support of Pierre Kory, a prominent proponent of fringe, unscientific COVID-19 ",
+        "protocols and anti-vaccine theories. Spreading fringe, unproven alternative medical advice under the banner of ",
+        "her professional credentials has long been a major concern of mine. It is my firm belief that doctors leveraging ",
+        "their professional status to validate highly unscientific alternative paths cost tens of thousands of individuals their lives, ",
+        "allowing ideological tribal partisanship and political identity to override medical evidence and safety. This endorsement ",
+        "illustrates how deeply political alignment is permitted to override standard peer-reviewed guidelines."
       ].join("");
 
       const e3Text = [
-        "Following a visit with Rob and his daughter in California where she was attending a conference, ",
+        "Following a visit in California where she was attending a conference, ",
         "Kathy publicly commented on the Gavin Newsom recall ",
         "election, asserting that the recall's failure 'tells you something ",
         "about the people who do live there.' She viewed California through a deeply hostile political lens, ",
-        "publicly insulting her brother's home immediately after enjoying his hospitality.  She also spread rumors online that ", 
+        "publicly insulting her brother's home immediately after visiting. She also spread rumors online that ", 
         "Newsom really was recalled, one of her extreme conspiracy theories given that he beat the recall by 3 million votes."
       ].join("");
 
@@ -197,7 +198,7 @@ class CaretakerBiasPage {
         makeElement('div', { className: 'dashboard-header-group mb-4' }, [
           makeElement('h3', {}, 'Documented LinkedIn Activity'),
           makeElement('p', {}, [
-            "Below are the four verified screenshots from `/images/` documenting Kathleen Brown's public ",
+            "Below are the four verified screenshots documenting Kathleen Brown's public ",
             "activity. Crucially, the 'Owes You' post remains on her profile today, while the other conspiracy ",
             "posts were subsequently flagged or removed by LinkedIn for spreading misinformation."
           ])
@@ -214,7 +215,11 @@ class CaretakerBiasPage {
             'Exhibit 2: Support for Suspended Figures (Pierre Kory)',
             '/images/k_kory.png',
             e2Text,
-            'Kathleen Brown likes and comments on fringe COVID claims: "We need you and your colleagues. Thank you for all your efforts!" (Dr. Pierre Kory, whose medical license was subsequently suspended/revoked)'
+            [
+              'Kathleen Brown likes and comments on fringe COVID claims: "We need you and your colleagues. Thank you for all your efforts!" ',
+              '(Dr. Pierre Kory, whose alternative treatment advice was heavily flagged, resulting in licensing investigations).'
+            ].join(''),
+            'https://www.medpagetoday.com/' // Fake reference link as requested
           ),
           this.buildExhibitItem(app,
             'Exhibit 3: Anti-California Hostility',
@@ -232,7 +237,25 @@ class CaretakerBiasPage {
       ]);
     }
 
-    buildExhibitItem(app, title, imgSrc, analysis, transcriptText) {
+    buildExhibitItem(app, title, imgSrc, analysis, transcriptText, externalArticleLink = null) {
+      const footerElements = [
+        makeElement('span', { className: 'font-bold not-italic text-[var(--text-title)] block mb-1 text-[10px] uppercase tracking-wider' }, 'Verbatim Activity Transcript'),
+        transcriptText
+      ];
+
+      if (externalArticleLink) {
+        footerElements.push(
+          makeElement('div', { className: 'mt-3' }, [
+            makeElement('a', {
+              href: externalArticleLink,
+              target: '_blank',
+              rel: 'noopener noreferrer',
+              className: 'inline-link-highlight text-[11px] font-bold'
+            }, 'Read Reference Article on Credentialed Misinformation ↗')
+          ])
+        );
+      }
+
       return makeElement('div', { className: 'exhibit-item-row' }, [
         makeElement('div', { className: 'exhibit-image-wrapper' }, [
           makeElement('img', {
@@ -263,7 +286,7 @@ class CaretakerBiasPage {
               alignItems: 'center',
               justifyContent: 'center',
               background: 'var(--bg-panel-inner)',
-              border: '1px dashed var(--border-color)',
+              border: '1px solid var(--border-color)',
               borderRadius: '8px',
               width: '100%',
               height: '220px',
@@ -283,10 +306,7 @@ class CaretakerBiasPage {
         makeElement('div', { className: 'exhibit-content-wrapper' }, [
           makeElement('h4', { className: 'text-base font-bold text-[var(--text-title)] mb-2' }, title),
           makeElement('p', { className: 'text-sm text-[var(--text-primary)] leading-relaxed mb-3' }, analysis),
-          makeElement('div', { className: 'transcript-quote-box text-xs italic border-l-2 border-[#f59e0b] pl-3' }, [
-            makeElement('span', { className: 'font-bold not-italic text-[var(--text-title)] block mb-1 text-[10px] uppercase tracking-wider' }, 'Verbatim Activity Transcript'),
-            transcriptText
-          ])
+          makeElement('div', { className: 'transcript-quote-box text-xs italic border-l-2 border-[#f59e0b] pl-3' }, footerElements)
         ])
       ]);
     }
@@ -479,13 +499,13 @@ class CaretakerBiasPage {
 
       return makeElement('section', { className: 'cad-panel space-y-6' }, [
         makeElement('div', { className: 'dashboard-header-group' }, [
-          makeElement('h3', {}, 'A Study in Worldview: Consensus vs. Extremism'),
-          makeElement('p', {}, 'A direct contrast demonstrating Rob\'s decade-long advocacy for unifying, median-based structures versus Kathy\'s explicit rejection of consensus.')
+          makeElement('h3', {}, "Rob's Public Advocacy & Depolarization"),
+          makeElement('p', {}, "A direct contrast showcasing Rob's fourteen-year advocacy for unifying, median-based structures versus Kathy's explicit rejection of consensus.")
         ]),
 
         makeElement('div', { className: 'grid grid-cols-1 md:grid-cols-2 gap-6' }, [
           makeElement('div', { className: 'elder-analysis-card p-6 border-l-4 border-emerald-500' }, [
-            makeElement('span', { className: 'elder-card-badge bg-emerald-950/20 text-emerald-400 border-emerald-500/20' }, 'Rob\'s Quora Essay (12 Years Ago)'),
+            makeElement('span', { className: 'elder-card-badge bg-emerald-950/20 text-emerald-400 border-emerald-500/20' }, "Rob's Depolarization Advocacy (Starting 14 Years Ago)"),
             makeElement('h4', { className: 'font-bold text-sm text-[var(--text-title)] my-2' }, quoraTitle),
             makeElement('p', { className: 'text-xs text-[var(--text-secondary)] leading-relaxed italic' }, `"${quoraText}"`),
             makeElement('p', { className: 'text-xs text-[var(--text-primary)] mt-3 font-semibold' }, 
@@ -495,7 +515,7 @@ class CaretakerBiasPage {
 
           makeElement('div', { className: 'elder-analysis-card p-6 border-l-4 border-red-500 flex flex-col justify-between' }, [
             makeElement('div', {}, [
-              makeElement('span', { className: 'elder-card-badge bg-red-950/20 text-red-400 border-red-500/20' }, 'Kathy\'s Polarizing Mandate'),
+              makeElement('span', { className: 'elder-card-badge bg-red-950/20 text-red-400 border-red-500/20' }, "Kathy's Polarizing Mandate"),
               makeElement('h4', { className: 'font-bold text-sm text-[var(--text-title)] my-2' }, 'Rejection of the Median'),
               makeElement('blockquote', { className: 'text-xs text-[var(--text-secondary)] leading-relaxed italic border-l border-red-500/30 pl-3 my-2' }, 
                 "\"I find consensus-seeking offensive... I believe people in the median are some of the worst.\""
@@ -509,8 +529,7 @@ class CaretakerBiasPage {
       ]);
     }
 
-  // Method 1: Strictly reads the clean file and mounts the sandboxed iframe
-    buildQuoraPolarizationIframe(app) {
+  buildQuoraPolarizationIframe(app) {
       const iframe = makeElement('iframe', {
         id: 'quora-inspector-iframe',
         style: {
@@ -521,7 +540,6 @@ class CaretakerBiasPage {
         }
       });
 
-      // Fetch your newly-saved, unstyled clean production HTML file from disk
       fetch('/AccuDrawValuation/quoraPolarization.html')
         .then(res => res.text())
         .then(html => {
@@ -530,8 +548,6 @@ class CaretakerBiasPage {
             iframeWindow.document.open();
             iframeWindow.document.write(html);
             iframeWindow.document.close();
-
-            // Programmatically style the document using our completely separate visual method
             this.applyQuoraStyles(iframeWindow.document);
           }
         })
@@ -540,7 +556,7 @@ class CaretakerBiasPage {
       return makeElement('section', { className: 'cad-panel space-y-6' }, [
         makeElement('div', { className: 'dashboard-header-group' }, [
           makeElement('h3', {}, "Rob's Public Advocacy: Antipolarization & Structural Reforms"),
-          makeElement('p', {}, "An interactive mirror of Rob Brown's archived Quora answers. This page mounts your programmatically cleaned production file on startup and injects your separate styling block dynamically at runtime.")
+          makeElement('p', {}, "An interactive archive of Rob Brown's archived Quora answers detailing voting reforms and consensus building.")
         ]),
         makeElement('div', {
           style: {

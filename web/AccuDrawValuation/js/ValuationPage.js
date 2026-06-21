@@ -1,24 +1,27 @@
 class ValuationPage {
   render(app) {
-    this.applyStyles();
-    const wrapper = makeElement('div', {
-      className: 'valuation-page-view space-y-8',
-    });
-    wrapper.appendChild(this.buildBackstoryBlock(app));
+      this.applyStyles();
+      const wrapper = makeElement('div', {
+        className: 'valuation-page-view space-y-8',
+      });
+      wrapper.appendChild(this.buildBackstoryBlock(app));
 
-    if (app.resultsRevealed) {
-      wrapper.appendChild(this.buildConsensusBlock(app));
-      wrapper.appendChild(this.buildInteractiveSummaryGrid(app));
-      wrapper.appendChild(this.buildPromptsSection(app)); // Display below results
-      wrapper.appendChild(this.buildTranscriptsBlock(app));
-      wrapper.appendChild(this.buildExtendedQueriesSection(app));
-    } else {
-      wrapper.appendChild(this.buildPromptsSection(app)); // Swapped to be above the button!
-      wrapper.appendChild(this.buildRevealCTA(app)); // The button is now at the bottom!
+      // Fixed prompts section directly before the results/reveal block
+      wrapper.appendChild(this.buildPromptsSection(app));
+
+      if (app.resultsRevealed) {
+        wrapper.appendChild(this.buildConsensusBlock(app));
+        wrapper.appendChild(this.buildInteractiveSummaryGrid(app));
+        wrapper.appendChild(this.buildTranscriptsBlock(app));
+        wrapper.appendChild(this.buildExtendedQueriesSection(app));
+        // Only show this alternative Gemini section *after* the results have been revealed
+        wrapper.appendChild(this.buildGeminiHigherEstimateSection(app));
+      } else {
+        wrapper.appendChild(this.buildRevealCTA(app));
+      }
+
+      return wrapper;
     }
-
-    return wrapper;
-  }
 
   buildBackstoryBlock(app) {
     const p1 = [
@@ -1503,4 +1506,42 @@ class ValuationPage {
       'valuation-page-styles'
     );
   }
+
+  buildGeminiHigherEstimateSection(app) {
+      return makeElement('section', { className: 'cad-panel border-l-4 border-[#3b82f6] space-y-4 bg-blue-950/5 mt-8' }, [
+        makeElement('div', { className: 'dashboard-header-group' }, [
+          makeElement('h3', { className: 'text-lg font-bold text-[var(--text-title)] uppercase tracking-wide', style: { fontFamily: 'ui-monospace, monospace' } }, 'Alternative Gemini Querying & Higher Valuation'),
+          makeElement('p', { className: 'text-sm text-[var(--text-secondary)] mt-1' }, 
+            'An evaluation utilizing alternative phrasing regarding strategic locking mechanics, demonstrating how different analytical lenses reveal higher enterprise footprint scales.'
+          )
+        ]),
+        makeElement('p', { className: 'text-sm text-[var(--text-primary)] leading-relaxed' }, [
+          'When the underlying value assessment questions are posed to Gemini from a strategic ',
+          'ecosystem platform lock-in perspective, the calculations scale even higher, arriving at an estimated ',
+          makeElement('span', { className: 'highlight-range font-bold' }, '$4.5 Billion to $8.0 Billion'),
+          ' in long-term enterprise value contribution. This reflects the reality that compounding defensive barriers ',
+          'and user muscle memory generate substantial enterprise valuation premiums over several decades.'
+        ]),
+        makeElement('div', { className: 'pt-2' }, [
+          makeElement('a', {
+            href: 'https://gemini.google.com/',
+            target: '_blank',
+            rel: 'noopener noreferrer',
+            className: 'sidebar-link-btn inline-block',
+            style: {
+              color: '#3b82f6',
+              borderColor: 'rgba(59, 130, 246, 0.3)',
+              backgroundColor: 'rgba(59, 130, 246, 0.04)',
+              width: 'auto',
+              padding: '10px 20px',
+              borderRadius: '6px',
+              textDecoration: 'none',
+              fontSize: '11px',
+              fontWeight: 'bold',
+              fontFamily: 'ui-monospace, monospace'
+            }
+          }, 'View Higher Valuation Gemini Chat ↗')
+        ])
+      ]);
+    }
 }

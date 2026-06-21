@@ -255,7 +255,7 @@ class AccuDrawValuation {
       this.activeTab = 'all';
       this.resultsRevealed = false;
       this.isTransitioning = false;
-      this.revealMode = localStorage.getItem('accudraw-reveal-mode') || 'drum-roll';
+      this.revealMode = localStorage.getItem('accudraw-reveal-mode') || 'no-drama';
       this.wrongAnswerStage = 0;
       this.justCorrected = false;
       this.isCalculating = false;
@@ -479,13 +479,14 @@ class AccuDrawValuation {
   
 
   buildFooter() {
+      const isValuation = this.currentView === 'valuation';
       return makeElement('footer', { className: 'dashboard-footer' }, [
         makeElement('div', { className: 'footer-content' }, [
-          makeElement(
+          isValuation ? makeElement(
             'p',
             { className: 'footer-left' },
             'This comparative data serves as an analytical mapping of historical public model calculations conducted in 2026 concerning MicroStation IP development.'
-          ),
+          ) : makeElement('p', { className: 'footer-left' }, ''),
           makeElement(
             'p',
             { className: 'footer-right' },
@@ -557,7 +558,7 @@ class AccuDrawValuation {
         headerTitle = 'AI Automation & Urgent Career Timeline';
         headerSubtitle = 'The exponential pace of automation and professional time pressure';
       } else if (this.currentView === 'current-work') {
-        headerTitle = 'Current Work & State-of-the-Art Prototyping';
+        headerTitle = 'Current Work & Vibe Coding Environment';
         headerSubtitle = 'Next-generation recursively self-improving visual code environments';
       }
 
