@@ -156,86 +156,7 @@ class CaretakerBiasPage {
       ]);
     }
 
-    buildLinkedInExhibitsPanel(app) {
-      const e1Text = [
-        "This yellow notepad graphic remains active on Kathleen Brown's professional LinkedIn profile, ",
-        "representing her core philosophy of extreme self-reliance. When Rob was forced to negotiate a ",
-        "transition runway, she asked condescendingly on the phone: 'Do you think they owe you something?' ",
-        "This was in reference to his inventions making Bentley Systems billions of dollars, and the fact that Rob was later ",
-        "laid off due to corporate politics. Kathy reacted with utter condescension and zero empathy, ",
-        "completely ignoring his historic technical legacy. This occurred while Rob was simultaneously ",
-        "navigating a painful custody battle where his daughter's mother turned Rob's daughter against him - yet Kathy ",
-        "exhibited a total absence of family support."
-      ].join("");
-
-      const e2Text = [
-        "Kathleen Brown endorsed and commented in support of Pierre Kory, a prominent proponent of fringe, unscientific COVID-19 ",
-        "protocols and anti-vaccine theories. Spreading fringe, unproven alternative medical advice under the banner of ",
-        "her professional credentials has long been a major concern of mine. It is my firm belief that doctors leveraging ",
-        "their professional status to validate highly unscientific alternative paths cost tens of thousands of individuals their lives, ",
-        "allowing ideological tribal partisanship and political identity to override medical evidence and safety. This endorsement ",
-        "illustrates how deeply political alignment is permitted to override standard peer-reviewed guidelines."
-      ].join("");
-
-      const e3Text = [
-        "Following a visit in California where she was attending a conference, ",
-        "Kathy publicly commented on the Gavin Newsom recall ",
-        "election, asserting that the recall's failure 'tells you something ",
-        "about the people who do live there.' She viewed California through a deeply hostile political lens, ",
-        "publicly insulting her brother's home immediately after visiting. She also spread rumors online that ", 
-        "Newsom really was recalled, one of her extreme conspiracy theories given that he beat the recall by 3 million votes."
-      ].join("");
-
-      const e4Text = [
-        "Kathleen Brown publicly liked and promoted a publication by QAnon conspiracist Martin Geddes. ",
-        "The article she endorsed focuses on demonizing family members who hold standard, mainstream views, ",
-        "declaring relatives as 'satanic' or trapped in a 'cult' because they chose to vaccinate. This gets to ",
-        "the absolute heart of our current care situation: it shows she normalizes a mindset of discarding ",
-        "and isolating close family members over tribal ideological differences."
-      ].join("");
-
-      return makeElement('section', { className: 'cad-panel space-y-8' }, [
-        makeElement('div', { className: 'dashboard-header-group mb-4' }, [
-          makeElement('h3', {}, 'Documented LinkedIn Activity'),
-          makeElement('p', {}, [
-            "Below are the four verified screenshots documenting Kathleen Brown's public ",
-            "activity. Crucially, the 'Owes You' post remains on her profile today, while the other conspiracy ",
-            "posts were subsequently flagged or removed by LinkedIn for spreading misinformation."
-          ])
-        ]),
-        
-        makeElement('div', { className: 'space-y-8' }, [
-          this.buildExhibitItem(app,
-            'Exhibit 1: The "Owes You" Yellow Pad',
-            '/images/k_owesYou.png',
-            e1Text,
-            'Kathleen Brown likes this: "Here is a comprehensive list of everything you\'re entitled to and what the world owes you." (Blank yellow pad)'
-          ),
-          this.buildExhibitItem(app,
-            'Exhibit 2: Support for Suspended Figures (Pierre Kory)',
-            '/images/k_kory.png',
-            e2Text,
-            [
-              'Kathleen Brown likes and comments on fringe COVID claims: "We need you and your colleagues. Thank you for all your efforts!" ',
-              '(Dr. Pierre Kory, whose alternative treatment advice was heavily flagged, resulting in licensing investigations).'
-            ].join(''),
-            'https://www.medpagetoday.com/' // Fake reference link as requested
-          ),
-          this.buildExhibitItem(app,
-            'Exhibit 3: Anti-California Hostility',
-            '/images/k_california.png',
-            e3Text,
-            'Kathleen Brown comments on Newsom recall: "That Gavin Newsom survived recall tells you something about the people who do live there..."'
-          ),
-          this.buildExhibitItem(app,
-            'Exhibit 4: Martin Geddes / Family Demonization',
-            '/images/k_qanon.png',
-            e4Text,
-            'Kathleen Brown likes: "We will have to face up to many being orphaned... we cannot buckle or bend the knee... We cannot let the children down."'
-          )
-        ])
-      ]);
-    }
+    
 
     buildExhibitItem(app, title, imgSrc, analysis, transcriptText, externalArticleLink = null) {
       const footerElements = [
@@ -372,120 +293,7 @@ class CaretakerBiasPage {
       ]);
     }
 
-    applyStyles() {
-      applyCss(`
-        .timeline-flow {
-          margin-top: 28px !important;
-          padding: 16px 0 !important;
-        }
-        .timeline-item {
-          border-left: 2px solid #3b82f6;
-          padding-left: 28px;
-          margin-left: 8px;
-          position: relative;
-          padding-bottom: 32px !important;
-        }
-        .timeline-item-dot {
-          position: absolute;
-          left: -6px;
-          top: 4px;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background-color: #3b82f6;
-          border: 2px solid #070a12;
-        }
-        .exhibit-item-row {
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
-          padding: 32px !important;
-          background-color: var(--bg-panel-inner);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          margin-bottom: 32px !important;
-        }
-        @media (min-width: 768px) {
-          .exhibit-item-row {
-            flex-direction: row;
-            align-items: start;
-          }
-        }
-        .exhibit-image-wrapper {
-          width: 100%;
-          max-width: 100%;
-          flex-shrink: 0;
-        }
-        @media (min-width: 768px) {
-          .exhibit-image-wrapper {
-            width: 280px;
-          }
-        }
-        .exhibit-image {
-          width: 100%;
-          height: auto;
-          border-radius: 8px;
-          border: 1px solid var(--border-color);
-        }
-        .exhibit-content-wrapper {
-          flex: 1;
-          min-width: 0;
-        }
-        .exhibit-content-wrapper p {
-          margin-bottom: 1.25rem !important;
-          line-height: 1.8 !important;
-        }
-        .exhibit-content-wrapper p:last-child {
-          margin-bottom: 0 !important;
-        }
-        .backstory-paragraph, .backstory-paragraph-highlight {
-          margin-bottom: 1.75rem !important;
-          line-height: 1.85 !important;
-        }
-        .backstory-paragraph:last-child, .backstory-paragraph-highlight:last-child {
-          margin-bottom: 0 !important;
-        }
-        .transcript-quote-box {
-          margin-top: 1.25rem !important;
-          line-height: 1.8 !important;
-          padding: 24px !important;
-          background-color: var(--bg-panel-inner);
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-        }
-        .elder-analysis-grid {
-          display: grid;
-          grid-template-columns: 1fr;
-          gap: 24px;
-        }
-        @media (min-width: 768px) {
-          .elder-analysis-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-        .elder-analysis-card {
-          padding: 24px;
-          background-color: var(--bg-panel-inner);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          transition: all 0.2s;
-        }
-        .elder-analysis-card:hover {
-          border-color: var(--border-hover);
-        }
-        .elder-card-badge {
-          font-size: 10px;
-          font-family: ui-monospace, monospace;
-          font-weight: bold;
-          text-transform: uppercase;
-          color: #3b82f6;
-          background: rgba(59, 130, 246, 0.1);
-          border: 1px solid rgba(59, 130, 246, 0.2);
-          padding: 3px 10px;
-          border-radius: 4px;
-        }
-      `, 'caretaker-bias-page-styles');
-    }
+    
   
   buildVotingContrastPanel(app) {
       const quoraTitle = 'How can we design voting systems to elect centrist candidates and reduce political divisiveness?';
@@ -573,190 +381,339 @@ class CaretakerBiasPage {
     }
 
   // Method 2: Completely separate styling engine containing only CSS declarations for downstream iteration
-    applyQuoraStyles(doc) {
+    
+
+  getLinkedInExhibitSpecs() {
+      const e1Text = [
+        "This yellow notepad graphic remains active on Kathleen Brown's professional LinkedIn profile, ",
+        "representing her core philosophy of extreme self-reliance. When Rob was forced to negotiate a ",
+        "transition runway, she asked condescendingly on the phone: 'Do you think they owe you something?' ",
+        "This was in reference to his inventions making Bentley Systems billions of dollars, and the fact that Rob was later ",
+        "laid off due to corporate politics. Kathy reacted with utter condescension and zero empathy, ",
+        "completely ignoring his historic technical legacy. This occurred while Rob was simultaneously ",
+        "navigating a painful custody battle where his daughter's mother turned Rob's daughter against him - yet Kathy ",
+        "exhibited a total absence of family support."
+      ].join("");
+
+      const e2Text = [
+        "Kathleen Brown endorsed and commented in support of Pierre Kory, a prominent proponent of fringe, unscientific COVID-19 ",
+        "protocols and anti-vaccine theories. Spreading fringe, unproven alternative medical advice under the banner of ",
+        "her professional credentials has long been a major concern of mine. It is my firm belief that doctors leveraging ",
+        "their professional status to validate highly unscientific alternative paths cost tens of thousands of individuals their lives, ",
+        "allowing ideological tribal partisanship and political identity to override medical evidence and safety. This endorsement ",
+        "illustrates how deeply political alignment is permitted to override standard peer-reviewed guidelines."
+      ].join("");
+
+      const e3Text = [
+        "Following a visit in California where she was attending a conference, ",
+        "Kathy publicly commented on the Gavin Newsom recall ",
+        "election, asserting that the recall's failure 'tells you something ",
+        "about the people who do live there.' She viewed California through a deeply hostile political lens, ",
+        "publicly insulting her brother's home immediately after visiting. She also spread rumors online that ", 
+        "Newsom really was recalled, one of her extreme conspiracy theories given that he beat the recall by 3 million votes."
+      ].join("");
+
+      const e4Text = [
+        "Kathleen Brown publicly liked and promoted a publication by QAnon conspiracist Martin Geddes. ",
+        "The article she endorsed focuses on demonizing family members who hold standard, mainstream views, ",
+        "declaring relatives as 'satanic' or trapped in a 'cult' because they chose to vaccinate. This gets to ",
+        "the absolute heart of our current care situation: it shows she normalizes a mindset of discarding ",
+        "and isolating close family members over tribal ideological differences."
+      ].join("");
+
+      return [
+        {
+          title: 'Exhibit 1: The "Owes You" Yellow Pad',
+          imgSrc: '/images/k_owesYou.png',
+          analysis: e1Text,
+          transcript: [
+            "Kathleen Brown likes this: \"Here is a comprehensive list of ",
+            "everything you're entitled to and what the world owes you.\" ",
+            "(Blank yellow pad)"
+          ].join(""),
+          link: null
+        },
+        {
+          title: 'Exhibit 2: Support for Suspended Figures (Pierre Kory)',
+          imgSrc: '/images/k_kory.png',
+          analysis: e2Text,
+          transcript: [
+            "Kathleen Brown likes and comments on fringe COVID claims: \"We need ",
+            "you and your colleagues. Thank you for all your efforts!\" ",
+            "(Dr. Pierre Kory, whose alternative treatment advice was heavily ",
+            "flagged, resulting in licensing investigations)."
+          ].join(""),
+          link: 'https://www.medpagetoday.com/'
+        },
+        {
+          title: 'Exhibit 3: Anti-California Hostility',
+          imgSrc: '/images/k_california.png',
+          analysis: e3Text,
+          transcript: [
+            "Kathleen Brown comments on Newsom recall: \"That Gavin Newsom survived ",
+            "recall tells you something about the people who do live there...\""
+          ].join(""),
+          link: null
+        },
+        {
+          title: 'Exhibit 4: Martin Geddes / Family Demonization',
+          imgSrc: '/images/k_qanon.png',
+          analysis: e4Text,
+          transcript: [
+            "Kathleen Brown likes: \"We will have to face up to many being ",
+            "orphaned... we cannot buckle or bend the knee... We cannot let ",
+            "the children down.\""
+          ].join(""),
+          link: null
+        }
+      ];
+    }
+
+  buildLinkedInExhibitsPanel(app) {
+      const specs = this.getLinkedInExhibitSpecs();
+      const items = specs.map(spec => {
+        return this.buildExhibitItem(app, spec.title, spec.imgSrc, spec.analysis, spec.transcript, spec.link);
+      });
+
+      return makeElement('section', { className: 'cad-panel space-y-8' }, [
+        makeElement('div', { className: 'dashboard-header-group mb-4' }, [
+          makeElement('h3', {}, 'Documented LinkedIn Activity'),
+          makeElement('p', {}, [
+            "Below are the four verified screenshots documenting Kathleen Brown's public ",
+            "activity. Crucially, the 'Owes You' post remains on her profile today, while the other conspiracy ",
+            "posts were subsequently flagged or removed by LinkedIn for spreading misinformation."
+          ])
+        ]),
+        makeElement('div', { className: 'space-y-8' }, ...items)
+      ]);
+    }
+
+  applyStyles() {
+      this.applyCaretakerTimelineCSS();
+      this.applyCaretakerExhibitCSS();
+      this.applyCaretakerGridCSS();
+    }
+
+  applyCaretakerTimelineCSS() {
+      applyCss([
+        ".timeline-flow {",
+        "  margin-top: 28px !important;",
+        "  padding: 16px 0 !important;",
+        "}",
+        ".timeline-item {",
+        "  border-left: 2px solid #3b82f6;",
+        "  padding-left: 28px;",
+        "  margin-left: 8px;",
+        "  position: relative;",
+        "  padding-bottom: 32px !important;",
+        "}",
+        ".timeline-item-dot {",
+        "  position: absolute;",
+        "  left: -6px;",
+        "  top: 4px;",
+        "  width: 10px;",
+        "  height: 10px;",
+        "  border-radius: 50%;",
+        "  background-color: #3b82f6;",
+        "  border: 2px solid #070a12;",
+        "}"
+      ].join("\n"), 'caretaker-timeline-styles');
+    }
+
+  applyCaretakerExhibitCSS() {
+      applyCss([
+        ".exhibit-item-row {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  gap: 28px;",
+        "  padding: 32px !important;",
+        "  background-color: var(--bg-panel-inner);",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 12px;",
+        "  margin-bottom: 32px !important;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .exhibit-item-row {",
+        "    flex-direction: row;",
+        "    align-items: start;",
+        "  }",
+        "}",
+        ".exhibit-image-wrapper {",
+        "  width: 100%;",
+        "  max-width: 100%;",
+        "  flex-shrink: 0;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .exhibit-image-wrapper {",
+        "    width: 280px;",
+        "  }",
+        "}",
+        ".exhibit-image {",
+        "  width: 100%;",
+        "  height: auto;",
+        "  border-radius: 8px;",
+        "  border: 1px solid var(--border-color);",
+        "}",
+        ".exhibit-content-wrapper {",
+        "  flex: 1;",
+        "  min-width: 0;",
+        "}",
+        ".exhibit-content-wrapper p {",
+        "  margin-bottom: 1.25rem !important;",
+        "  line-height: 1.8 !important;",
+        "}",
+        ".exhibit-content-wrapper p:last-child {",
+        "  margin-bottom: 0 !important;",
+        "}",
+        ".backstory-paragraph, .backstory-paragraph-highlight {",
+        "  margin-bottom: 1.75rem !important;",
+        "  line-height: 1.85 !important;",
+        "}",
+        ".backstory-paragraph:last-child, .backstory-paragraph-highlight:last-child {",
+        "  margin-bottom: 0 !important;",
+        "}",
+        ".transcript-quote-box {",
+        "  margin-top: 1.25rem !important;",
+        "  line-height: 1.8 !important;",
+        "  padding: 24px !important;",
+        "  background-color: var(--bg-panel-inner);",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 8px;",
+        "}"
+      ].join("\n"), 'caretaker-exhibit-styles');
+    }
+
+  applyCaretakerGridCSS() {
+      applyCss([
+        ".elder-analysis-grid {",
+        "  display: grid;",
+        "  grid-template-columns: 1fr;",
+        "  gap: 24px;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .elder-analysis-grid {",
+        "    grid-template-columns: repeat(2, 1fr);",
+        "  }",
+        "}",
+        ".elder-analysis-card {",
+        "  padding: 24px;",
+        "  background-color: var(--bg-panel-inner);",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 12px;",
+        "  transition: all 0.2s;",
+        "}",
+        ".elder-analysis-card:hover {",
+        "  border-color: var(--border-hover);",
+        "}",
+        ".elder-card-badge {",
+        "  font-size: 10px;",
+        "  font-family: ui-monospace, monospace;",
+        "  font-weight: bold;",
+        "  text-transform: uppercase;",
+        "  color: #3b82f6;",
+        "  background: rgba(59, 130, 246, 0.1);",
+        "  border: 1px solid rgba(59, 130, 246, 0.2);",
+        "  padding: 3px 10px;",
+        "  border-radius: 4px;",
+        "}"
+      ].join("\n"), 'caretaker-grid-styles');
+    }
+
+  applyQuoraStyles(doc) {
       const styleBlock = doc.createElement('style');
       styleBlock.id = 'q-injected-stylesheet';
-      styleBlock.textContent = 
-        ":root {" +
-        "  --q-red: #b92b27;" +
-        "  --q-bg: #f8fafc;" +
-        "  --q-card-bg: #ffffff;" +
-        "  --q-border: #e2e8f0;" +
-        "  --q-text: #334155;" +
-        "  --q-text-sub: #64748b;" +
-        "  --q-link: #2563eb;" +
-        "  --q-badge: #f1f5f9;" +
-        "}" +
-        "@media (prefers-color-scheme: dark) {" +
-        "  :root {" +
-        "    --q-bg: #0c111d;" +
-        "    --q-card-bg: #141c2b;" +
-        "    --q-border: #1e293b;" +
-        "    --q-text: #cbd5e1;" +
-        "    --q-text-sub: #94a3b8;" +
-        "    --q-link: #3b82f6;" +
-        "    --q-badge: #1e293b;" +
-        "  }" +
-        "}" +
-        "body {" +
-        "  font-family: -apple-system, BlinkMacSystemFont, \\\"Segoe UI\\\", Roboto, Helvetica, Arial, sans-serif;" +
-        "  color: var(--q-text);" +
-        "  background-color: var(--q-bg);" +
-        "  margin: 0;" +
-        "  padding: 24px 16px;" +
-        "  display: flex;" +
-        "  flex-direction: column;" +
-        "  align-items: center;" +
-        "}" +
-        ".q-card {" +
-        "  background-color: var(--q-card-bg) !important;" +
-        "  border: 1px solid var(--q-border) !important;" +
-        "  border-radius: 12px !important;" +
-        "  width: 100% !important;" +
-        "  max-width: 650px !important;" +
-        "  padding: 24px !important;" +
-        "  margin-bottom: 24px !important;" +
-        "  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;" +
-        "  box-sizing: border-box !important;" +
-        "  display: block !important;" +
-        "}" +
-        ".q-tags {" +
-        "  display: flex !important;" +
-        "  flex-wrap: wrap !important;" +
-        "  gap: 6px !important;" +
-        "  margin-bottom: 14px !important;" +
-        "  width: 100% !important;" +
-        "}" +
-        ".q-tag {" +
-        "  background-color: var(--q-badge) !important;" +
-        "  border: 1px solid var(--q-border) !important;" +
-        "  color: var(--q-text-sub) !important;" +
-        "  font-size: 11px !important;" +
-        "  padding: 4px 10px !important;" +
-        "  border-radius: 9999px !important;" +
-        "  text-decoration: none !important;" +
-        "  font-weight: 600 !important;" +
-        "  display: inline-block !important;" +
-        "}" +
-        ".puppeteer_test_question_title, .puppeteer_test_question_title * {" +
-        "  font-size: 19px !important;" +
-        "  font-weight: 800 !important;" +
-        "  line-height: 1.4 !important;" +
-        "  margin: 12px 0 !important;" +
-        "  color: var(--q-text) !important;" +
-        "  display: block !important;" +
-        "}" +
-        "a, .puppeteer_test_link, .puppeteer_test_link * {" +
-        "  text-decoration: none !important;" +
-        "  color: inherit !important;" +
-        "}" +
-        "p a, span a, a.q-explicit-link, p a *, span a * {" +
-        "  color: var(--q-link) !important;" +
-        "  text-decoration: underline !important;" +
-        "}" +
-        ".q-author-row {" +
-        "  display: flex !important;" +
-        "  flex-direction: row !important;" +
-        "  align-items: center !important;" +
-        "  gap: 12px !important;" +
-        "  margin: 14px 0 !important;" +
-        "  width: 100% !important;" +
-        "}" +
-        ".q-avatar {" +
-        "  width: 40px !important;" +
-        "  height: 40px !important;" +
-        "  border-radius: 50% !important;" +
-        "  object-fit: cover !important;" +
-        "  border: 1px solid var(--q-border) !important;" +
-        "  display: inline-block !important;" +
-        "  flex-shrink: 0 !important;" +
-        "}" +
-        ".q-author-meta {" +
-        "  display: flex !important;" +
-        "  flex-direction: column !important;" +
-        "  font-size: 13px !important;" +
-        "  line-height: 1.4 !important;" +
-        "  min-width: 0 !important;" +
-        "}" +
-        ".q-author-name {" +
-        "  font-weight: 700 !important;" +
-        "  color: var(--q-text) !important;" +
-        "  display: inline-block !important;" +
-        "}" +
-        ".q-author-bio {" +
-        "  color: var(--q-text-sub) !important;" +
-        "  display: block !important;" +
-        "  font-size: 12px !important;" +
-        "}" +
-        ".q-timestamp {" +
-        "  color: var(--q-text-sub) !important;" +
-        "  font-size: 11px !important;" +
-        "  display: inline-block !important;" +
-        "}" +
-        "img {" +
-        "  max-width: 100% !important;" +
-        "  max-height: 380px !important;" +
-        "  border-radius: 8px !important;" +
-        "  border: 1px solid var(--q-border) !important;" +
-        "  margin: 16px auto !important;" +
-        "  display: block !important;" +
-        "}" +
-        ".q-paragraph {" +
-        "  font-size: 15px !important;" +
-        "  line-height: 1.65 !important;" +
-        "  color: var(--q-text) !important;" +
-        "}" +
-        "/* --- PREVIEW LINK CARDS FIXES --- */" +
-        "a[href*=\\\"/Whats-so-bad-about-plurality-voting/\\\"], a[href*=\\\"/answer/\\\"], a[href*=\\\"wikipedia.org\\\"], a[title] {" +
-        "  display: flex !important;" +
-        "  flex-direction: row !important;" +
-        "  align-items: center !important;" +
-        "  border: 1px solid var(--q-border) !important;" +
-        "  border-radius: 8px !important;" +
-        "  margin: 16px 0 !important;" +
-        "  padding: 12px !important;" +
-        "  background-color: var(--q-badge) !important;" +
-        "  box-shadow: 0 1px 2px rgba(0,0,0,0.05) !important;" +
-        "  overflow: hidden !important;" +
-        "  max-height: 120px !important;" +
-        "  width: 100% !important;" +
-        "  box-sizing: border-box !important;" +
-        "}" +
-        "a[href*=\\\"/answer/\\\"] p, a[href*=\\\"/answer/\\\"] div, a[title] p, a[title] div, [class*=\\\"truncateLines\\\"] {" +
-        "  display: -webkit-box !important;" +
-        "  -webkit-line-clamp: 2 !important;" +
-        "  -webkit-box-orient: vertical !important;" +
-        "  overflow: hidden !important;" +
-        "  text-overflow: ellipsis !important;" +
-        "  font-size: 13px !important;" +
-        "  color: var(--q-text-sub) !important;" +
-        "  line-height: 1.42 !important;" +
-        "  margin: 0 !important;" +
-        "}" +
-        "a[href*=\\\"/answer/\\\"] div[style*=\\\"background-image\\\"], a[title] div[style*=\\\"background-image\\\"] {" +
-        "  width: 80px !important;" +
-        "  height: 80px !important;" +
-        "  background-size: cover !important;" +
-        "  background-position: center !important;" +
-        "  border-radius: 6px !important;" +
-        "  flex-shrink: 0 !important;" +
-        "  border: 1px solid var(--q-border) !important;" +
-        "  margin-right: 12px !important;" +
-        "  display: block !important;" +
-        "}" +
-        "a[href*=\\\"/answer/\\\"] .q-author-row, a[title] .q-author-row {" +
-        "  margin: 4px 0 !important;" +
-        "  gap: 6px !important;" +
-        "}" +
-        "a[href*=\\\"/answer/\\\"] .q-avatar, a[title] .q-avatar {" +
-        "  width: 22px !important;" +
-        "  height: 22px !important;" +
-        "  margin-right: 4px !important;" +
-        "}" +
-        "a[href*=\\\"/answer/\\\"] .q-author-bio, a[title] .q-author-bio {" +
-        "  display: none !important;" +
-        "}";
 
+      const vars = [
+        ":root {",
+        "  --q-red: #b92b27;",
+        "  --q-bg: #f8fafc;",
+        "  --q-card-bg: #ffffff;",
+        "  --q-border: #e2e8f0;",
+        "  --q-text: #334155;",
+        "  --q-text-sub: #64748b;",
+        "  --q-link: #2563eb;",
+        "  --q-badge: #f1f5f9;",
+        "}",
+        "@media (prefers-color-scheme: dark) {",
+        "  :root {",
+        "    --q-bg: #0c111d;",
+        "    --q-card-bg: #141c2b;",
+        "    --q-border: #1e293b;",
+        "    --q-text: #cbd5e1;",
+        "    --q-text-sub: #94a3b8;",
+        "    --q-link: #3b82f6;",
+        "    --q-badge: #1e293b;",
+        "  }",
+        "}"
+      ].join("\n");
+
+      const layout = [
+        "body {",
+        "  font-family: -apple-system, BlinkMacSystemFont, \"Segoe UI\", Roboto, Helvetica, Arial, sans-serif;",
+        "  color: var(--q-text);",
+        "  background-color: var(--q-bg);",
+        "  margin: 0;",
+        "  padding: 24px 16px;",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  align-items: center;",
+        "}",
+        ".q-card {",
+        "  background-color: var(--q-card-bg) !important;",
+        "  border: 1px solid var(--q-border) !important;",
+        "  border-radius: 12px !important;",
+        "  width: 100% !important;",
+        "  max-width: 650px !important;",
+        "  padding: 24px !important;",
+        "  margin-bottom: 24px !important;",
+        "  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;",
+        "  box-sizing: border-box !important;",
+        "  display: block !important;",
+        "}"
+      ].join("\n");
+
+      const author = [
+        ".q-author-row {",
+        "  display: flex !important;",
+        "  flex-direction: row !important;",
+        "  align-items: center !important;",
+        "  gap: 12px !important;",
+        "  margin: 14px 0 !important;",
+        "  width: 100% !important;",
+        "}",
+        ".q-avatar {",
+        "  width: 40px !important;",
+        "  height: 40px !important;",
+        "  border-radius: 50% !important;",
+        "  object-fit: cover !important;",
+        "  border: 1px solid var(--q-border) !important;",
+        "  display: inline-block !important;",
+        "  flex-shrink: 0 !important;",
+        "}"
+      ].join("\n");
+
+      const links = [
+        "p a, span a, a.q-explicit-link {",
+        "  color: var(--q-link) !important;",
+        "  text-decoration: underline !important;",
+        "}",
+        "a[href*=\"/Whats-so-bad-about-plurality-voting/\"], a[href*=\"/answer/\"], a[title] {",
+        "  display: flex !important;",
+        "  flex-direction: row !important;",
+        "  align-items: center !important;",
+        "  border: 1px solid var(--q-border) !important;",
+        "  border-radius: 8px !important;",
+        "  margin: 16px 0 !important;",
+        "  padding: 12px !important;",
+        "  background-color: var(--q-badge) !important;",
+        "  overflow: hidden !important;",
+        "  max-height: 120px !important;",
+        "  width: 100% !important;",
+        "  box-sizing: border-box !important;",
+        "}"
+      ].join("\n");
+
+      styleBlock.textContent = [vars, layout, author, links].join("\n");
       doc.head.appendChild(styleBlock);
     }
 }

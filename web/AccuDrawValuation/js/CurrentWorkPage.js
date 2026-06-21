@@ -198,76 +198,7 @@ class CurrentWorkPage {
     // =========================================================================
     // COMPACT DYNAMIC STYLESHEET
     // =========================================================================
-    applyStyles() {
-      applyCss(`
-    .current-work-editorial-wrapper {
-      display: flex;
-      flex-direction: column;
-      gap: 36px;
-      max-width: 900px;
-      margin: 0 auto;
-      width: 100%;
-    }
-    .current-work-status-banner {
-      background-color: rgba(245, 158, 11, 0.04);
-      border: 1px solid rgba(245, 158, 11, 0.2);
-      padding: 24px;
-      border-radius: 12px;
-      margin-bottom: 24px;
-    }
-    .status-alert-icon {
-      font-size: 16px;
-    }
-    .narrative-editorial-paragraph {
-      font-size: 15px;
-      color: var(--text-primary);
-      line-height: 1.85;
-    }
-    .video-editorial-stream {
-      display: flex;
-      flex-direction: column;
-      margin-top: 24px;
-    }
-    .video-editorial-block {
-      display: flex;
-      flex-direction: column;
-      margin-bottom: 40px;
-    }
-    .video-editorial-apology-box {
-      background-color: rgba(245, 158, 11, 0.05);
-      border-left: 3px solid #f59e0b;
-      padding: 16px 20px;
-      border-radius: 0 8px 8px 0;
-    }
-    .editorial-video-frame-wrapper {
-      border: 1px solid var(--border-color);
-      border-radius: 12px;
-      overflow: hidden;
-      background-color: #010204;
-      transition: border-color 0.2s ease;
-    }
-    .editorial-video-frame-wrapper:hover {
-      border-color: var(--border-hover);
-    }
-    .editorial-video-frame-container {
-      width: 100%;
-      aspect-ratio: 16/9;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      position: relative;
-    }
-    .editorial-video-placeholder-overlay {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      width: 100%;
-      height: 100%;
-    }
-  `, "current-work-editorial-styles");
-    }
+    
   
   static get PAGE_CONTENT() {
       return {
@@ -416,47 +347,134 @@ class CurrentWorkPage {
       ]);
     }
 
+  
+
   buildVideoEditorialBlock(section) {
       const content = CurrentWorkPage.PAGE_CONTENT;
       const videoId = content.videoIds[section.videoIdKey];
       const playerId = `current-work-player-${section.id}`;
 
       const children = [
-        makeElement("h3", {className: "text-lg font-black text-[var(--text-title)] mb-3"}, section.title)
+        makeElement("h3", { className: "text-lg font-black text-[var(--text-title)] mb-3" }, section.title)
       ];
 
-      // Video-specific apology box (e.g. for the main lengthy video)
       if (section.isLengthy && section.apologyText) {
-        children.push(makeElement("div", {className: "video-editorial-apology-box mb-4"}, [
-          makeElement("span", {className: "text-amber-500 font-mono font-bold block mb-1 text-xs uppercase tracking-wider"}, "Length & Polish Notice"),
-          makeElement("p", {className: "text-xs text-[var(--text-secondary)] leading-relaxed italic"}, section.apologyText)
-        ]));
+        children.push(this.buildLengthNotice(section));
       }
 
-      // Narrative section text description
-      children.push(makeElement("p", {className: "text-sm text-[var(--text-primary)] leading-relaxed mb-6"}, section.description));
+      children.push(makeElement("p", { className: "text-sm text-[var(--text-primary)] leading-relaxed mb-6" }, section.description));
 
-      // Video element - occupies clean, high-res horizontal viewport spacing for watchability
-      children.push(makeElement("div", {className: "editorial-video-frame-wrapper mb-4 shadow-xl"}, [
-        makeElement("div", {
-          id: playerId,
-          className: "editorial-video-frame-container",
-          style: {minHeight: "360px", backgroundColor: "#020306"}
-        }, [
-          makeElement("div", {className: "editorial-video-placeholder-overlay p-8"}, [
-            makeElement("span", {style: {fontSize: "44px", marginBottom: "12px", display: "block"}}, "🎥"),
-            makeElement("button", {
-              className: "copy-prompt-btn",
-              onclick: () => this.loadVideoIntoPlayer(playerId, videoId)
-            }, "Play Video Demonstration")
-          ])
-        ])
-      ]));
+      const videoFrame = this.buildVideoFrameContainer(playerId, videoId);
+      children.push(makeElement("div", { className: "editorial-video-frame-wrapper mb-4 shadow-xl" }, videoFrame));
 
-      children.push(makeElement("p", {className: "text-xs text-[var(--text-secondary)] italic opacity-80"},
+      children.push(makeElement("p", { className: "text-xs text-[var(--text-secondary)] italic opacity-80" },
         `Active Feed Link: https://www.youtube.com/watch?v=${videoId}`
       ));
 
-      return makeElement("div", {className: "video-editorial-block pb-10 border-b border-[var(--border-color)] last:border-0 last:pb-0 last:mb-0"}, children);
+      return makeElement("div", { className: "video-editorial-block pb-10 border-b border-[var(--border-color)] last:border-0 last:pb-0 last:mb-0" }, children);
+    }
+
+  buildLengthNotice(section) {
+      return makeElement("div", { className: "video-editorial-apology-box mb-4" }, [
+        makeElement("span", { className: "text-amber-500 font-mono font-bold block mb-1 text-xs uppercase tracking-wider" }, "Length & Polish Notice"),
+        makeElement("p", { className: "text-xs text-[var(--text-secondary)] leading-relaxed italic" }, section.apologyText)
+      ]);
+    }
+
+  buildVideoFrameContainer(playerId, videoId) {
+      return makeElement("div", {
+        id: playerId,
+        className: "editorial-video-frame-container",
+        style: { minHeight: "360px", backgroundColor: "#020306" }
+      }, [
+        makeElement("div", { className: "editorial-video-placeholder-overlay p-8" }, [
+          makeElement("span", { style: { fontSize: "44px", marginBottom: "12px", display: "block" } }, "🎥"),
+          makeElement("button", {
+            className: "copy-prompt-btn",
+            onclick: () => this.loadVideoIntoPlayer(playerId, videoId)
+          }, "Play Video Demonstration")
+        ])
+      ]);
+    }
+
+  applyStyles() {
+      this.applyEditorialLayoutCSS();
+      this.applyEditorialVideoCSS();
+    }
+
+  applyEditorialLayoutCSS() {
+      applyCss([
+        ".current-work-editorial-wrapper {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  gap: 36px;",
+        "  max-width: 900px;",
+        "  margin: 0 auto;",
+        "  width: 100%;",
+        "}",
+        ".current-work-status-banner {",
+        "  background-color: rgba(245, 158, 11, 0.04);",
+        "  border: 1px solid rgba(245, 158, 11, 0.2);",
+        "  padding: 24px;",
+        "  border-radius: 12px;",
+        "  margin-bottom: 24px;",
+        "}",
+        ".status-alert-icon {",
+        "  font-size: 16px;",
+        "}",
+        ".narrative-editorial-paragraph {",
+        "  font-size: 15px;",
+        "  color: var(--text-primary);",
+        "  line-height: 1.85;",
+        "}"
+      ].join("\n"), "current-work-layout-styles");
+    }
+
+  applyEditorialVideoCSS() {
+      applyCss([
+        ".video-editorial-stream {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  margin-top: 24px;",
+        "}",
+        ".video-editorial-block {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  margin-bottom: 40px;",
+        "}",
+        ".video-editorial-apology-box {",
+        "  background-color: rgba(245, 158, 11, 0.05);",
+        "  border-left: 3px solid #f59e0b;",
+        "  padding: 16px 20px;",
+        "  border-radius: 0 8px 8px 0;",
+        "}",
+        ".editorial-video-frame-wrapper {",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 12px;",
+        "  overflow: hidden;",
+        "  background-color: #010204;",
+        "  transition: border-color 0.2s ease;",
+        "}",
+        ".editorial-video-frame-wrapper:hover {",
+        "  border-color: var(--border-hover);",
+        "}",
+        ".editorial-video-frame-container {",
+        "  width: 100%;",
+        "  aspect-ratio: 16/9;",
+        "  display: flex;",
+        "  align-items: center;",
+        "  justify-content: center;",
+        "  position: relative;",
+        "}",
+        ".editorial-video-placeholder-overlay {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  align-items: center;",
+        "  justify-content: center;",
+        "  text-align: center;",
+        "  width: 100%;",
+        "  height: 100%;",
+        "}"
+      ].join("\n"), "current-work-video-styles");
     }
 }

@@ -21,42 +21,7 @@ class ValueEmberLogo {
       this._init();
     }
 
-    _init() {
-      ValueEmberLogo._loadGoogleFont();
-      this.applyStyles();
-
-      const text = this.element.textContent || "$2.3 Billion";
-      this.element.innerHTML = "";
-      
-      this.element.style.fontFamily = "'Comfortaa', cursive, sans-serif";
-      this.element.style.fontWeight = "700";
-      this.element.style.position = "relative";
-      this.element.style.display = "inline-flex";
-      this.element.style.alignItems = "baseline";
-      this.element.style.whiteSpace = "nowrap";
-      this.element.style.cursor = "pointer";
-      this.element.style.userSelect = "none";
-      this.element.style.overflow = "visible";
-
-      for (let i = 0; i < text.length; i++) {
-        const charSpan = document.createElement('span');
-        if (text[i] === ' ') {
-          charSpan.innerHTML = '&nbsp;';
-        } else {
-          charSpan.textContent = text[i];
-        }
-        charSpan.className = 'logo-char';
-        charSpan.style.display = 'inline-block';
-        charSpan.style.transition = 'margin 0.3s ease, opacity 0.3s ease';
-        this.element.appendChild(charSpan);
-        this.charSpans.push(charSpan);
-      }
-
-      this._setupHover();
-      this._startTick();
-
-      this._animFrame = requestAnimationFrame((t) => this._animate(t));
-    }
+    
 
     applyStyles() {
       applyCss(`
@@ -79,68 +44,7 @@ class ValueEmberLogo {
       });
     }
 
-    _createSparkle() {
-      if (!this.element) return;
-
-      const awake = this.isAwake || this.isHovered;
-      const speedMult = this.options.emberSpeedMultiplier * (awake ? 2.5 : 1);
-      const sizeMult = this.options.emberSizeMultiplier;
-      const baseSize = awake ? 1.5 : 1.0;
-      const size = (Math.random() * (awake ? 3.0 : 2.0) + baseSize) * sizeMult;
-
-      const isLight = this.options.forceDark ? false : !!this.element.closest('.theme-light');
-      let colors;
-      if (isLight) {
-        colors = ['#d32f2f', '#e64a19', '#f57c00', '#e65100', '#f59e0b', '#b71c1c'];
-      } else {
-        colors = ['#ff6b35', '#c44d20', '#ffaa00', '#ff8844', '#ffffff'];
-        if (awake) {
-          colors = ['#ffffff', '#ffeedd', '#ff3300', '#00ffff', '#cc33ff', '#33ff77', '#ff1155', '#ffcc00'];
-        }
-      }
-      if (this.options.rainbowMode) {
-        const hue = (this.colorCycle * 3) % 360;
-        colors = [`hsl(${hue}, 100%, 65%)`, `hsl(${(hue + 60) % 360}, 100%, 60%)`, '#ffffff'];
-      }
-
-      const color = colors[Math.floor(Math.random() * colors.length)];
-      const opacity = Math.random() * (awake ? 0.6 : 0.4) + 0.4;
-      const boxShadow = isLight
-        ? `0 0 ${size * 2}px ${color}`
-        : `0 0 ${size * (awake ? 4 : 2.5)}px ${color}`;
-
-      const ember = document.createElement('div');
-      Object.assign(ember.style, {
-        position: 'absolute',
-        width: size + 'px',
-        height: size + 'px',
-        background: color,
-        borderRadius: '50%',
-        pointerEvents: 'none',
-        opacity: String(opacity),
-        boxShadow: boxShadow,
-        zIndex: '10'
-      });
-
-      const rect = this.element.getBoundingClientRect();
-      const startX = Math.random() * rect.width;
-      const startY = Math.random() * rect.height * 0.7 + rect.height * 0.1;
-
-      ember.style.left = startX + 'px';
-      ember.style.top = startY + 'px';
-
-      const dx = (Math.random() - 0.5) * 45 * speedMult;
-      const dy = (Math.random() - 1) * 35 * speedMult - 12;
-      const duration = (Math.random() * 1.5 + (awake ? 0.5 : 1.5)) / this.options.emberSpeedMultiplier;
-
-      ember.style.setProperty('--dx', dx + 'px');
-      ember.style.setProperty('--dy', dy + 'px');
-      ember.style.animation = `valueEmberFloat ${duration}s cubic-bezier(0.25, 1, 0.5, 1) forwards`;
-
-      this.element.appendChild(ember);
-
-      setTimeout(() => { if (ember.parentNode) ember.remove(); }, duration * 1000);
-    }
+    
 
     _startTick() {
       const tick = () => {
@@ -222,5 +126,135 @@ class ValueEmberLogo {
         link.href = 'https://fonts.googleapis.com/css2?family=Comfortaa:wght@400;700;900&display=swap';
         document.head.appendChild(link);
       }
+    }
+
+  _init() {
+      ValueEmberLogo._loadGoogleFont();
+      this.applyStyles();
+
+      const text = this.element.textContent || "$2.3 Billion";
+      this.element.innerHTML = "";
+      
+      this.element.style.fontFamily = "'Comfortaa', cursive, sans-serif";
+      this.element.style.fontWeight = "700";
+      this.element.style.position = "relative";
+      this.element.style.display = "inline-flex";
+      this.element.style.alignItems = "baseline";
+      this.element.style.whiteSpace = "nowrap";
+      this.element.style.cursor = "pointer";
+      this.element.style.userSelect = "none";
+      this.element.style.overflow = "visible";
+
+      this._buildSpanSpans(text);
+      this._setupHover();
+      this._startTick();
+
+      this._animFrame = requestAnimationFrame((t) => this._animate(t));
+    }
+
+  _buildSpanSpans(text) {
+      for (let i = 0; i < text.length; i++) {
+        const charSpan = document.createElement('span');
+        if (text[i] === ' ') {
+          charSpan.innerHTML = '&nbsp;';
+        } else {
+          charSpan.textContent = text[i];
+        }
+        charSpan.className = 'logo-char';
+        charSpan.style.display = 'inline-block';
+        charSpan.style.transition = 'margin 0.3s ease, opacity 0.3s ease';
+        this.element.appendChild(charSpan);
+        this.charSpans.push(charSpan);
+      }
+    }
+
+  _createSparkle() {
+      if (!this.element) return;
+
+      const awake = this.isAwake || this.isHovered;
+      const speedMult = this.options.emberSpeedMultiplier * (awake ? 2.5 : 1);
+      const sizeMult = this.options.emberSizeMultiplier;
+      const baseSize = awake ? 1.5 : 1.0;
+      const size = (Math.random() * (awake ? 3.0 : 2.0) + baseSize) * sizeMult;
+
+      const color = this._getSparkleColor(awake);
+      const movement = this._getSparkleMovement(speedMult, awake);
+      
+      this._appendSparkle(color, size, movement, awake);
+    }
+
+  _getSparkleColor(awake) {
+      const isLight = this.options.forceDark ? false : !!this.element.closest('.theme-light');
+      
+      if (this.options.rainbowMode) {
+        const hue = (this.colorCycle * 3) % 360;
+        return `hsl(${hue}, 100%, 65%)`;
+      }
+      
+      if (isLight) {
+        const lightPalette = ['#d32f2f', '#e64a19', '#f57c00', '#e65100', '#f59e0b', '#b71c1c'];
+        return lightPalette[Math.floor(Math.random() * lightPalette.length)];
+      }
+
+      let darkPalette = ['#ff6b35', '#c44d20', '#ffaa00', '#ff8844', '#ffffff'];
+      if (awake) {
+        darkPalette = ['#ffffff', '#ffeedd', '#ff3300', '#00ffff', '#cc33ff', '#33ff77', '#ff1155', '#ffcc00'];
+      }
+      return darkPalette[Math.floor(Math.random() * darkPalette.length)];
+    }
+
+  _getSparkleMovement(speedMult, awake) {
+      const rect = this.element.getBoundingClientRect();
+      const startX = Math.random() * rect.width;
+      const startY = Math.random() * rect.height * 0.7 + rect.height * 0.1;
+
+      const dx = (Math.random() - 0.5) * 45 * speedMult;
+      const dy = (Math.random() - 1) * 35 * speedMult - 12;
+      const duration = (Math.random() * 1.5 + (awake ? 0.5 : 1.5)) / this.options.emberSpeedMultiplier;
+
+      return {
+        startX,
+        startY,
+        dx,
+        dy,
+        duration
+      };
+    }
+
+  _appendSparkle(color, size, movement, awake) {
+      const isLight = this.options.forceDark ? false : !!this.element.closest('.theme-light');
+      const opacity = Math.random() * (awake ? 0.6 : 0.4) + 0.4;
+      
+      const glowScale = awake ? 4 : 2.5;
+      const boxShadow = isLight
+        ? `0 0 ${size * 2}px ${color}`
+        : `0 0 ${size * glowScale}px ${color}`;
+
+      const ember = document.createElement('div');
+      Object.assign(ember.style, {
+        position: 'absolute',
+        width: size + 'px',
+        height: size + 'px',
+        background: color,
+        borderRadius: '50%',
+        pointerEvents: 'none',
+        opacity: String(opacity),
+        boxShadow: boxShadow,
+        zIndex: '10',
+        left: movement.startX + 'px',
+        top: movement.startY + 'px'
+      });
+
+      ember.style.setProperty('--dx', movement.dx + 'px');
+      ember.style.setProperty('--dy', movement.dy + 'px');
+      ember.style.animation = `valueEmberFloat ${movement.duration}s cubic-bezier(0.25, 1, 0.5, 1) forwards`;
+
+      this.element.appendChild(ember);
+
+      setTimeout(() => {
+        if (ember.parentNode) {
+          ember.remove();
+        }
+      }, movement.duration * 1000);
     }
 }

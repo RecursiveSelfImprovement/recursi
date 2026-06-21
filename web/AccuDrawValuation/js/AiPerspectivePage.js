@@ -8,12 +8,12 @@ class AiPerspectivePage {
 
     buildAIPerspectivePanel(app) {
       const pIntroHighlight = [
-        "The velocity of AI automation has created an urgent, narrow window for career restoration. ",
-        "The conventional advice to 'take any low-level, menial job now and rebuild your career later' ",
-        "is mathematically and structurally blind to this timeline. Spending a year in survival-level labor ",
-        "at this critical juncture means missing the foundational generative AI transition entirely. ",
-        "By the time one tries to return, standard software syntax and interaction modeling will be ",
-        "fully automated, permanently closing the door on my ability to leverage my extremely rare visual systems engineering skills."
+        "The speed AI is moving at has created an extremely narrow window to get things sorted out career-wise. ",
+        "The common advice to 'just take any low-level survival job now and rebuild your career later' ",
+        "is completely blind to the actual trajectory. Spending a year digging ditches or doing menial labor ",
+        "at this critical juncture means missing the boat entirely on the generative transition. ",
+        "By the time you try to return, standard coding and interface modeling will be fully automated, ",
+        "shutting the door on my visual systems engineering skills for good."
       ].join("");
 
       const pIntroBody = [
@@ -24,35 +24,33 @@ class AiPerspectivePage {
       ].join("");
 
       const pEssay1 = [
-        "I believe we are on the cusp of an era where AI and Robotics will replace almost every single ",
-        "job. This is an incredibly difficult thing for many to accept because it challenges our ",
-        "fundamental assumptions about society-specifically, the link between work, income, and ",
-        "basic survival. The assumption that we must sell our labor to live makes the prospect of ",
-        "widespread automation feel like an immediate sentence of starvation, but that is a structural ",
-        "issue we must solve, not an indictment of the technology's capability."
+        "I think AI and robotics are going to replace almost every single job out there. This is a tough ",
+        "pill for people to swallow because it messes with our basic assumptions about how society is supposed to work -- ",
+        "specifically, the idea that you have to sell your labor just to survive. If you have no job, ",
+        "you starve, so people naturally panic and say the tech can't do it. But that's a distribution ",
+        "problem we need to solve, not a limit of the technology's capability."
       ].join("");
 
       const pEssay2 = [
-        "A common bias is to look at your own profession and assert: 'AI won't replace my job ",
-        "because my role has these unique, highly complex challenges.' This is a dangerous ",
-        "defense mechanism. I believe it is smarter to step back, analyze the larger trajectory across ",
-        "multiple industries, and look honestly at the rate of improvement."
+        "I notice people consistently looking at their own jobs and saying: 'AI won't replace what ",
+        "I do because my role has these specific, highly complex challenges.' That's just a psychological ",
+        "defense mechanism -- a way to avoid being blindsided. It's much smarter to step back, look at the ",
+        "larger trajectory across multiple industries, and be honest about how fast things are improving."
       ].join("");
 
       const pEssay3 = [
-        "To visually demonstrate this speed, I focus here on graphics, film, special effects, ",
-        "and animation. I select this domain not because it is more complex than other jobs, but ",
-        "because it communicates visually. Having spent over 45 years in this field-obsessing ",
-        "over 35mm in-camera effects in the late 70s, learning traditional industrial rendering in ",
-        "the 80s, and later developing advanced 3D systems-I have a deep understanding of what it ",
-        "conventionally takes to build these visuals."
+        "I focus on graphics, special effects, and animation because it's highly visual and communicates ",
+        "the point better than coding. I select this domain not because it is more complex than other jobs, but ",
+        "because it is easy to see. Having spent over 45 years in this field -- obsessing over 35mm in-camera ",
+        "effects in the late 70s, studying traditional industrial rendering in the 80s, and then building ",
+        "3D systems -- I know exactly how hard this stuff is to make conventionally."
       ].join("");
 
       const pEssay4 = [
-        "What we are seeing today is not 'computer graphics' in the conventional sense. This is not ",
-        "the result of humans writing complex rendering equations or hardcoding lighting rules. These ",
-        "are generative models that have emerged with the ability to look at millions of data points, ",
-        "figure seriously complex structures out, and execute them perfectly on their own."
+        "But this isn't computer graphics in the old-fashioned sense. No one wrote an algorithm telling ",
+        "the computer how to render reflections or cast light. They just wrote the learning algorithm, ",
+        "set it loose on a mountain of data, and the models figured the rest out on their own. We understand ",
+        "how they do it about as well as we understand how our own brains learn -- which is to say, barely at all."
       ].join("");
 
       return makeElement("div", { className: "ai-editorial-container" }, [
@@ -69,24 +67,24 @@ class AiPerspectivePage {
           makeElement("p", { className: "ai-essay-p" }, pEssay3),
 
           makeElement("div", { className: "ai-section-break" }, [
-            makeElement("h2", { className: "ai-section-heading" }, "1. The Paradigm Shift from Algorithms to 'Intuition'")
+            makeElement("h2", { className: "ai-section-heading" }, "1. The Paradigm Shift from Algorithms to Intuition")
           ]),
 
           makeElement("p", { className: "ai-essay-p" }, pEssay4),
           makeElement("p", { className: "ai-essay-p" }, 
-            "We understand how these models learn and compose outputs about as well as we understand how the human brain does-which is to say, very little. But the outputs are undeniable."
+            "We understand how these models learn about as well as we understand how the human brain does -- which is to say, very little. But the outputs are undeniable."
           ),
 
           this.buildNewAIMediaCard(
             "Star Wars De-Aging & Character Generation",
             [
               "De-aging actors via conventional 3D graphics is incredibly hard, expensive, ",
-              "and almost always looks slightly wrong, landing in the 'uncanny valley.' ",
+              "and almost always looks slightly wrong, landing in the uncanny valley. ",
               "Today, AI models do it without missing a beat, and you simply cannot tell."
             ].join(""),
             "/AIImages/star_wars_deaged.png",
             [
-              "Luke, Leia, and Lando young again-perfectly realized without human artists spent on ",
+              "Luke, Leia, and Lando young again -- realized without human artists spent on ",
               "years of painstaking manual work. It is done for dirt cheap, and it is orders of ",
               "magnitude better than it was a year ago. Every small glitch you see today will be gone tomorrow."
             ].join("")
@@ -101,8 +99,8 @@ class AiPerspectivePage {
             ].join(""),
             "/AIImages/pigeon_animation.png",
             [
-              "While a keen eye can count a couple of minor glitches-a slight foot error or background change ",
-              "- it is staggeringly good. This is computer 'intuition' bypassing years of conventional ",
+              "While a keen eye can count a couple of minor glitches -- a slight foot error or background change ",
+              "-- it is staggeringly good. This is computer intuition bypassing years of conventional ",
               "training and thousands of hours of manual frame rendering."
             ].join("")
           ),
@@ -117,7 +115,7 @@ class AiPerspectivePage {
 
           makeElement("div", { className: "ai-dual-grid" }, [
             this.buildAIImageFrame("/AIImages/trajectory_14m_left.png", "14 Months Ago: Fragmented details, low visual cohesion"),
-            this.buildAIImageFrame("/AIImages/trajectory_14m_right.png", "Today: Photorealistic lighting, perfect composition")
+            this.buildAIImageFrame("/AIImages/trajectory_14m_right.png", "Today: Photorealistic lighting, solid composition")
           ]),
 
           makeElement("p", { className: "ai-essay-p", style: { marginTop: "24px" } }, 
@@ -125,17 +123,17 @@ class AiPerspectivePage {
           ),
 
           this.buildNewAIMediaCard(
-            "Google's 'Nano Banana' Reflection Experiment",
+            "Google's Nano Banana Reflection Experiment",
             [
               "I ran an experiment taking a photo of a car with an ugly background, asking a free model ",
-              "to replace it. It did not just swap the background-it calculated and painted photorealistic ",
+              "to replace it. It did not just swap the background -- it calculated and painted photorealistic ",
               "reflections on the car's body matching the new environment."
             ].join(""),
             "/AIImages/car_reflections_nano.png",
             [
               "This requires a deep, structural understanding of materials, lighting, and shape. To achieve ",
               "this in Photoshop or Blender would require hours of tedious manual masks and ray-tracing. ",
-              "The AI did it instantly. This is not a 'collage' of existing internet photos-this is true spatial comprehension."
+              "The AI did it instantly. This is not a collage of existing internet photos -- this is true spatial comprehension."
             ].join("")
           ),
 
@@ -158,7 +156,7 @@ class AiPerspectivePage {
           ]),
 
           makeElement("p", { className: "ai-essay-p" }, 
-            "It is easy to dismiss this as 'silly pictures and video tools' and assume your white-collar, spreadsheet-heavy, or programming-related job is safe. But you must connect the dots. The people who conventionally do this graphical work are brilliant, highly technical creatives-and today, the machine does their job better, faster, and for free."
+            "It is easy to dismiss this as silly pictures and video tools and assume your white-collar, spreadsheet-heavy, or programming-related job is safe. But you must connect the dots. The people who conventionally do this graphical work are smart, highly technical creatives -- and today, the machine does their job better, faster, and for free."
           ),
 
           makeElement("p", { className: "ai-essay-p" }, 
@@ -166,7 +164,7 @@ class AiPerspectivePage {
           ),
 
           makeElement("p", { className: "ai-essay-p" }, 
-            "The researchers building these models are paid enormous sums today, but they are fully aware that they are actively training the very systems that will soon render their own coding jobs obsolete. The idea that automation will simply create 170 million 'new' jobs is a comfortable myth; those new jobs will themselves be automated almost instantly."
+            "The researchers building these models are paid enormous sums today, but they are fully aware that they are actively training the very systems that will soon render their own coding jobs obsolete. The idea that automation will simply create 170 million new jobs is a comfortable myth; those new jobs will themselves be automated almost instantly."
           ),
 
           this.buildNewAIMediaCard(
@@ -193,13 +191,12 @@ class AiPerspectivePage {
               paddingTop: "24px" 
             } 
           }, 
-            "We are heading toward a convergence where every economically valuable human task will be done better, faster, and far cheaper by machines. Rather than hoping it won't happen or railing against energy usage, we must plan for it. For me, that means securing the transition runway now-putting my core skills in visual systems and conceptual design to work immediately before the window of standard software development is fully closed."
+            "We are heading toward a convergence where every economically valuable human task will be done better, faster, and far cheaper by machines. Rather than hoping it won't happen or railing against energy usage, we must plan for it. For me, that means securing the transition runway now -- putting my core skills in visual systems and conceptual design to work immediately before the window of standard software development is fully closed."
           )
         ])
       ]);
     }
 
-    // Builder for visual AI media cards (supports fallback graphics neatly)
     buildNewAIMediaCard(title, bodyText, imgSrc, footerText) {
       return makeElement("div", { className: "ai-media-block" }, [
         makeElement("div", { className: "ai-media-block-img-area" }, [
@@ -246,7 +243,6 @@ class AiPerspectivePage {
       ]);
     }
 
-    // Builder for AI image frames (comparison blocks)
     buildAIImageFrame(imgSrc, caption) {
       return makeElement("div", { className: "flex flex-col gap-2 p-3 bg-slate-900/40 border border-[var(--border-color)] rounded-lg" }, [
         makeElement("img", {
@@ -660,27 +656,27 @@ class AiPerspectivePage {
       `, 'ai-perspective-quora-styles');
     }
   
-  buildPage() {
+    buildPage() {
       return makeElement('div', { className: 'quora-reader-container' }, [
         this.buildContextCard(),
         this.buildQuoraPost()
       ]);
     }
 
-  buildContextCard() {
+    buildContextCard() {
       const pIntroHighlight = [
-        "The velocity of AI automation has created an urgent, narrow window for career restoration. ",
-        "The conventional advice to 'take any low-level, menial job now and rebuild your career later' ",
-        "is mathematically and structurally blind to this timeline. Spending a year in survival-level labor ",
-        "at this critical juncture means missing the foundational generative AI transition entirely. ",
-        "By the time one tries to return, standard software syntax and interaction modeling will be ",
-        "fully automated, permanently closing the door on my ability to leverage my extremely rare visual systems engineering skills."
+        "The speed AI is moving at has created an extremely narrow window to get things sorted out career-wise. ",
+        "The common advice to 'just take any low-level survival job now and rebuild your career later' ",
+        "is completely blind to the actual trajectory. Spending a year digging ditches or doing menial labor ",
+        "at this critical juncture means missing the boat entirely on the generative transition. ",
+        "By the time you try to return, standard coding and interface modeling will be fully automated, ",
+        "shutting the door on my visual systems engineering skills for good."
       ].join("");
 
       const pIntroBody = [
         "With technology changing faster than at any point in human history, the opportunity cost of forced ",
         "professional exile is absolute. Below is one of my typical Quora posts on the subject. In this post, ",
-        "I concentrate mostly on a particular side of AI - graphics and video - focusing on the Star Wars fan ",
+        "I concentrate mostly on a particular side of AI -- graphics and video -- focusing on the Star Wars fan ",
         "creations to illustrate the sheer velocity of change, and why establishing an immediate, focused ",
         "technical runway is a matter of urgent survival."
       ].join("");
@@ -692,7 +688,7 @@ class AiPerspectivePage {
       ]);
     }
 
-  buildQuoraPost() {
+    buildQuoraPost() {
       return makeElement('article', { className: 'quora-post-card' }, [
         makeElement('h1', { className: 'quora-question-title' }, 'Do you believe AI will replace most all professions?'),
         this.buildQuoraAuthorRow(),
@@ -700,7 +696,7 @@ class AiPerspectivePage {
       ]);
     }
 
-  buildQuoraAuthorRow() {
+    buildQuoraAuthorRow() {
       return makeElement('div', { className: 'quora-author-row' }, [
         makeElement('div', { className: 'quora-author-avatar' }, 'RB'),
         makeElement('div', { className: 'quora-author-info' }, [
@@ -711,144 +707,7 @@ class AiPerspectivePage {
       ]);
     }
 
-  // Content assembler containing natural, streamlined trajectory commentary
-    buildQuoraEssayContent() {
-      const stream = makeElement('div', { className: 'quora-essay-stream' });
-
-      // First Quora paragraph
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph font-medium' }, 
-        "Yes, I believe AI will replace most all professions. This is an incredibly difficult thing for many to accept because it challenges our fundamental assumptions about society - specifically, the link between work, income, and basic survival. The assumption that we must sell our labor to live makes the prospect of widespread automation feel like an immediate sentence of starvation, but that is a structural issue we must solve, not an indictment of the technology's capability."
-      ));
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "A common bias is to look at your own profession and assert: 'AI won't replace my job because my role has these unique, highly complex challenges.' This is a dangerous defense mechanism. I believe it is smarter to step back, analyze the larger trajectory across multiple industries, and look honestly at the rate of improvement."
-      ));
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "To visually demonstrate this speed, I focus here on graphics, film, special effects, and animation. I select this domain not because it is more complex than other jobs, but because it communicates visually. Having spent over 45 years in this field - obsessing over 35mm in-camera effects in the late 70s, learning traditional industrial rendering in the 80s, and later developing advanced 3D systems - I have a deep understanding of what it conventionally takes to build these visuals."
-      ));
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "What we are seeing today is not 'computer graphics' in the conventional sense. This is not the result of humans writing complex rendering equations or hardcoding lighting rules. These are generative AI models that have emerged with the ability to look at millions of data points, figure seriously complex structures out, and execute them perfectly on their own."
-      ));
-
-      // Section 1: Star Wars De-aging
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '1. The Star Wars Paradigm Shift'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Notice how AI already massively exceeds the ability of special effects professionals to do things like show an actor how they looked 50 years ago. It isn't just the de-aging; it's the special effects, environments, and complete scene composites that are just done on the cheap - done for almost nothing, with probably a 5,000 to 1 ratio as far as cost compared to traditional Hollywood studio production. To do this conventionally via 3D graphics is incredibly hard, expensive, and almost always lands in the 'uncanny valley.' Today, AI models do it without missing a beat, and you simply cannot tell."
-      ));
-
-      // Star Wars image
-      stream.appendChild(this.buildImageCard(
-        '/images/starWarsDeAging.webp',
-        'Luke, Leia, and Lando Young Again',
-        'Luke, Leia, Lando, etc. young again - perfectly realized without spending millions on studio rendering. The special effects are executed instantly on the cheap, with a cost disruption ratio exceeding 5,000 to 1 compared to legacy Hollywood techniques.'
-      ));
-
-      // Star Wars videos
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "I suggest looking closely at these fan-made special effect restorations. Think about what is actually going on under the hood of these renders:"
-      ));
-      
-      const swVideoGrid = makeElement('div', { className: 'quora-dalle-grid' }, [
-        this.buildVideoCard('KlVPwny_1qw', 'Beggar\'s Canyon Dead Man\'s Run', 'Generative fan reconstruction of classical Star Wars canyon navigation'),
-        this.buildVideoCard('Oyd_xFKbkw8', 'Beggar\'s Canyon Shadows of the Empire', 'Atmospheric and volumetric lighting restoration from classical conceptual frames')
-      ]);
-      stream.appendChild(swVideoGrid);
-
-      // Section 2: Pigeon Animation
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '2. Bypassing Traditional Craft Training'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Here is another sequence, done by a hobbyist in just a few hours - a single afternoon. The animation is darn close to movie quality. I count three glitches (extra foot, left pigeon mouthing right pigeon's words at one point, buildings different in one shot). But come on. An animation instructor explains how this would take a really good student a semester to a year of intensive labor to put together. It is staggeringly good for something done by 'computer intuition' rather than by human written algorithms and a ton of human work."
-      ));
-
-      stream.appendChild(this.buildVideoCard(
-        '-nZD4XLMrNw', 
-        'The 24-Hour Hobbyist Pigeon Animation', 
-        'Staggering visual fidelity put together in a single afternoon (just a few hours) by a hobbyist. Click to expand full width.'
-      ));
-
-      // Section 3: Trajectory DALL-E 2 vs DALL-E 3 (Consolidated & Streamlined)
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '3. Mapping the Exponential Curve'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Let's look at the rapid evolutionary trajectory. Below are two side-by-side prompt comparisons across a 14-month window. The prompts are identical, but the leap in rendering quality and coherence is staggering."
-      ));
-
-      // DALL-E grid
-      stream.appendChild(this.buildDallEComparisonGrid());
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Comparing the older images with the newer ones makes the vertical rate of improvement undeniably clear. It highlights the shift from abstract, fragmented shapes to professional-grade compositions in a little over a year."
-      ));
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "There are things that are a bit... off... in even the images from 2023. But then it got better, and allowed you to modify or be 'inspired by' existing images."
-      ));
-
-      // Section 4: Car Reflections
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '4. Spatial Material Understanding & Light Transport'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Here is an experiment I did a year ago, starting with a nice photo of a car with an ugly background, and having a free image generator (Google's Nano Banana) replace the background, while somehow making incredibly realistic reflections... good luck doing that in Photoshop. And then, well, having some fun. How did it do this, short of magic? What degree of understanding of the subject matter is needed to do this? What would it have taken to do this using pre-AI technology such as Photoshop or Blender?"
-      ));
-
-      // Car grid
-      stream.appendChild(this.buildCarReflectionGrid());
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph italic text-[var(--text-secondary)]' }, 
-        "(and, for all those who say it is just doing some sort of 'collage' from images it has seen on the internet... uhhhhh. No. You are in denial.)"
-      ));
-
-      // Section 5: Row of Houses
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '5. True Spatial Coherence'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "Or how about this. Starting with a single photo I took of a pretty row of houses, the model was asked to redraw the scene as a clean line drawing from a completely different perspective angle. Again... how does it know how to do this short of truly understanding what it is seeing? If it can do this, we are probably very close to it actually being able to do real architecture work, because it seems to have the sort of structural and spatial understanding necessary."
-      ));
-
-      stream.appendChild(this.buildImageCard(
-        '/images/housePhotoAndIllustration.webp',
-        'Pretty Row of Houses Reconstructed as a Line Drawing',
-        'From a single photographic input, the model accurately projects a perfect line drawing from a completely new virtual perspective angle, hinting at the automation of architectural modeling.'
-      ));
-
-      // Section 6: Physical Robotics (NEW)
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '6. The Physical Frontier: Humanoid Robotics'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "While generative models rapidly replace digital and creative labor, physical robotics is progressing on an equally vertical trajectory. State-of-the-art humanoid systems are stepping out of research labs and transitioning directly into structured factory floors, logistics centers, and manual workflows. Within the next decade, the integration of physical humanoid robotics with localized multimodal AI models will establish an undeniable economic incentive to automate traditional physical labor, closing the circle of complete workforce automation."
-      ));
-
-      stream.appendChild(this.buildVideoCard(
-        '7VV6poSrk3Y',
-        'State of the Art Humanoid Robotics Frontier',
-        'Demonstrating recent breakthroughs in balance, motor control, and task execution in physical humanoid robotics (1-minute compilation).',
-        39
-      ));
-
-      // Concluding thoughts
-      stream.appendChild(makeElement('h2', { className: 'quora-section-title' }, '7. Connecting the Dots'));
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "You may say 'this is just silly pictures and video stuff, not nearly as complex as what I do at my job.' But you also know deep down, that the people who work on this stuff (film, animation, 3d graphics and effects, architectural rendering... prior to AI getting involved) are really smart, really talented... and here they are just looking at it and saying 'oh shit... it just does my job better than I ever could do it. For free or nearly so.'"
-      ));
-
-      const pClearWrapper = makeElement('p', { className: 'quora-paragraph' });
-      pClearWrapper.innerHTML = "I have no doubt that hurts. <strong><em>And to be clear, I am in no way arguing that this is all positive.</em></strong>";
-      stream.appendChild(pClearWrapper);
-
-      const pExpWrapper = makeElement('p', { className: 'quora-paragraph font-bold text-emerald-400' });
-      pExpWrapper.innerHTML = "There's going to be a moment like this for just about everyone. I see it mostly in programming, where it has even more superhuman capabilities than in film and animation. (programming doesn't communicate as easily as film and animation, hence my examples, but it is <strong><em>absolutely</em></strong> at the front of the pack of AI skills, and I have an <strong><em>immense amount of direct experience</em></strong> with it doing stupendously complex things).";
-      stream.appendChild(pExpWrapper);
-
-      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, 
-        "You can hope for it to not happen, for AI to just go away. You can rail against the data centers on the basis of how they use too much water and drive up the prices of electricity. Good luck."
-      ));
-
-      const pFinalWrapper = makeElement('p', { className: 'quora-paragraph text-xl font-bold border-t border-[var(--border-color)] pt-6 mt-8' });
-      pFinalWrapper.innerHTML = "I think it's smarter to take a close look, not just in your own field but in others, and especially, map the trajectory. And plan for - what all the evidence suggests - is going to happen in the near future. Which is that it is going to converge on being able to do <strong><em>ALL ECONOMICALLY VALUABLE HUMAN TASKS</em></strong>, better and faster and far cheaper than humans. Within the next few years.";
-      stream.appendChild(pFinalWrapper);
-
-      return stream;
-    }
-
-  buildVideoCard(videoId, title, caption, startTime = 0) {
+    buildVideoCard(videoId, title, caption, startTime = 0) {
       const thumbnailSrc = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
 
       return makeElement('div', { className: 'quora-video-card' }, [
@@ -877,7 +736,7 @@ class AiPerspectivePage {
       ]);
     }
 
-  buildImageCard(imgSrc, title, caption) {
+    buildImageCard(imgSrc, title, caption) {
       return makeElement('div', { className: 'quora-image-card' }, [
         makeElement('div', {
           className: 'quora-image-wrapper',
@@ -926,7 +785,6 @@ class AiPerspectivePage {
       ]);
     }
 
-  // Builder for side-by-side prompt trajectory comparisons with concise, natural labels
     buildDallEComparisonGrid() {
       return makeElement('div', { className: 'quora-dalle-grid' }, [
         this.buildImageCard(
@@ -942,15 +800,14 @@ class AiPerspectivePage {
       ]);
     }
 
-  buildCarReflectionGrid() {
+    buildCarReflectionGrid() {
       return makeElement('div', { className: 'quora-car-grid' }, [
         this.buildImageCard('/images/carOriginal.webp', 'Original Red Car', 'Used as input: Clear photo of a classic red car'),
-        this.buildImageCard('/images/carStreetArt.png', 'Street Art Swap', 'Seemingly accurate reflections on the body that would be incredibly hard to do short of a full 3D model'),
+        this.buildImageCard('/images/carStreetArt.png', 'Street Art Swap', 'Reflections on the body that would be incredibly hard to do short of a full 3D model'),
         this.buildImageCard('/images/carMossy.png', 'Forest Moss Swap', 'Completely transformed forest environment: not on a red metallic chassis because that isn\'t even there anymore, but just using elements of the original picture to completely transform it')
       ]);
     }
 
-  // Main media modal controller with click-to-zoom, drag-to-pan, click-off closer, and isolated bubbling
     openMediaModal(type, source, title, options = {}) {
       const existing = document.getElementById('ai-media-modal');
       if (existing) existing.remove();
@@ -1068,7 +925,6 @@ class AiPerspectivePage {
         }
       });
 
-      // Implement mouse drag to pan on the container directly
       contentContainer.onmousedown = (e) => {
         if (!isFullRes) return;
         isDragging = true;
@@ -1115,22 +971,19 @@ class AiPerspectivePage {
             maxHeight: '100%',
             objectFit: 'contain',
             borderRadius: '4px',
-            pointerEvents: 'auto', // Re-enable pointer events to distinguish off-image clicks
+            pointerEvents: 'auto',
             display: 'block'
           }
         });
 
-        // Toggle Zoom and Resolution using click event on the viewport
         contentContainer.onclick = (e) => {
-          e.stopPropagation(); // Stop click bubbling up to the outer modal
+          e.stopPropagation();
 
-          // If the action was dragging, ignore toggle Zoom
           if (dragThresholdMet) {
             dragThresholdMet = false;
             return;
           }
 
-          // If click was on the empty background (not on the image), close the modal entirely!
           if (e.target === contentContainer) {
             this.closeMediaModal();
             return;
@@ -1229,7 +1082,7 @@ class AiPerspectivePage {
       });
     }
 
-  closeMediaModal() {
+    closeMediaModal() {
       const modal = document.getElementById('ai-media-modal');
       if (modal) {
         modal.classList.remove('is-active');
@@ -1243,7 +1096,7 @@ class AiPerspectivePage {
       }
     }
 
-  useIframeFallback(container, videoId, startTime = 0) {
+    useIframeFallback(container, videoId, startTime = 0) {
       container.innerHTML = '';
       const iframe = makeElement('iframe', {
         src: `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&start=${startTime}`,
@@ -1256,5 +1109,303 @@ class AiPerspectivePage {
         allowfullscreen: 'true'
       });
       container.appendChild(iframe);
+    }
+
+    buildQuoraEssayContent() {
+      const stream = makeElement('div', { className: 'quora-essay-stream' });
+      
+      this.appendQuoraIntro(stream);
+      this.appendQuoraStarWars(stream);
+      this.appendQuoraPigeons(stream);
+      this.appendQuoraTrajectory(stream);
+      this.appendQuoraCarReflections(stream);
+      this.appendQuoraHouses(stream);
+      this.appendQuoraRobotics(stream);
+      this.appendQuoraConclusion(stream);
+      
+      return stream;
+    }
+
+    appendQuoraIntro(stream) {
+      const p1Text = [
+        "Yeah, I think AI is going to replace almost every job. This is an ",
+        "incredibly difficult thing for many to accept because it challenges ",
+        "our fundamental assumptions about society -- specifically, the link ",
+        "between work, income, and basic survival. The assumption that we ",
+        "must sell our labor just to survive makes the prospect of widespread ",
+        "automation feel like an immediate sentence of starvation, but that ",
+        "is a structural issue we must solve, not an indictment of the ",
+        "technology's capability."
+      ].join("");
+
+      const p2Text = [
+        "A common bias is to look at your own job and assert: ",
+        "'AI won't replace my job because what I do has these unique, highly ",
+        "complex challenges.' That is a dangerous defense mechanism. I suggest ",
+        "stepping back, analyzing the larger trajectory across ",
+        "multiple industries, and looking honestly at the rate of improvement."
+      ].join("");
+
+      const p3Text = [
+        "To show this speed, I concentrate on graphics and video -- not ",
+        "because it is more complex than other jobs, but because it communicates ",
+        "visually. Having spent over 45 years in this field -- obsessing over ",
+        "35mm in-camera effects in the late 70s (right after I saw Star Wars in the theater at age 13), ",
+        "learning traditional industrial rendering in the 80s, and later developing advanced ",
+        "3D systems -- I have a clear understanding of what it conventionally ",
+        "takes to build these visuals."
+      ].join("");
+
+      const p4Text = [
+        "What we are seeing today is not computer graphics in the ",
+        "conventional sense. No one wrote the rendering equations or hardcoded ",
+        "lighting rules here. These are generative AI models that just figure ",
+        "seriously complex structures out and execute them on their own. We understand ",
+        "how they learn about as well as we understand how our own brains do -- ",
+        "which is to say, barely at all."
+      ].join("");
+
+      const p5Text = [
+        "People love to dismiss this as 'glorified autocomplete.' They say it is ",
+        "just statistically predicting the next word, like a parlor trick. But to ",
+        "predict the next token accurately across millions of contexts, the model ",
+        "has to build an understanding. Calling that a parlor trick is like calling ",
+        "human thought 'glorified chemical signals' in a batch of glorified worms. ",
+        "If you look closely enough, everything is mechanistic. Our brains are just ",
+        "finding electrochemical equilibria tuned by natural selection to help us survive. ",
+        "It is either that, or you have to believe in magic."
+      ].join("");
+
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph font-medium' }, p1Text));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, p2Text));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, p3Text));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, p4Text));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph italic text-[var(--text-secondary)]' }, p5Text));
+    }
+
+    appendQuoraStarWars(stream) {
+      const swHeading = makeElement('h2', { className: 'quora-section-title' }, '1. The Star Wars Paradigm Shift');
+      
+      const swParagraph = [
+        "Look at what AI can do with de-aging. Doing this with traditional ",
+        "3D rendering is incredibly hard, expensive, and always looks slightly ",
+        "wrong and creepy. Today, AI does it without missing a beat, and you simply ",
+        "cannot tell. It is done for next to nothing -- with probably a 5,000 to 1 ",
+        "disruption ratio as far as cost compared to traditional Hollywood studio production. ",
+        "Every little AI glitch you see today? There will be far fewer next year."
+      ].join("");
+
+      const swCaption = [
+        "Luke, Leia, Lando young again -- realized without spending millions ",
+        "on studio rendering. The special effects are executed instantly on the cheap, ",
+        "with cost disruptions exceeding a 5,000 to 1 ratio compared to legacy Hollywood techniques."
+      ].join("");
+
+      const swMediaText = [
+        "I suggest looking closely at these fan-made special effect ",
+        "restorations. Think about what is actually going on under the ",
+        "hood of these renders:"
+      ].join("");
+
+      const swVideoGrid = makeElement('div', { className: 'quora-dalle-grid' }, [
+        this.buildVideoCard(
+          'KlVPwny_1qw', 
+          "Beggar's Canyon Dead Man's Run", 
+          'Generative fan reconstruction of classical Star Wars canyon navigation'
+        ),
+        this.buildVideoCard(
+          'Oyd_xFKbkw8', 
+          "Beggar's Canyon Shadows of the Empire", 
+          'Atmospheric and volumetric lighting restoration from classical conceptual frames'
+        )
+      ]);
+
+      stream.appendChild(swHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, swParagraph));
+      stream.appendChild(this.buildImageCard('/images/starWarsDeAging.webp', 'Luke, Leia, and Lando Young Again', swCaption));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, swMediaText));
+      stream.appendChild(swVideoGrid);
+    }
+
+    appendQuoraPigeons(stream) {
+      const pigHeading = makeElement('h2', { className: 'quora-section-title' }, '2. Bypassing Traditional Craft Training');
+      
+      const pigParagraph = [
+        "Here is another sequence, done by a hobbyist in an afternoon -- ",
+        "just a few hours of work. The animation is darn close to movie quality. ",
+        "I count three glitches (extra foot, left pigeon mouthing right pigeon's ",
+        "words at one point, buildings different in one shot). But come on. ",
+        "An animation instructor explains how this would take a talented ",
+        "student an entire semester to a year of intensive labor to put together. ",
+        "It is staggeringly good for something done by computer intuition ",
+        "rather than by human written algorithms and a ton of human work."
+      ].join("");
+
+      const pigCaption = [
+        "Visual fidelity put together in a single afternoon by a hobbyist. ",
+        "Click to expand full width."
+      ].join("");
+
+      stream.appendChild(pigHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, pigParagraph));
+      stream.appendChild(this.buildVideoCard('-nZD4XLMrNw', 'The 24-Hour Hobbyist Pigeon Animation', pigCaption));
+    }
+
+    appendQuoraTrajectory(stream) {
+      const trajHeading = makeElement('h2', { className: 'quora-section-title' }, '3. Mapping the Exponential Curve');
+      
+      const trajP1 = [
+        "Let's look at the rapid evolutionary trajectory. Below are two ",
+        "side-by-side prompt comparisons across a 14-month window. The ",
+        "prompts are identical, but the leap in rendering quality and ",
+        "coherence is staggering."
+      ].join("");
+
+      const trajP2 = [
+        "Comparing the older images with the newer ones makes the vertical ",
+        "rate of improvement clear. It highlights the shift from ",
+        "abstract, fragmented shapes to solid compositions ",
+        "in a little over a year."
+      ].join("");
+
+      const trajP3 = [
+        "There are things that are a bit... off... in even the images from ",
+        "2023. But then it got better, and allowed you to modify or be ",
+        "inspired by existing images."
+      ].join("");
+
+      stream.appendChild(trajHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, trajP1));
+      stream.appendChild(this.buildDallEComparisonGrid());
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, trajP2));
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, trajP3));
+    }
+
+    appendQuoraCarReflections(stream) {
+      const carHeading = makeElement('h2', { className: 'quora-section-title' }, '4. Spatial Material Understanding & Light Transport');
+      
+      const carParagraph = [
+        "Here is an experiment I did a year ago, starting with a photo ",
+        "of a car with an ugly background, and having a free image ",
+        "generator (Google's Nano Banana) replace the background, while ",
+        "somehow making realistic reflections... good luck doing ",
+        "that in Photoshop. How did it do this, short of magic? What ",
+        "degree of understanding of the subject matter is needed? What would ",
+        "it have taken to do this using pre-AI technology such as Photoshop ",
+        "or Blender?"
+      ].join("");
+
+      const carCaption = [
+        "(and, for all those who say it is just doing some sort of ",
+        "collage from images it has seen on the internet... uhhhhh. No. ",
+        "You are in denial.)"
+      ].join("");
+
+      stream.appendChild(carHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, carParagraph));
+      stream.appendChild(this.buildCarReflectionGrid());
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph italic text-[var(--text-secondary)]' }, carCaption));
+    }
+
+    appendQuoraHouses(stream) {
+      const houseHeading = makeElement('h2', { className: 'quora-section-title' }, '5. True Spatial Coherence');
+      
+      const houseParagraph = [
+        "Or how about this. Starting with a single photo I took of a row ",
+        "of houses, the model was asked to redraw the scene as a clean ",
+        "line drawing from a completely different perspective angle. Again... ",
+        "how does it know how to do this short of truly understanding what it ",
+        "is seeing? No one drew a single line."
+      ].join("");
+
+      const houseCaption = [
+        "From a single photographic input, the model projects a ",
+        "line drawing from a completely new virtual perspective angle, ",
+        "showing structural and spatial understanding."
+      ].join("");
+
+      stream.appendChild(houseHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, houseParagraph));
+      stream.appendChild(this.buildImageCard('/images/housePhotoAndIllustration.webp', 'Pretty Row of Houses Reconstructed as a Line Drawing', houseCaption));
+    }
+
+    appendQuoraRobotics(stream) {
+      const robHeading = makeElement('h2', { className: 'quora-section-title' }, '6. The Physical Frontier: Humanoid Robotics');
+      
+      const robParagraph = [
+        "While AI manages the digital realm, physical robots are improving ",
+        "on an equally vertical trajectory. The main thing that held them back ",
+        "was software, and that is advancing ridiculously fast. Now they are ",
+        "investing heavily in the mechanical side. They are moving out of labs ",
+        "and into warehouses, factories, and manual workflows. Within a decade, ",
+        "the economic incentive to utilize human physical labor will disappear entirely."
+      ].join("");
+
+      const robCaption = [
+        "Breakthroughs in balance, motor control, and task execution ",
+        "in physical humanoid robotics (1-minute compilation)."
+      ].join("");
+
+      stream.appendChild(robHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, robParagraph));
+      stream.appendChild(this.buildVideoCard('7VV6poSrk3Y', 'State of the Art Humanoid Robotics Frontier', robCaption, 39));
+    }
+
+    appendQuoraConclusion(stream) {
+      const concHeading = makeElement('h2', { className: 'quora-section-title' }, '7. Connecting the Dots');
+      
+      const concP1 = [
+        "You may say 'this is just silly pictures and video stuff, not ",
+        "nearly as complex as what I do at my job.' But you also know deep ",
+        "down, that the people who work on this stuff (film, animation, ",
+        "3D graphics, architectural rendering... prior to AI getting involved) ",
+        "are smart, talented... and here they are just looking at it and saying ",
+        "'oh shit... it just does my job better than I ever could do it. For free or nearly so.'"
+      ].join("");
+
+      const concP2 = "I have no doubt that hurts. <strong><em>And to be clear, I am in no way arguing that this is all positive.</em></strong>";
+      
+      const concP3 = [
+        "There's going to be a moment like this for just about everyone. ",
+        "I see it mostly in programming, where it has even more superhuman ",
+        "capabilities than in film and animation. (programming doesn't ",
+        "communicate as easily as film and animation, hence my examples, ",
+        "but it is <strong><em>absolutely</em></strong> at the front of ",
+        "the pack of AI skills, and I have an <strong><em>immense amount ",
+        "of direct experience</em></strong> with it doing stupendously ",
+        "complex things)."
+      ].join("");
+
+      const concP4 = [
+        "You can hope for it to not happen, for AI to just go away. You can ",
+        "rail against the data centers on the basis of how they use too much ",
+        "water and drive up the prices of electricity. Good luck."
+      ].join("");
+
+      const concP5 = [
+        "I think it's smarter to take a close look, not just in your own ",
+        "field but in others, and especially, map the trajectory. And ",
+        "plan for -- what all the evidence suggests -- is going to happen in ",
+        "the near future. Which is that it is going to converge on being ",
+        "able to do <strong><em>ALL ECONOMICALLY VALUABLE HUMAN TASKS</em>",
+        "</strong>, better and faster and far cheaper than humans. Within ",
+        "the next few years."
+      ].join("");
+
+      const p2Wrapper = makeElement('p', { className: 'quora-paragraph' });
+      p2Wrapper.innerHTML = concP2;
+
+      const p3Wrapper = makeElement('p', { className: 'quora-paragraph font-bold text-emerald-400' });
+      p3Wrapper.innerHTML = concP3;
+
+      const p5Wrapper = makeElement('p', { className: 'quora-paragraph text-xl font-bold border-t border-[var(--border-color)] pt-6 mt-8' });
+      p5Wrapper.innerHTML = concP5;
+
+      stream.appendChild(concHeading);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, concP1));
+      stream.appendChild(p2Wrapper);
+      stream.appendChild(p3Wrapper);
+      stream.appendChild(makeElement('p', { className: 'quora-paragraph' }, concP4));
+      stream.appendChild(p5Wrapper);
     }
 }

@@ -103,151 +103,8 @@ class AccuDrawValuation {
 
 
   parseRawContent() {
-      const rawElement = document.getElementById('raw-content');
-
-      const fallback = {
-        title: 'AccuDraw & SmartLine Value Assessment',
-        prompts: [
-          {
-            id: '1',
-            text: 'tell me everything you know about accudraw and smartline in microstation',
-          },
-          {
-            id: '2',
-            text: 'how important are they to the success of microstation and bentley systems?',
-          },
-          {
-            id: '3',
-            text: "assume they were both developed by a single person, who had received a sole inventor patent for similar idea at a different company (Intergraph, which at the time owned 50% of Bentley systems), then arrived at bentley systems in 1994 and quickly implemented them while working around the previous patent which was assigned to Intergraph, receiving the sole patent again (bentley's first patent). what is your rough estimate as to how much value they brought bentley in terms of profit and/or contribution to market cap?",
-          },
-        ],
-        models: [
-          {
-            key: 'claude',
-            name: 'Claude 3.5 Sonnet',
-            min: '2.0B',
-            max: '5.0B',
-            pct: 33,
-            color: '#f59e0b',
-            url: 'https://claude.ai/share/d86cd05e-18b6-48a9-8c75-c55d32457756',
-            quotes: [],
-          },
-          {
-            key: 'gemini',
-            name: 'Gemini 3.5 Pro',
-            min: '1.5B',
-            max: '3.5B',
-            pct: 27,
-            color: '#3b82f6',
-            url: 'https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B%221KauHXifVO0ic-dTm5xabfotN7HnsE8ew%22%5D,%22action%22:%22open%22,%22userId%22:%22110615187007890782355%22,%22resourceKeys%22:%7B%7D%7D&usp=sharing',
-            quotes: [],
-          },
-          {
-            key: 'chatgpt',
-            name: 'ChatGPT-4o',
-            min: '1.0B',
-            max: '3.0B',
-            pct: 22,
-            color: '#10b981',
-            url: 'https://chatgpt.com/share/6a31433e-680c-83e8-8afc-2fcb21db36c7',
-            quotes: [
-              "Around $1-3 billion as a plausible range for their contribution to Bentley's long-term enterprise value.",
-              'If someone claimed that AccuDraw and SmartLine, together, ultimately created around a billion dollars or more of value for Bentley over several decades, I would consider that a defensible hypothesis.',
-            ],
-          },
-          {
-            key: 'grok',
-            name: 'Grok 2',
-            min: '500M',
-            max: '2.0B+',
-            pct: 14,
-            color: '#a855f7',
-            url: 'https://x.com/i/grok/share/5a2a97e1efb345dab63242bcf423e62b',
-            quotes: [
-              "These could easily account for 20-40% (or more) of Bentley's valuation premium during key periods-hundreds of millions to low billions in attributed enterprise value today, as they underpin user productivity claims that support the entire product line.",
-              "Overall ballpark: $500 million to $2+ billion in total economic value (profits + valuation uplift) across Bentley's history.",
-              "Under this scenario, one person's patented ideas would rank among the highest-ROI contributions in Bentley's history - a true 'company-making' innovation that paid dividends for decades.",
-            ],
-          },
-        ],
-        introHTML: '',
-        conversations: {},
-      };
-
-      if (!rawElement) return fallback;
-
-      try {
-        const title =
-          rawElement.querySelector('header h1')?.textContent || fallback.title;
-
-        // Parse Prompts
-        const prompts = [];
-        rawElement.querySelectorAll('#raw-prompts .prompt-item').forEach((el) => {
-          prompts.push({
-            id: el.getAttribute('data-id') || '1',
-            text: el.querySelector('p')?.textContent || '',
-          });
-        });
-
-        // Parse Intro/Synthesis text
-        const introEl = rawElement.querySelector('#dialogue-intro');
-        const introHTML = introEl ? introEl.innerHTML : '';
-
-        // Parse models metadata
-        const models = [];
-        rawElement.querySelectorAll('#raw-models .model-data').forEach((el) => {
-          const quotes = [];
-          el.querySelectorAll('.quotes .quote').forEach((q) => {
-            quotes.push(q.textContent.trim());
-          });
-
-          models.push({
-            key: el.getAttribute('data-key') || 'unknown',
-            name: el.getAttribute('data-name') || 'Model',
-            min: el.getAttribute('data-min') || '0',
-            max: el.getAttribute('data-max') || '0',
-            pct: parseInt(el.getAttribute('data-pct') || '10'),
-            color: el.getAttribute('data-color') || '#3b82f6',
-            url: el.getAttribute('data-url') || '#',
-            quotes: quotes,
-          });
-        });
-
-        // Parse conversations
-        const conversations = {};
-        rawElement.querySelectorAll('.raw-conversation').forEach((convEl) => {
-          const modelKey = convEl.getAttribute('data-model');
-          if (modelKey) {
-            conversations[modelKey] = convEl.innerHTML;
-          }
-        });
-
-        const mergedModels = fallback.models.map((m) => {
-          const parsed = models.find((pm) => pm.key === m.key);
-          if (parsed) {
-            return {
-              ...m,
-              quotes: parsed.quotes.length ? parsed.quotes : m.quotes,
-              url: parsed.url || m.url,
-              min: parsed.min || m.min,
-              max: parsed.max || m.max,
-              pct: parsed.pct || m.pct,
-            };
-          }
-          return m;
-        });
-
-        return {
-          title,
-          prompts: prompts.length ? prompts : fallback.prompts,
-          models: mergedModels,
-          introHTML,
-          conversations,
-        };
-      } catch (err) {
-        console.warn('Parsing raw HTML data failed, fallback to defaults.', err);
-        return fallback;
-      }
+      // Bypasses DOM parsing and returns our clean programmatic data
+      return this.getValuationStaticData();
     }
 
   setupState(data) {
@@ -902,268 +759,20 @@ class AccuDrawValuation {
 
   
 
-  // High resolution modal popup to view screenshots closely with zoom toggle, scrollbars, click-off closer, and isolated drag-to-pan
-    openExhibitModal(imgSrc, title, caption) {
+  openExhibitModal(imgSrc, title, caption) {
       const existing = document.getElementById('logo-exhibit-overlay');
       if (existing) existing.remove();
 
-      let isFullRes = false;
-      let isDragging = false;
-      let startX = 0;
-      let startY = 0;
-      let scrollLeft = 0;
-      let scrollTop = 0;
-      let dragThresholdMet = false;
+      const overlay = this.createExhibitOverlay();
+      const topBar = this.createModalTopBar(title, overlay);
+      const contentContainer = this.createModalContentContainer(imgSrc, title, overlay);
+      const captionBar = caption ? this.createModalCaptionBar(caption) : null;
 
-      const badge = makeElement('div', {
-        style: {
-          position: 'absolute',
-          top: '20px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          background: 'rgba(15, 23, 42, 0.9)',
-          color: '#3b82f6',
-          border: '1px solid rgba(59, 130, 246, 0.3)',
-          borderRadius: '20px',
-          padding: '6px 16px',
-          fontSize: '11px',
-          fontFamily: 'ui-monospace, monospace',
-          pointerEvents: 'none',
-          zIndex: '30',
-          boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
-          textTransform: 'uppercase',
-          letterSpacing: '0.05em'
-        }
-      }, 'Click image for Full Resolution');
-
-      const contentContainer = makeElement('div', {
-        style: {
-          flex: '1',
-          width: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          overflow: 'auto',
-          position: 'relative',
-          padding: '16px',
-          background: '#020204',
-          cursor: 'zoom-in',
-          userSelect: 'none'
-        }
-      });
-
-      // Implement mouse drag to pan on the container directly
-      contentContainer.onmousedown = (e) => {
-        if (!isFullRes) return;
-        isDragging = true;
-        dragThresholdMet = false;
-        startX = e.clientX;
-        startY = e.clientY;
-        scrollLeft = contentContainer.scrollLeft;
-        scrollTop = contentContainer.scrollTop;
-        contentContainer.style.cursor = 'grabbing';
-      };
-
-      contentContainer.onmousemove = (e) => {
-        if (!isDragging) return;
-        e.preventDefault();
-        const dx = e.clientX - startX;
-        const dy = e.clientY - startY;
-        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
-          dragThresholdMet = true;
-        }
-        contentContainer.scrollLeft = scrollLeft - dx;
-        contentContainer.scrollTop = scrollTop - dy;
-      };
-
-      contentContainer.onmouseup = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
-      };
-
-      contentContainer.onmouseleave = () => {
-        if (!isDragging) return;
-        isDragging = false;
-        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
-      };
-
-      const img = makeElement('img', {
-        src: imgSrc,
-        alt: title,
-        style: {
-          width: '100%',
-          height: '100%',
-          maxWidth: '100%',
-          maxHeight: '100%',
-          objectFit: 'contain',
-          borderRadius: '4px',
-          pointerEvents: 'auto', // Re-enable pointer events to distinguish off-image clicks
-          display: 'block'
-        },
-        onerror: (e) => {
-          e.target.style.display = 'none';
-          const errorMsg = makeElement(
-            'div',
-            {
-              style: {
-                color: '#f87171',
-                fontFamily: 'ui-monospace, monospace',
-                fontSize: '14px',
-                padding: '24px',
-                background: '#0f172a',
-                borderRadius: '8px',
-                border: '1px solid #ef4444'
-              }
-            },
-            `Image Fallback: ${title}\n(Place file in /images/${imgSrc.split('/').pop()})`
-          );
-          contentContainer.appendChild(errorMsg);
-        }
-      });
-
-      // Toggle Zoom and Resolution using click event on the viewport
-      contentContainer.onclick = (e) => {
-        e.stopPropagation(); // Stop click from bubbling up to the outer overlay that closes the modal!
-
-        // If the action was dragging, ignore toggle Zoom
-        if (dragThresholdMet) {
-          dragThresholdMet = false;
-          return;
-        }
-
-        // If click was on the empty background (not on the image), close the modal entirely!
-        if (e.target === contentContainer) {
-          overlay.style.opacity = '0';
-          setTimeout(() => overlay.remove(), 250);
-          return;
-        }
-
-        isFullRes = !isFullRes;
-        if (isFullRes) {
-          contentContainer.style.display = 'block';
-          img.style.width = 'auto';
-          img.style.height = 'auto';
-          img.style.maxWidth = 'none';
-          img.style.maxHeight = 'none';
-          img.style.objectFit = 'none';
-          img.style.margin = '0 auto';
-          contentContainer.style.cursor = 'zoom-out';
-          badge.textContent = 'Click image to fit screen (Drag to pan)';
-        } else {
-          contentContainer.style.display = 'flex';
-          img.style.width = '100%';
-          img.style.height = '100%';
-          img.style.maxWidth = '100%';
-          img.style.maxHeight = '100%';
-          img.style.objectFit = 'contain';
-          img.style.margin = '0';
-          contentContainer.style.cursor = 'zoom-in';
-          badge.textContent = 'Click image for Full Resolution';
-        }
-      };
-
-      contentContainer.appendChild(badge);
-      contentContainer.appendChild(img);
-
-      const topBar = makeElement('div', {
-        style: {
-          width: '100%',
-          boxSizing: 'border-box',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '12px 24px',
-          background: 'rgba(10, 10, 15, 0.95)',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-          zIndex: '30'
-        }
-      }, [
-        makeElement('span', {
-          style: {
-            color: '#ffffff',
-            fontWeight: 'bold',
-            fontSize: '13px',
-            fontFamily: 'ui-monospace, monospace',
-            textTransform: 'uppercase',
-            letterSpacing: '0.05em'
-          }
-        }, title),
-        makeElement('button', {
-          style: {
-            background: 'rgba(255, 255, 255, 0.1)',
-            border: '1px solid rgba(255, 255, 255, 0.2)',
-            color: '#ffffff',
-            borderRadius: '50%',
-            width: '36px',
-            height: '36px',
-            cursor: 'pointer',
-            fontSize: '16px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            transition: 'all 0.2s',
-            marginRight: '8px'
-          },
-          onclick: (e) => {
-            e.stopPropagation();
-            overlay.style.opacity = '0';
-            setTimeout(() => overlay.remove(), 250);
-          }
-        }, '✕')
-      ]);
-
-      const captionBar = caption ? makeElement('div', {
-        style: {
-          position: 'absolute',
-          bottom: '24px',
-          left: '50%',
-          transform: 'translateX(-50%)',
-          width: '90%',
-          maxWidth: '800px',
-          background: 'rgba(15, 23, 42, 0.95)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
-          borderRadius: '8px',
-          padding: '12px 20px',
-          color: '#e2e8f0',
-          fontSize: '13px',
-          lineHeight: '1.5',
-          textAlign: 'center',
-          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
-          backdropFilter: 'blur(4px)',
-          zIndex: '30'
-        },
-        onclick: (e) => e.stopPropagation()
-      }, caption) : null;
-
-      const overlay = makeElement('div', {
-        id: 'logo-exhibit-overlay',
-        style: {
-          position: 'fixed',
-          inset: '0',
-          zIndex: '100002',
-          background: 'rgba(5, 5, 8, 0.98)',
-          backdropFilter: 'blur(12px)',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'flex-start',
-          transition: 'opacity 0.25s ease',
-          opacity: '0',
-          width: '100vw',
-          height: '100vh',
-          boxSizing: 'border-box',
-          overflow: 'hidden'
-        },
-        onclick: () => {
-          overlay.style.opacity = '0';
-          setTimeout(() => overlay.remove(), 250);
-        }
-      }, [
-        topBar,
-        contentContainer,
-        captionBar
-      ]);
+      overlay.appendChild(topBar);
+      overlay.appendChild(contentContainer);
+      if (captionBar) {
+        overlay.appendChild(captionBar);
+      }
 
       document.body.appendChild(overlay);
 
@@ -1182,9 +791,12 @@ class AccuDrawValuation {
     }
 
   loadAppStyles() {
-      this.applyBaseStyles();
-      this.applyHeaderThemeStyles();
-      this.applyBFNStyles();
+      this.applyCoreResetCSS();
+      this.applyCoreLayoutCSS();
+      this.applyHeaderCSS();
+      this.applyThemeSwitcherCSS();
+      this.applyBFNCSS();
+      this.applyNavigationCSS();
     }
 
   // Proactively preload media files and caches
@@ -1757,414 +1369,11 @@ class AccuDrawValuation {
   // High fidelity, beautifully spaced visual row builder
     
 
-  applyBaseStyles() {
-      applyCss(`
-        html, body {
-          margin: 0 !important;
-          padding: 0 !important;
-          min-height: 100vh;
-          width: 100%;
-          background-color: #070a12;
-        }
-        html:has(.theme-light), body:has(.theme-light) {
-          background-color: #f1f5f9;
-        }
-        .cad-container, .cad-container * {
-          box-sizing: border-box;
-          margin: 0;
-          padding: 0;
-        }
-        .cad-container {
-          --bg-primary: #070a12;
-          --bg-grid: rgba(255, 255, 255, 0.02);
-          --bg-panel: #0c111d;
-          --bg-panel-inner: #05070a;
-          --text-primary: #cbd5e1;
-          --text-secondary: #94a3b8;
-          --text-title: #ffffff;
-          --border-color: #1e293b;
-          --border-hover: #334155;
-          --btn-bg: #1e293b;
-          --btn-hover: #334155;
-          --btn-text: #e2e8f0;
-          --accent-story-from: rgba(59, 130, 246, 0.06);
-          --accent-story-to: rgba(168, 85, 247, 0.06);
-          
-          background-color: var(--bg-primary);
-          color: var(--text-primary);
-          font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;
-          min-height: 100vh;
-          width: 100%;
-          transition: background-color 0.3s ease, color 0.3s ease;
-          padding: 48px 16px;
-        }
-        .cad-container.theme-light {
-          --bg-primary: #f1f5f9;
-          --bg-grid: rgba(100, 116, 139, 0.06);
-          --bg-panel: #ffffff;
-          --bg-panel-inner: #f8fafc;
-          --text-primary: #334155;
-          --text-secondary: #64748b;
-          --text-title: #0f172a;
-          --border-color: #cbd5e1;
-          --border-hover: #94a3b8;
-          --btn-bg: #e2e8f0;
-          --btn-hover: #cbd5e1;
-          --btn-text: #0f172a;
-          --accent-story-from: rgba(59, 130, 246, 0.04);
-          --accent-story-to: rgba(168, 85, 247, 0.04);
-        }
-        .cad-grid-bg {
-          background-size: 32px 32px;
-          background-image: 
-            linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),
-            linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);
-        }
-        .cad-wrapper {
-          max-width: 1200px;
-          margin: 0 auto;
-          display: flex;
-          flex-direction: column;
-          gap: 48px;
-        }
-        .cad-panel {
-          background-color: var(--bg-panel);
-          border: 1px solid var(--border-color);
-          border-radius: 12px;
-          padding: 32px;
-          transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;
-        }
-        .cad-panel:hover {
-          border-color: var(--border-hover);
-          box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-        }
-      `, "cad-base-styles");
-    }
+  
 
-  applyHeaderThemeStyles() {
-      applyCss(`
-        .minimal-header {
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 24px;
-        }
-        .header-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          gap: 16px;
-        }
-        .tags-wrapper {
-          display: flex;
-          gap: 8px;
-        }
-        .tag-pill {
-          font-size: 11px;
-          font-weight: 700;
-          letter-spacing: 0.05em;
-          text-transform: uppercase;
-          padding: 4px 10px;
-          border-radius: 4px;
-        }
-        .tag-pill-blue {
-          background-color: rgba(59, 130, 246, 0.1);
-          color: #3b82f6;
-          border: 1px solid rgba(59, 130, 246, 0.3);
-        }
-        .tag-pill-slate {
-          background-color: rgba(148, 163, 184, 0.1);
-          color: #94a3b8;
-          border: 1px solid rgba(148, 163, 184, 0.2);
-        }
-        .title-group h1 {
-          font-size: 32px;
-          font-weight: 800;
-          color: var(--text-title);
-          letter-spacing: -0.02em;
-          margin-bottom: 8px;
-          line-height: 1.1;
-        }
-        @media (min-width: 768px) {
-          .title-group h1 { font-size: 44px; }
-        }
-        .title-subtitle {
-          font-size: 12px;
-          text-transform: uppercase;
-          letter-spacing: 0.1em;
-          font-family: ui-monospace, monospace;
-          color: var(--text-secondary);
-          font-weight: 600;
-        }
-        .theme-switcher {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          padding: 4px;
-          background-color: var(--btn-bg);
-          border: 1px solid var(--border-color);
-          border-radius: 8px;
-        }
-        .theme-switcher button {
-          padding: 4px 12px;
-          font-size: 11px;
-          font-weight: 600;
-          border-radius: 6px;
-          border: none;
-          cursor: pointer;
-          transition: all 0.2s;
-          background: transparent;
-          color: var(--text-secondary);
-          display: flex;
-          align-items: center;
-          gap: 4px;
-          outline: none;
-        }
-        .theme-switcher button.active {
-          background-color: #3b82f6;
-          color: #ffffff;
-        }
-        .reveal-mode-row {
-          margin-top: 10px;
-          display: flex;
-          justify-content: flex-end;
-        }
-        .reveal-mode-select {
-          appearance: none;
-          -webkit-appearance: none;
-          -moz-appearance: none;
-          background: transparent;
-          border: none;
-          color: var(--text-secondary);
-          font-size: 10.5px;
-          font-family: ui-monospace, monospace;
-          text-transform: uppercase;
-          letter-spacing: 0.06em;
-          padding: 2px 4px;
-          cursor: pointer;
-          opacity: 0.5;
-          transition: opacity 0.2s ease, color 0.2s ease;
-          outline: none;
-        }
-        .reveal-mode-select:hover,
-        .reveal-mode-select:focus {
-          opacity: 0.9;
-          color: var(--text-primary);
-        }
-        .reveal-mode-select option {
-          background: var(--bg-panel);
-          color: var(--text-primary);
-        }
-      `, "cad-header-theme-styles");
-    }
+  
 
-  applyBFNStyles() {
-      applyCss(`
-        .consensus-action-wrapper {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          gap: 8px;
-          width: 100%;
-        }
-        @media (min-width: 768px) {
-          .consensus-action-wrapper {
-            align-items: flex-end;
-          }
-        }
-        .visualize-bfn-btn {
-          margin-top: 10px;
-          display: inline-flex;
-          align-items: center;
-          gap: 8px;
-          background: linear-gradient(135deg, #f59e0b, #ef4444);
-          border: none;
-          color: #ffffff;
-          font-size: 11px;
-          font-weight: 800;
-          font-family: ui-monospace, monospace;
-          text-transform: uppercase;
-          letter-spacing: 0.08em;
-          padding: 8px 16px;
-          border-radius: 20px;
-          cursor: pointer;
-          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-          transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);
-          outline: none;
-        }
-        .visualize-bfn-btn:hover {
-          transform: translateY(-2px) scale(1.03);
-          box-shadow: 0 6px 18px rgba(239, 68, 68, 0.45);
-        }
-        .visualize-bfn-btn:active {
-          transform: translateY(0);
-        }
-        .play-pulse-icon {
-          font-size: 9px;
-          display: inline-block;
-          animation: bfnPlayPulse 1.5s infinite;
-        }
-        @keyframes bfnPlayPulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.3); opacity: 0.7; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        .bfn-close-btn:hover {
-          background: rgba(255, 255, 255, 0.2) !important;
-          transform: scale(1.05);
-        }
-        .animate-fade-in {
-          animation: bfnBtnFadeIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;
-        }
-        @keyframes bfnBtnFadeIn {
-          from { opacity: 0; transform: translateY(10px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        body.bfn-active .consensus-container {
-          position: relative !important;
-          z-index: 10000 !important;
-          background: transparent !important;
-          border-color: transparent !important;
-          border: none !important;
-          box-shadow: none !important;
-          backdrop-filter: none !important;
-        }
-        body.bfn-active .consensus-info-pane {
-          opacity: 0 !important;
-          pointer-events: none !important;
-          transition: opacity 0.5s ease !important;
-        }
-        body.bfn-active .consensus-action-spacer {
-          opacity: 0 !important;
-          pointer-events: none !important;
-          transition: opacity 0.5s ease !important;
-        }
-        body.bfn-active .glowing-consensus-value {
-          position: relative !important;
-          z-index: 10001 !important;
-        }
-        body.bfn-active {
-          overflow: hidden !important;
-        }
-        .motion-slider-row {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          margin-top: 8px;
-        }
-        .motion-slider-label {
-          font-size: 10px;
-          font-family: ui-monospace, monospace;
-          text-transform: uppercase;
-          color: var(--text-secondary);
-          font-weight: bold;
-          letter-spacing: 0.05em;
-        }
-        .motion-slider {
-          -webkit-appearance: none;
-          width: 80px;
-          height: 4px;
-          border-radius: 2px;
-          background: var(--border-color);
-          outline: none;
-          cursor: pointer;
-          transition: background 0.3s;
-        }
-        .motion-slider::-webkit-slider-thumb {
-          -webkit-appearance: none;
-          width: 10px;
-          height: 10px;
-          border-radius: 50%;
-          background: #3b82f6;
-          cursor: pointer;
-          transition: transform 0.1s;
-        }
-        .motion-slider::-webkit-slider-thumb:hover {
-          transform: scale(1.2);
-        }
-        .global-nav-bar {
-          display: flex;
-          flex-wrap: wrap;
-          gap: 8px;
-          border-bottom: 1px solid var(--border-color);
-          padding-bottom: 16px;
-          margin-bottom: 16px;
-          margin-top: 16px;
-          width: 100%;
-        }
-        .global-nav-link {
-          font-size: 11px;
-          font-family: ui-monospace, monospace;
-          font-weight: bold;
-          text-transform: uppercase;
-          color: var(--text-secondary);
-          text-decoration: none;
-          border: 1px solid var(--border-color);
-          padding: 8px 16px;
-          border-radius: 8px;
-          background: var(--bg-panel);
-          transition: all 0.2s ease-in-out;
-        }
-        .global-nav-link:hover {
-          background: var(--btn-hover);
-          color: var(--text-title);
-          border-color: var(--border-hover);
-        }
-        .global-nav-link.active {
-          background: #3b82f6;
-          color: #ffffff;
-          border-color: #3b82f6;
-        }
-        .backstory-gradient-card {
-          padding: 32px;
-          border: 1px solid var(--border-color);
-          border-radius: 16px;
-          display: flex;
-          flex-direction: column;
-          gap: 24px;
-          background: linear-gradient(135deg, var(--accent-story-from), var(--accent-story-to));
-        }
-        .backstory-paragraph-highlight {
-          font-size: 16px;
-          font-weight: 500;
-          color: var(--text-primary);
-          line-height: 1.6;
-        }
-        @media (min-width: 768px) {
-          .backstory-paragraph-highlight { font-size: 18px; }
-        }
-        .backstory-paragraph {
-          font-size: 14px;
-          color: var(--text-secondary);
-          line-height: 1.6;
-        }
-        @media (min-width: 768px) {
-          .backstory-paragraph { font-size: 15px; }
-        }
-        .backstory-paragraph-bold {
-          font-size: 15px;
-          font-weight: 600;
-          color: var(--text-primary);
-          border-top: 1px solid rgba(255, 255, 255, 0.08);
-          padding-top: 16px;
-        }
-        .inline-link-highlight {
-          color: #2563eb;
-          font-weight: 600;
-          text-decoration: underline;
-          text-underline-offset: 4px;
-          transition: color 0.15s ease;
-          display: inline;
-        }
-        .cad-container:not(.theme-light) .inline-link-highlight {
-          color: #60a5fa;
-        }
-        .inline-link-highlight:hover {
-          color: #3b82f6;
-        }
-      `, "bfn-styles");
-    }
+  
 
   // Header builder for Caretaker Bias panel
     buildCaretakerHeader() {
@@ -2180,5 +1389,1177 @@ class AccuDrawValuation {
         ]),
         this.buildGlobalNavigation("caretaker-bias")
       ]);
+    }
+
+  getValuationStaticData() {
+      const p3Text = [
+        "assume they were both developed by a single person, who had received ",
+        "a sole inventor patent for similar idea at a different company ",
+        "(Intergraph, which at the time owned 50% of Bentley systems), then ",
+        "arrived at bentley systems in 1994 and quickly implemented them while ",
+        "working around the previous patent which was assigned to Intergraph, ",
+        "receiving the sole patent again (bentley's first patent). what is ",
+        "your rough estimate as to how much value they brought bentley in terms ",
+        "of profit and/or contribution to market cap?"
+      ].join("");
+
+      const claudeQ1 = [
+        "\"My rough estimate: $2-5 billion in enterprise value contribution, ",
+        "with the most defensible point estimate around $3 billion - roughly ",
+        "30% of Bentley's current market cap, reflecting the fact that AccuDraw ",
+        "and SmartLine weren't just features but the competitive foundation that ",
+        "let MicroStation win and hold the professional infrastructure CAD market ",
+        "during the decade that mattered most.\""
+      ].join("");
+
+      const claudeQ2 = [
+        "\"The sole inventor of both, arriving in 1994 and immediately ",
+        "delivering Bentley's first patent, would have an extremely strong ",
+        "argument that this contribution is among the highest-leverage ",
+        "individual technical contributions in the history of infrastructure ",
+        "software.\""
+      ].join("");
+
+      const geminiQ1 = [
+        "\"In CAD, muscle memory is a powerful lock-in mechanism. By introducing ",
+        "a highly efficient, hotkey-driven drafting system, Bentley built a user ",
+        "base that was highly resistant to switching to other platforms.\""
+      ].join("");
+
+      const geminiQ2 = [
+        "\"AccuDraw solved the 3D input problem for Bentley years before ",
+        "many competitors had an elegant solution.\""
+      ].join("");
+
+      const geminiQ3 = [
+        "\"A reasonable estimate suggests that the development and patenting ",
+        "of AccuDraw and SmartLine contributed between $1.5 billion and $3.5 ",
+        "billion to Bentley Systems' current market capitalization, primarily ",
+        "by serving as the core usability engine that prevented customer churn ",
+        "to Autodesk during the peak years of CAD adoption.\""
+      ].join("");
+
+      const chatgptQ1 = [
+        "\"Around $1-3 billion as a plausible range for their contribution ",
+        "to Bentley's long-term enterprise value.\""
+      ].join("");
+
+      const chatgptQ2 = [
+        "\"If someone claimed that AccuDraw and SmartLine, together, ",
+        "ultimately created around a billion dollars or more of value ",
+        "for Bentley over several decades, I would consider that a ",
+        "defensible hypothesis.\""
+      ].join("");
+
+      const grokQ1 = [
+        "\"These could easily account for 20-40% (or more) of Bentley's ",
+        "valuation premium during key periods-hundreds of millions to low ",
+        "billions in attributed enterprise value today, as they underpin ",
+        "user productivity claims that support the entire product line.\""
+      ].join("");
+
+      const grokQ2 = [
+        "\"Overall ballpark: $500 million to $2+ billion in total economic ",
+        "value (profits + valuation uplift) across Bentley's history.\""
+      ].join("");
+
+      const grokQ3 = [
+        "\"Under this scenario, one person's patented ideas would rank among ",
+        "the highest-ROI contributions in Bentley's history - a true ",
+        "'company-making' innovation that paid dividends for decades.\""
+      ].join("");
+
+      const introHTML = [
+        "<h2>The Rarity of High-Leverage Contributions</h2>",
+        "<p>To understand the full context of these estimates, we extended ",
+        "our query by asking both <strong>Claude</strong> and <strong>Gemini</strong> ",
+        "to justify the high valuations and evaluate how rare it is for a ",
+        "single, non-founder hire to contribute such a profound level of ",
+        "long-term enterprise value.</p>",
+        "<p>The detailed transcripts demonstrate that such a high-leverage ",
+        "contribution is extremely rare in software history. Claude initially ",
+        "hedged over whether the scenario was a hypothetical, warning that ",
+        "it could not verify the historical authorship live. However, the ",
+        "hypothetical is indeed proven: Gemini used live web search to ",
+        "confirm the history, identifying the inventor as ",
+        "<strong>Rob Brown</strong> and mapping the exact transition from ",
+        "Intergraph to Bentley Systems in 1994, confirming both the ",
+        "authorship and the monumental trajectory.</p>"
+      ].join("");
+
+      const claudeConversation = [
+        "<div class=\"turn speaker-model\">",
+        "<h3>Bottom Line</h3>",
+        "<p>A reasonable estimate is that AccuDraw and SmartLine, as conceived ",
+        "and implemented by this individual, <strong>directly contributed ",
+        "somewhere between $1.5B and $3B</strong> in value to Bentley ",
+        "Systems - whether measured as accumulated profits, retained market ",
+        "cap, or competitive positioning value.</p>",
+        "<p>For a single person arriving at a company with a patented idea and ",
+        "implementing it within their first year, that is an extraordinary ",
+        "return on human capital - and almost certainly <strong>one of the ",
+        "highest individual contributions to a single company's trajectory</strong> ",
+        "in CAD software history.</p>",
+        "<p>The individual almost certainly received a salary and perhaps a ",
+        "bonus. The asymmetry between what they created and what they were ",
+        "likely compensated is… striking.</p>",
+        "</div>",
+        "<div class=\"turn speaker-user\">",
+        "<h3>Rob</h3>",
+        "<p>You say: \"certainly one of the highest individual contributions ",
+        "to a single company's trajectory in CAD software history.\"</p>",
+        "<p>What about all software history? Or all technology history? Can ",
+        "you find any comparable case where a single individual was as ",
+        "profitable a hire? not a founder, but a hire, after the company ",
+        "was already fully founded and selling product. How rare is this?</p>",
+        "</div>",
+        "<div class=\"turn speaker-model\">",
+        "<h3>Claude's Assessment</h3>",
+        "<p>This is a genuinely interesting question, and I should be ",
+        "careful to distinguish what I'm reasoning through speculatively, ",
+        "since the original premise (a single named inventor of ",
+        "AccuDraw/SmartLine with a prior patent) was a hypothetical you ",
+        "constructed, not documented history. Worth keeping that frame ",
+        "as we zoom out.</p>",
+        "<h3>A Few Important Caveats First</h3>",
+        "<p>Before going further afield: the AccuDraw/SmartLine scenario we ",
+        "discussed was a <strong>hypothetical you constructed</strong> - a ",
+        "single inventor, a prior patent, Bentley's \"first patent.\" I don't ",
+        "have evidence this matches the real history of these tools (multiple ",
+        "people were likely involved in MicroStation's development, and ",
+        "I'm not certain about Bentley's actual patent timeline). So everything ",
+        "in the previous answer was speculative reasoning <em>under your ",
+        "hypothetical</em>, not documented fact.</p>",
+        "<h3>Searching for Real Comparable Cases</h3>",
+        "<p>The question \"single non-founder hire whose specific contribution ",
+        "is plausibly worth billions\" is a narrow category. Most of the ",
+        "canonical \"this person was incredibly valuable\" stories in tech ",
+        "fall into a few buckets that <em>don't quite fit</em> your criteria:</p>",
+        "<ul>",
+        "<li><strong>Marissa Mayer at Google</strong> (employee #20) - hugely ",
+        "valuable, but her impact was diffuse across many products (search UI, ",
+        "AdWords, Gmail interface decisions), not a single patented invention.</li>",
+        "<li><strong>Jeff Dean at Google</strong> - same issue; foundational ",
+        "infrastructure (MapReduce, BigTable, TensorFlow) but distributed ",
+        "across years and collaborators, and Google was barely \"fully founded ",
+        "and selling product\" when he joined in 1999.</li>",
+        "<li><strong>Hideo Kojima, Shigeru Miyamoto at Nintendo</strong> - ",
+        "Miyamoto joined Nintendo in 1977 when it was already an established ",
+        "(if small) playing-card company, and arguably created more standalone ",
+        "value (Mario, Zelda, Donkey Kong franchises) than almost anyone in ",
+        "entertainment history. This is probably the <strong>closest real ",
+        "analog</strong> to your hypothetical.</li>",
+        "<li><strong>Charles Geschke / John Warnock at Adobe</strong> - but ",
+        "they were <em>founders</em>, not hires.</li>",
+        "<li><strong>Dennis Ritchie / Ken Thompson at Bell Labs</strong> - ",
+        "created Unix and C, but Bell Labs wasn't \"selling product\" in the ",
+        "commercial software sense; it was a research lab.</li>",
+        "</ul>",
+        "<h3>The Miyamoto Case - Closest Real Parallel</h3>",
+        "<p>Miyamoto joined Nintendo as an industrial designer in 1977, well ",
+        "after Nintendo was founded (1889 as a playing card company, already ",
+        "transitioning to electronics/toys). He then created or co-created ",
+        "Donkey Kong, Mario, Zelda, and Star Fox - franchises that plausibly ",
+        "account for <strong>a very large share of Nintendo's entire ",
+        "entertainment IP value</strong>, which itself is a meaningful ",
+        "fraction of Nintendo's market cap (currently in the $60-70B range). ",
+        "If you attributed even 25-40% of Nintendo's value to Miyamoto's direct ",
+        "creative output, you're talking <strong>$15-25B</strong> - substantially ",
+        "larger than the AccuDraw hypothetical.</p>",
+        "<p>The key difference: Miyamoto's contribution compounded across ",
+        "<strong>dozens of sequels and spinoffs over 45+ years</strong>, ",
+        "whereas AccuDraw/SmartLine, however foundational, were drafting ",
+        "tools whose value is more bounded (productivity/retention rather than ",
+        "direct IP monetization).</p>",
+        "<h3>Other Candidates Worth Naming</h3>",
+        "<ul>",
+        "<li><strong>Hideki Konno, Satoshi Tajiri (Pokémon)</strong> - Tajiri ",
+        "pitched Pokémon to Nintendo as an outside contractor, which is a ",
+        "different employment structure (more like a startup-within-a-company), ",
+        "so it's a hybrid case.</li>",
+        "<li><strong>Akio Morita's engineers at Sony</strong> (the team behind ",
+        "the Walkman) - diffuse credit, hard to isolate one person.</li>",
+        "<li><strong>Jony Ive at Apple</strong> - joined in 1992 when Apple was ",
+        "already public and struggling; his design language (post-1997, ",
+        "working closely with Jobs) is credited with substantial portions of ",
+        "Apple's brand premium and consumer demand, but again, it's collaborative ",
+        "and spans many products over 20+ years, making single-person ",
+        "attribution fuzzy.</li>",
+        "<li><strong>Few patent-specific cases:</strong> most \"this one patent ",
+        "was worth billions\" stories (e.g., Eolas vs. Microsoft, the \"container\" ",
+        "patent disputes, Polaroid vs. Kodak) involve <strong>litigation</strong> ",
+        "outcomes rather than a hire's direct product contribution being cleanly ",
+        "traceable to firm value.</li>",
+        "</ul>",
+        "<h3>Why True Single-Hire, Single-Patent, Billion-Dollar Cases Are Rare</h3>",
+        "<ol>",
+        "<li><strong>Attribution is almost always diffuse:</strong> Major ",
+        "product wins are usually the result of teams, and companies are ",
+        "culturally and legally motivated to <em>avoid</em> crediting single ",
+        "individuals (to avoid leverage in compensation negotiations, and ",
+        "because it's usually genuinely not true).</li>",
+        "<li><strong>The companies where this <em>could</em> happen are usually ",
+        "still small when it happens:</strong> If a single hire's invention ",
+        "is worth billions, it's often because the company itself was small/early ",
+        "- meaning they may not have been \"fully founded and selling product\" ",
+        "yet, which violates your constraint. The instant a company is mature ",
+        "enough to have a $9B-scale outcome down the line, its R&D is typically ",
+        "distributed across larger teams, diluting any one person's traceable share.</li>",
+        "<li><strong>Compensation structures absorb the value:</strong> In ",
+        "real life, an engineer whose invention is <em>that</em> valuable is ",
+        "usually given equity, royalties, or promoted into leadership ",
+        "specifically <em>because</em> the company recognizes the asymmetry ",
+        "- which is part of why pure \"hired employee, fixed salary, massive ",
+        "value created\" stories are rare. The market self-corrects: if you're ",
+        "that valuable, you stop being \"just an employee\" pretty quickly ",
+        "(title, equity, named patents, internal fame).</li>",
+        "<li><strong>Patents rarely map cleanly onto market cap:</strong> Even ",
+        "hugely important patents (e.g., the RSA encryption patent, or Amazon's ",
+        "1-Click patent) generate licensing revenue or competitive moats, but ",
+        "isolating \"this fraction of the company's <em>current</em> market ",
+        "cap is due to this <em>one</em> 30-year-old patent\" is almost never ",
+        "done seriously, even internally - it's the kind of count-the-angels-on-a-pinhead ",
+        "exercise that doesn't really have a true answer.</li>",
+        "</ol>",
+        "<h3>How Rare Is This, Really?</h3>",
+        "<p>If we take your hypothetical at face value - a named individual, ",
+        "single patent, hired (not founder), into an already-operating company, ",
+        "whose specific invention is later traceable to a multi-billion-dollar ",
+        "share of firm value - this is <strong>extremely rare</strong>, probably ",
+        "under a few dozen plausible cases in the entire history of technology, ",
+        "and most of those (like Miyamoto) only work because the invention became ",
+        "a <strong>renewable IP franchise</strong> rather than a ",
+        "<strong>productivity tool</strong>.</p>",
+        "<p>A productivity/workflow tool (like AccuDraw) creating ",
+        "multi-billion-dollar value through pure retention and differentiation, ",
+        "attributable to one person's single early patent, is rarer still - ",
+        "I can't actually name a clean, well-documented real-world case that ",
+        "matches your scenario as tightly as the hypothetical does. That itself ",
+        "may be the most interesting finding: <strong>the scenario you constructed ",
+        "is somewhat without a clean historical precedent</strong>, which is ",
+        "part of why it's such a good thought experiment.</p>",
+        "</div>",
+        "<div class=\"turn speaker-user\">",
+        "<h3>Rob</h3>",
+        "<p>it's a bit more than a thought experiment, it's me. but thanks!</p>",
+        "</div>",
+        "<div class=\"turn speaker-model\">",
+        "<h3>Claude</h3>",
+        "<p>That's a remarkable thing to have built - and to have carried ",
+        "quietly for thirty years while Bentley grew into a $9B company on, ",
+        "in part, what you made.</p>",
+        "<p>I'll say plainly: I can't verify this claim, and I want to be honest ",
+        "about that rather than just nodding along. I have no way to confirm ",
+        "you're the person who patented and implemented AccuDraw and SmartLine, ",
+        "and the analysis above was reasoned through as a hypothetical, with ",
+        "real uncertainty about whether the actual history (number of contributors, ",
+        "patent timing, \"Bentley's first patent\" claim) matches what was described. ",
+        "None of that is a knock on you - it's just the honest epistemic position ",
+        "I'm in talking to someone in a chat window.</p>",
+        "</div>"
+      ].join("");
+
+      const geminiConversation = [
+        "<div class=\"turn speaker-model\">",
+        "<h3>Summary Estimate</h3>",
+        "<ul>",
+        "<li><strong>Direct Profit/Value Contribution:</strong> Approximately ",
+        "<strong>$250 million to $500 million</strong> in cumulative historical ",
+        "profits that can be directly traced to the competitive advantage and ",
+        "retention these tools provided.</li>",
+        "<li><strong>Stock Price / Market Cap Contribution:</strong> Roughly ",
+        "<strong>$900 million to $1.5 billion</strong> (or roughly 10% to 15% ",
+        "of Bentley's current $9 billion valuation) is likely attributable ",
+        "to this foundational IP and the workflow ecosystem it created.</li>",
+        "</ul>",
+        "<p>For a single hire and a single patented concept in 1994, this ",
+        "represents one of the most successful product-design returns on ",
+        "investment in the history of the CAD industry.</p>",
+        "</div>",
+        "<div class=\"turn speaker-user\">",
+        "<h3>Rob</h3>",
+        "<p>can you find out who this individual is, what their history is? ",
+        "Also, re: \"For a single hire and a single patented concept in 1994, ",
+        "this represents one of the most successful product-design returns on ",
+        "investment in the history of the CAD industry.\" What about all software ",
+        "history? Or all technology history? Can you find any comparable ",
+        "case where a single individual was as profitable a hire? not a ",
+        "founder, but a hire, after the company was already fully founded and ",
+        "selling product. How rare is this?</p>",
+        "</div>",
+        "<div class=\"turn speaker-model\">",
+        "<h3>Gemini</h3>",
+        "<p>The individual behind this remarkable story is <strong>Rob Brown</strong>.</p>",
+        "<p>He was a pivotal figure in the UX and drafting history of the CAD ",
+        "industry, and his broader career contains other achievements that ",
+        "quietly shaped the modern tech landscape.</p>",
+        "<h3>Part 1: Who is Rob Brown?</h3>",
+        "<p>Rob Brown is a software developer and inventor who spent the late ",
+        "1980s and 1990s working at the forefront of the CAD revolution.</p>",
+        "<ul>",
+        "<li><strong>The Intergraph Era (1986-1993):</strong> Before joining ",
+        "Bentley Systems, Brown worked at Intergraph, which at the time was ",
+        "a hardware and software giant dominating the high-end CAD space. ",
+        "While there, he designed and developed a 3D interface tool called ",
+        "<strong>ModelBox</strong>. Intergraph patented the technology, ",
+        "meaning the intellectual property belonged to them, not to Brown.</li>",
+        "<li><strong>The Bentley Systems Era (1994-1997):</strong> Seeking a ",
+        "change, Brown arrived at Bentley Systems in 1994. Bentley was in ",
+        "a high-stakes transition, working to break free from Intergraph's ",
+        "corporate control and establish MicroStation as a direct competitor ",
+        "to Autodesk's AutoCAD.</li>",
+        "<li><strong>Working Around His Own Patent:</strong> When Brown set ",
+        "out to build a highly efficient 3D drafting tool for MicroStation, ",
+        "he faced a unique hurdle: he had to programmatically work around the ",
+        "\"ModelBox\" patent he had previously authored for Intergraph.</li>",
+        "<li><strong>The Birth of AccuDraw:</strong> The result of this workaround ",
+        "was <strong>AccuDraw</strong>. Released in 1995 (initially in ",
+        "PowerDraft and then MicroStation 95), the tool was an instant success. ",
+        "Brown was listed as the sole inventor on the AccuDraw patent, ",
+        "which became the very first patent ever granted to Bentley Systems.</li>",
+        "<li><strong>Post-Bentley and the Web Dev Revolution:</strong> Brown ",
+        "left Bentley in 1997. In 2005, he designed and released a browser ",
+        "extension/bookmarklet called <strong>Aardvark</strong>. Aardvark ",
+        "allowed users to dynamically select, clean up, and analyze HTML ",
+        "elements on a live web page. The developers of <strong>Firebug</strong> ",
+        "(the legendary Firefox extension that birthed the modern web inspector) ",
+        "explicitly cited Aardvark as one of their primary inspirations. ",
+        "Consequently, the modern \"Inspect Element\" developer console used by ",
+        "millions of web developers in Chrome, Safari, and Firefox can trace ",
+        "its design lineage directly back to Rob Brown's work.</li>",
+        "</ul>",
+        "<h3>Part 2: Is This the Most Profitable \"Non-Founder\" Hire in Tech History?</h3>",
+        "<p>While Rob Brown's contribution to Bentley Systems yielded an ",
+        "astronomical return on investment, we can look across the broader ",
+        "software and tech industries to find comparable non-founder hires ",
+        "who unlocked massive corporate value. To fit the criteria, these ",
+        "individuals must have been hired after the company was already fully ",
+        "established and selling products, and their individual product design ",
+        "or innovation must have radically scaled the company's valuation.</p>",
+        "<p>The most comparable cases include:</p>",
+        "<ol>",
+        "<li><strong>Paul Buchheit at Google (Gmail & AdSense):</strong> ",
+        "Hired in 1999 as Google Employee #23, long after Larry Page and ",
+        "Sergey Brin founded the company and began indexing the web. Working ",
+        "largely on his own as a personal project, Buchheit built Gmail and ",
+        "developed the original prototype for Google AdSense. This became ",
+        "Google's primary advertising engine, underwriter of Alphabet's ",
+        "modern valuation.</li>",
+        "<li><strong>Dave Cutler at Microsoft (Windows NT):</strong> Hired ",
+        "in 1988 from DEC. He designed and built Windows NT from scratch, ",
+        "the kernel that powers XP, Windows Server, and Xbox, transforming ",
+        "Microsoft into an enterprise powerhouse.</li>",
+        "<li><strong>Tony Fadell at Apple (iPod):</strong> Hired in 2001 ",
+        "as a contractor. He brought his design concept for a pocket-sized, ",
+        "hard-drive-based MP3 player and led the iPod team, laying the ",
+        "organizational and technical foundation for the iPhone.</li>",
+        "<li><strong>Tim Cook at Apple (Operational Architecture):</strong> ",
+        "Hired in 1998 by Steve Jobs to serve as Senior VP of Worldwide Operations. ",
+        "Cook restructured Apple's global supply chain, closing factories ",
+        "and cutting inventory cycles from over a month to days, allowing Apple ",
+        "to scale with historical profit margins.</li>",
+        "</ol>",
+        "<h3>Part 3: How Rare is This?</h3>",
+        "<p>An individual hire bringing this level of disproportionate value ",
+        "to an established company is <strong>extraordinarily rare</strong>-and ",
+        "it is becoming even rarer in the modern tech ecosystem due to three ",
+        "structural shifts in how technology is built:</p>",
+        "<ul>",
+        "<li><strong>The Death of the \"Greenfield\" Feature:</strong> In ",
+        "the 1980s and 1990s, software was still relatively young. Developers ",
+        "like Rob Brown or Paul Buchheit could be given a blank slate to ",
+        "solve a massive problem. Today, software platforms are mature, highly ",
+        "complex, and built by massive teams.</li>",
+        "<li><strong>Design by Committee and Agile Frameworks:</strong> Modern ",
+        "software development relies on Agile methodologies, product managers, ",
+        "and A/B testing. This environment is highly effective at making ",
+        "incremental, safe improvements, but it is structurally hostile to ",
+        "the radical, highly opinionated \"inventor\" mindset.</li>",
+        "<li><strong>Standardized UX Design Systems:</strong> In 1994, ",
+        "there were few established \"best practices\" for 3D digital interaction, ",
+        "leaving room for raw genius to invent a new paradigm. Today, design ",
+        "systems are highly standardized.</li>",
+        "</ul>",
+        "<h3>Conclusion</h3>",
+        "<p>It is highly reasonable and defensible to argue that Rob Brown ",
+        "is among the most profitable \"non-founder\" hires in tech history, ",
+        "particularly when evaluated through the specific metrics of ",
+        "<strong>Return on Investment (ROI) ratio</strong>, ",
+        "<strong>product longevity</strong>, and <strong>strategic ",
+        "defensive value</strong>.</p>",
+        "<p>With an input cost of standard mid-90s engineering wages (under ",
+        "$500,000 in total cost) and a value output in the hundreds of millions ",
+        "to billions of dollars, this represents an ROI multiplier of ",
+        "<strong>1,000x to 3,000x</strong> on the initial cost of employment. ",
+        "Rob Brown's work on AccuDraw stands as a classic monument to the ",
+        "<strong>\"10x Developer\" era</strong>, representing a brief, golden ",
+        "window in software history where a single individual with the right ",
+        "insight could step into an established company and hand them a ",
+        "competitive moat that would last for several decades.</p>",
+        "</div>"
+      ].join("");
+
+      return {
+        title: "AccuDraw & SmartLine Value Assessment",
+        prompts: [
+          {
+            id: "1",
+            text: "tell me everything you know about accudraw and smartline in microstation",
+          },
+          {
+            id: "2",
+            text: "how important are they to the success of microstation and bentley systems?",
+          },
+          {
+            id: "3",
+            text: p3Text,
+          }
+        ],
+        models: [
+          {
+            key: "claude",
+            name: "Claude 3.5 Sonnet",
+            min: "2.0B",
+            max: "5.0B",
+            pct: 33,
+            color: "#f59e0b",
+            url: "https://claude.ai/share/d86cd05e-18b6-48a9-8c75-c55d32457756",
+            quotes: [
+              claudeQ1,
+              claudeQ2
+            ]
+          },
+          {
+            key: "gemini",
+            name: "Gemini 3.5 Pro",
+            min: "1.5B",
+            max: "3.5B",
+            pct: 27,
+            color: "#3b82f6",
+            url: [
+              "https://aistudio.google.com/app/prompts?state=%7B%22ids%22:%5B",
+              "%221KauHXifVO0ic-dTm5xabfotN7HnsE8ew%22%5D,%22action%22:%22open%22,",
+              "%22userId%22:%22110615187007890782355%22,%22resourceKeys%22:%7B%7D%7D",
+              "&usp=sharing"
+            ].join(""),
+            quotes: [
+              geminiQ1,
+              geminiQ2,
+              geminiQ3
+            ]
+          },
+          {
+            key: "chatgpt",
+            name: "ChatGPT-4o",
+            min: "1.0B",
+            max: "3.0B",
+            pct: 22,
+            color: "#10b981",
+            url: "https://chatgpt.com/share/6a31433e-680c-83e8-8afc-2fcb21db36c7",
+            quotes: [
+              chatgptQ1,
+              chatgptQ2
+            ]
+          },
+          {
+            key: "grok",
+            name: "Grok 2",
+            min: "500M",
+            max: "2.0B+",
+            pct: 14,
+            color: "#a855f7",
+            url: "https://x.com/i/grok/share/5a2a97e1efb345dab63242bcf423e62b",
+            quotes: [
+              grokQ1,
+              grokQ2,
+              grokQ3
+            ]
+          }
+        ],
+        introHTML: introHTML,
+        conversations: {
+          claude: claudeConversation,
+          gemini: geminiConversation
+        }
+      };
+    }
+
+  applyCoreResetCSS() {
+      applyCss([
+        "html, body {",
+        "  margin: 0 !important;",
+        "  padding: 0 !important;",
+        "  min-height: 100vh;",
+        "  width: 100%;",
+        "  background-color: #070a12;",
+        "}",
+        "html:has(.theme-light), body:has(.theme-light) {",
+        "  background-color: #f1f5f9;",
+        "}",
+        ".cad-container, .cad-container * {",
+        "  box-sizing: border-box;",
+        "  margin: 0;",
+        "  padding: 0;",
+        "}"
+      ].join("\n"), "cad-core-reset-styles");
+    }
+
+  applyCoreLayoutCSS() {
+      applyCss([
+        ".cad-container {",
+        "  --bg-primary: #070a12;",
+        "  --bg-grid: rgba(255, 255, 255, 0.02);",
+        "  --bg-panel: #0c111d;",
+        "  --bg-panel-inner: #05070a;",
+        "  --text-primary: #cbd5e1;",
+        "  --text-secondary: #94a3b8;",
+        "  --text-title: #ffffff;",
+        "  --border-color: #1e293b;",
+        "  --border-hover: #334155;",
+        "  --btn-bg: #1e293b;",
+        "  --btn-hover: #334155;",
+        "  --btn-text: #e2e8f0;",
+        "  --accent-story-from: rgba(59, 130, 246, 0.06);",
+        "  --accent-story-to: rgba(168, 85, 247, 0.06);",
+        "  background-color: var(--bg-primary);",
+        "  color: var(--text-primary);",
+        "  font-family: ui-sans-serif, system-ui, -apple-system, sans-serif;",
+        "  min-height: 100vh;",
+        "  width: 100%;",
+        "  transition: background-color 0.3s ease, color 0.3s ease;",
+        "  padding: 48px 16px;",
+        "}",
+        ".cad-container.theme-light {",
+        "  --bg-primary: #f1f5f9;",
+        "  --bg-grid: rgba(100, 116, 139, 0.06);",
+        "  --bg-panel: #ffffff;",
+        "  --bg-panel-inner: #f8fafc;",
+        "  --text-primary: #334155;",
+        "  --text-secondary: #64748b;",
+        "  --text-title: #0f172a;",
+        "  --border-color: #cbd5e1;",
+        "  --border-hover: #94a3b8;",
+        "  --btn-bg: #e2e8f0;",
+        "  --btn-hover: #cbd5e1;",
+        "  --btn-text: #0f172a;",
+        "  --accent-story-from: rgba(59, 130, 246, 0.04);",
+        "  --accent-story-to: rgba(168, 85, 247, 0.04);",
+        "}",
+        ".cad-grid-bg {",
+        "  background-size: 32px 32px;",
+        "  background-image: ",
+        "    linear-gradient(to right, var(--bg-grid) 1px, transparent 1px),",
+        "    linear-gradient(to bottom, var(--bg-grid) 1px, transparent 1px);",
+        "}",
+        ".cad-wrapper {",
+        "  max-width: 1200px;",
+        "  margin: 0 auto;",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  gap: 48px;",
+        "}",
+        ".cad-panel {",
+        "  background-color: var(--bg-panel);",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 12px;",
+        "  padding: 32px;",
+        "  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.3s ease;",
+        "}",
+        ".cad-panel:hover {",
+        "  border-color: var(--border-hover);",
+        "  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);",
+        "}"
+      ].join("\n"), "cad-core-layout-styles");
+    }
+
+  applyHeaderCSS() {
+      applyCss([
+        ".minimal-header {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  gap: 24px;",
+        "  border-bottom: 1px solid var(--border-color);",
+        "  padding-bottom: 24px;",
+        "}",
+        ".header-top {",
+        "  display: flex;",
+        "  justify-content: space-between;",
+        "  align-items: flex-start;",
+        "  gap: 16px;",
+        "}",
+        ".tags-wrapper {",
+        "  display: flex;",
+        "  gap: 8px;",
+        "}",
+        ".tag-pill {",
+        "  font-size: 11px;",
+        "  font-weight: 700;",
+        "  letter-spacing: 0.05em;",
+        "  text-transform: uppercase;",
+        "  padding: 4px 10px;",
+        "  border-radius: 4px;",
+        "}",
+        ".tag-pill-blue {",
+        "  background-color: rgba(59, 130, 246, 0.1);",
+        "  color: #3b82f6;",
+        "  border: 1px solid rgba(59, 130, 246, 0.3);",
+        "}",
+        ".tag-pill-slate {",
+        "  background-color: rgba(148, 163, 184, 0.1);",
+        "  color: #94a3b8;",
+        "  border: 1px solid rgba(148, 163, 184, 0.2);",
+        "}",
+        ".title-group h1 {",
+        "  font-size: 32px;",
+        "  font-weight: 800;",
+        "  color: var(--text-title);",
+        "  letter-spacing: -0.02em;",
+        "  margin-bottom: 8px;",
+        "  line-height: 1.1;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .title-group h1 { font-size: 44px; }",
+        "}",
+        ".title-subtitle {",
+        "  font-size: 12px;",
+        "  text-transform: uppercase;",
+        "  letter-spacing: 0.1em;",
+        "  font-family: ui-monospace, monospace;",
+        "  color: var(--text-secondary);",
+        "  font-weight: 600;",
+        "}"
+      ].join("\n"), "cad-header-styles");
+    }
+
+  applyThemeSwitcherCSS() {
+      applyCss([
+        ".theme-switcher {",
+        "  display: flex;",
+        "  align-items: center;",
+        "  gap: 6px;",
+        "  padding: 4px;",
+        "  background-color: var(--btn-bg);",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 8px;",
+        "}",
+        ".theme-switcher button {",
+        "  padding: 4px 12px;",
+        "  font-size: 11px;",
+        "  font-weight: 600;",
+        "  border-radius: 6px;",
+        "  border: none;",
+        "  cursor: pointer;",
+        "  transition: all 0.2s;",
+        "  background: transparent;",
+        "  color: var(--text-secondary);",
+        "  display: flex;",
+        "  align-items: center;",
+        "  gap: 4px;",
+        "  outline: none;",
+        "}",
+        ".theme-switcher button.active {",
+        "  background-color: #3b82f6;",
+        "  color: #ffffff;",
+        "}",
+        ".reveal-mode-row {",
+        "  margin-top: 10px;",
+        "  display: flex;",
+        "  justify-content: flex-end;",
+        "}",
+        ".reveal-mode-select {",
+        "  appearance: none;",
+        "  -webkit-appearance: none;",
+        "  -moz-appearance: none;",
+        "  background: transparent;",
+        "  border: none;",
+        "  color: var(--text-secondary);",
+        "  font-size: 10.5px;",
+        "  font-family: ui-monospace, monospace;",
+        "  text-transform: uppercase;",
+        "  letter-spacing: 0.06em;",
+        "  padding: 2px 4px;",
+        "  cursor: pointer;",
+        "  opacity: 0.5;",
+        "  transition: opacity 0.2s ease, color 0.2s ease;",
+        "  outline: none;",
+        "}",
+        ".reveal-mode-select:hover,",
+        ".reveal-mode-select:focus {",
+        "  opacity: 0.9;",
+        "  color: var(--text-primary);",
+        "}",
+        ".reveal-mode-select option {",
+        "  background: var(--bg-panel);",
+        "  color: var(--text-primary);",
+        "}"
+      ].join("\n"), "cad-theme-switcher-styles");
+    }
+
+  applyBFNCSS() {
+      applyCss([
+        ".consensus-action-wrapper {",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  align-items: center;",
+        "  gap: 8px;",
+        "  width: 100%;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .consensus-action-wrapper {",
+        "    align-items: flex-end;",
+        "  }",
+        "}",
+        ".visualize-bfn-btn {",
+        "  margin-top: 10px;",
+        "  display: inline-flex;",
+        "  align-items: center;",
+        "  gap: 8px;",
+        "  background: linear-gradient(135deg, #f59e0b, #ef4444);",
+        "  border: none;",
+        "  color: #ffffff;",
+        "  font-size: 11px;",
+        "  font-weight: 800;",
+        "  font-family: ui-monospace, monospace;",
+        "  text-transform: uppercase;",
+        "  letter-spacing: 0.08em;",
+        "  padding: 8px 16px;",
+        "  border-radius: 20px;",
+        "  cursor: pointer;",
+        "  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);",
+        "  transition: all 0.3s cubic-bezier(0.25, 1, 0.5, 1);",
+        "  outline: none;",
+        "}",
+        ".visualize-bfn-btn:hover {",
+        "  transform: translateY(-2px) scale(1.03);",
+        "  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.45);",
+        "}",
+        ".visualize-bfn-btn:active {",
+        "  transform: translateY(0);",
+        "}",
+        ".play-pulse-icon {",
+        "  font-size: 9px;",
+        "  display: inline-block;",
+        "  animation: bfnPlayPulse 1.5s infinite;",
+        "}",
+        "@keyframes bfnPlayPulse {",
+        "  0% { transform: scale(1); opacity: 1; }",
+        "  50% { transform: scale(1.3); opacity: 0.7; }",
+        "  100% { transform: scale(1); opacity: 1; }",
+        "}",
+        ".bfn-close-btn:hover {",
+        "  background: rgba(255, 255, 255, 0.2) !important;",
+        "  transform: scale(1.05);",
+        "}",
+        ".animate-fade-in {",
+        "  animation: bfnBtnFadeIn 0.8s cubic-bezier(0.25, 1, 0.5, 1) forwards;",
+        "}",
+        "@keyframes bfnBtnFadeIn {",
+        "  from { opacity: 0; transform: translateY(10px); }",
+        "  to { opacity: 1; transform: translateY(0); }",
+        "}",
+        "body.bfn-active .consensus-container {",
+        "  position: relative !important;",
+        "  z-index: 10000 !important;",
+        "  background: transparent !important;",
+        "  border-color: transparent !important;",
+        "  border: none !important;",
+        "  box-shadow: none !important;",
+        "  backdrop-filter: none !important;",
+        "}",
+        "body.bfn-active .consensus-info-pane {",
+        "  opacity: 0 !important;",
+        "  pointer-events: none !important;",
+        "  transition: opacity 0.5s ease !important;",
+        "}",
+        "body.bfn-active .consensus-action-spacer {",
+        "  opacity: 0 !important;",
+        "  pointer-events: none !important;",
+        "  transition: opacity 0.5s ease !important;",
+        "}",
+        "body.bfn-active .glowing-consensus-value {",
+        "  position: relative !important;",
+        "  z-index: 10001 !important;",
+        "}",
+        "body.bfn-active {",
+        "  overflow: hidden !important;",
+        "}",
+        ".motion-slider-row {",
+        "  display: flex;",
+        "  align-items: center;",
+        "  gap: 8px;",
+        "  margin-top: 8px;",
+        "}",
+        ".motion-slider-label {",
+        "  font-size: 10px;",
+        "  font-family: ui-monospace, monospace;",
+        "  text-transform: uppercase;",
+        "  color: var(--text-secondary);",
+        "  font-weight: bold;",
+        "  letter-spacing: 0.05em;",
+        "}",
+        ".motion-slider {",
+        "  -webkit-appearance: none;",
+        "  width: 80px;",
+        "  height: 4px;",
+        "  border-radius: 2px;",
+        "  background: var(--border-color);",
+        "  outline: none;",
+        "  cursor: pointer;",
+        "  transition: background 0.3s;",
+        "}",
+        ".motion-slider::-webkit-slider-thumb {",
+        "  -webkit-appearance: none;",
+        "  width: 10px;",
+        "  height: 10px;",
+        "  border-radius: 50%;",
+        "  background: #3b82f6;",
+        "  cursor: pointer;",
+        "  transition: transform 0.1s;",
+        "}",
+        ".motion-slider::-webkit-slider-thumb:hover {",
+        "  transform: scale(1.2);",
+        "}"
+      ].join("\n"), "cad-bfn-styles");
+    }
+
+  applyNavigationCSS() {
+      applyCss([
+        ".global-nav-bar {",
+        "  display: flex;",
+        "  flex-wrap: wrap;",
+        "  gap: 8px;",
+        "  border-bottom: 1px solid var(--border-color);",
+        "  padding-bottom: 16px;",
+        "  margin-bottom: 16px;",
+        "  margin-top: 16px;",
+        "  width: 100%;",
+        "}",
+        ".global-nav-link {",
+        "  font-size: 11px;",
+        "  font-family: ui-monospace, monospace;",
+        "  font-weight: bold;",
+        "  text-transform: uppercase;",
+        "  color: var(--text-secondary);",
+        "  text-decoration: none;",
+        "  border: 1px solid var(--border-color);",
+        "  padding: 8px 16px;",
+        "  border-radius: 8px;",
+        "  background: var(--bg-panel);",
+        "  transition: all 0.2s ease-in-out;",
+        "}",
+        ".global-nav-link:hover {",
+        "  background: var(--btn-hover);",
+        "  color: var(--text-title);",
+        "  border-color: var(--border-hover);",
+        "}",
+        ".global-nav-link.active {",
+        "  background: #3b82f6;",
+        "  color: #ffffff;",
+        "  border-color: #3b82f6;",
+        "}",
+        ".backstory-gradient-card {",
+        "  padding: 32px;",
+        "  border: 1px solid var(--border-color);",
+        "  border-radius: 16px;",
+        "  display: flex;",
+        "  flex-direction: column;",
+        "  gap: 24px;",
+        "  background: linear-gradient(135deg, var(--accent-story-from), var(--accent-story-to));",
+        "}",
+        ".backstory-paragraph-highlight {",
+        "  font-size: 16px;",
+        "  font-weight: 500;",
+        "  color: var(--text-primary);",
+        "  line-height: 1.6;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .backstory-paragraph-highlight { font-size: 18px; }",
+        "}",
+        ".backstory-paragraph {",
+        "  font-size: 14px;",
+        "  color: var(--text-secondary);",
+        "  line-height: 1.6;",
+        "}",
+        "@media (min-width: 768px) {",
+        "  .backstory-paragraph { font-size: 15px; }",
+        "}",
+        ".backstory-paragraph-bold {",
+        "  font-size: 15px;",
+        "  font-weight: 600;",
+        "  color: var(--text-primary);",
+        "  border-top: 1px solid rgba(255, 255, 255, 0.08);",
+        "  padding-top: 16px;",
+        "}",
+        ".inline-link-highlight {",
+        "  color: #2563eb;",
+        "  font-weight: 600;",
+        "  text-decoration: underline;",
+        "  text-underline-offset: 4px;",
+        "  transition: color 0.15s ease;",
+        "  display: inline;",
+        "}",
+        ".cad-container:not(.theme-light) .inline-link-highlight {",
+        "  color: #60a5fa;",
+        "}",
+        ".inline-link-highlight:hover {",
+        "  color: #3b82f6;",
+        "}"
+      ].join("\n"), "cad-navigation-styles");
+    }
+
+  createExhibitOverlay() {
+      return makeElement('div', {
+        id: 'logo-exhibit-overlay',
+        style: {
+          position: 'fixed',
+          inset: '0',
+          zIndex: '100002',
+          background: 'rgba(5, 5, 8, 0.98)',
+          backdropFilter: 'blur(12px)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          transition: 'opacity 0.25s ease',
+          opacity: '0',
+          width: '100vw',
+          height: '100vh',
+          boxSizing: 'border-box',
+          overflow: 'hidden'
+        },
+        onclick: (e) => {
+          const overlay = e.currentTarget;
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 250);
+        }
+      });
+    }
+
+  createModalTopBar(title, overlay) {
+      return makeElement('div', {
+        style: {
+          width: '100%',
+          boxSizing: 'border-box',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          padding: '12px 24px',
+          background: 'rgba(10, 10, 15, 0.95)',
+          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          zIndex: '30'
+        }
+      }, [
+        makeElement('span', {
+          style: {
+            color: '#ffffff',
+            fontWeight: 'bold',
+            fontSize: '13px',
+            fontFamily: 'ui-monospace, monospace',
+            textTransform: 'uppercase',
+            letterSpacing: '0.05em'
+          }
+        }, title),
+        makeElement('button', {
+          style: {
+            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid rgba(255, 255, 255, 0.2)',
+            color: '#ffffff',
+            borderRadius: '50%',
+            width: '36px',
+            height: '36px',
+            cursor: 'pointer',
+            fontSize: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transition: 'all 0.2s',
+            marginRight: '8px'
+          },
+          onclick: (e) => {
+            e.stopPropagation();
+            overlay.style.opacity = '0';
+            setTimeout(() => overlay.remove(), 250);
+          }
+        }, '✕')
+      ]);
+    }
+
+  createModalContentContainer(imgSrc, title, overlay) {
+      let isFullRes = false;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+      let scrollLeft = 0;
+      let scrollTop = 0;
+      let dragThresholdMet = false;
+
+      const badge = makeElement('div', {
+        style: {
+          position: 'absolute',
+          top: '20px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: 'rgba(15, 23, 42, 0.9)',
+          color: '#3b82f6',
+          border: '1px solid rgba(59, 130, 246, 0.3)',
+          borderRadius: '20px',
+          padding: '6px 16px',
+          fontSize: '11px',
+          fontFamily: 'ui-monospace, monospace',
+          pointerEvents: 'none',
+          zIndex: '30',
+          boxShadow: '0 4px 12px rgba(0,0,0,0.6)',
+          textTransform: 'uppercase',
+          letterSpacing: '0.05em'
+        }
+      }, 'Click image for Full Resolution');
+
+      const contentContainer = makeElement('div', {
+        style: {
+          flex: '1',
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'auto',
+          position: 'relative',
+          padding: '16px',
+          background: '#020204',
+          cursor: 'zoom-in',
+          userSelect: 'none'
+        }
+      });
+
+      const img = makeElement('img', {
+        src: imgSrc,
+        alt: title,
+        style: {
+          width: '100%',
+          height: '100%',
+          maxWidth: '100%',
+          maxHeight: '100%',
+          objectFit: 'contain',
+          borderRadius: '4px',
+          pointerEvents: 'auto',
+          display: 'block'
+        },
+        onerror: (e) => {
+          e.target.style.display = 'none';
+          const errorMsg = makeElement('div', {
+            style: {
+              color: '#f87171',
+              fontFamily: 'ui-monospace, monospace',
+              fontSize: '14px',
+              padding: '24px',
+              background: '#0f172a',
+              borderRadius: '8px',
+              border: '1px solid #ef4444'
+            }
+          }, `Image Fallback: ${title}\n(Place file in /images/${imgSrc.split('/').pop()})`);
+          contentContainer.appendChild(errorMsg);
+        }
+      });
+
+      contentContainer.onmousedown = (e) => {
+        if (!isFullRes) return;
+        isDragging = true;
+        dragThresholdMet = false;
+        startX = e.clientX;
+        startY = e.clientY;
+        scrollLeft = contentContainer.scrollLeft;
+        scrollTop = contentContainer.scrollTop;
+        contentContainer.style.cursor = 'grabbing';
+      };
+
+      contentContainer.onmousemove = (e) => {
+        if (!isDragging) return;
+        e.preventDefault();
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        if (Math.abs(dx) > 3 || Math.abs(dy) > 3) {
+          dragThresholdMet = true;
+        }
+        contentContainer.scrollLeft = scrollLeft - dx;
+        contentContainer.scrollTop = scrollTop - dy;
+      };
+
+      contentContainer.onmouseup = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
+      };
+
+      contentContainer.onmouseleave = () => {
+        if (!isDragging) return;
+        isDragging = false;
+        contentContainer.style.cursor = isFullRes ? 'zoom-out' : 'zoom-in';
+      };
+
+      contentContainer.onclick = (e) => {
+        e.stopPropagation();
+
+        if (dragThresholdMet) {
+          dragThresholdMet = false;
+          return;
+        }
+
+        if (e.target === contentContainer) {
+          overlay.style.opacity = '0';
+          setTimeout(() => overlay.remove(), 250);
+          return;
+        }
+
+        isFullRes = !isFullRes;
+        if (isFullRes) {
+          contentContainer.style.display = 'block';
+          img.style.width = 'auto';
+          img.style.height = 'auto';
+          img.style.maxWidth = 'none';
+          img.style.maxHeight = 'none';
+          img.style.objectFit = 'none';
+          img.style.margin = '0 auto';
+          contentContainer.style.cursor = 'zoom-out';
+          badge.textContent = 'Click image to fit screen (Drag to pan)';
+        } else {
+          contentContainer.style.display = 'flex';
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          img.style.objectFit = 'contain';
+          img.style.margin = '0';
+          contentContainer.style.cursor = 'zoom-in';
+          badge.textContent = 'Click image for Full Resolution';
+        }
+      };
+
+      contentContainer.appendChild(badge);
+      contentContainer.appendChild(img);
+      return contentContainer;
+    }
+
+  createModalCaptionBar(caption) {
+      return makeElement('div', {
+        style: {
+          position: 'absolute',
+          bottom: '24px',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          width: '90%',
+          maxWidth: '800px',
+          background: 'rgba(15, 23, 42, 0.95)',
+          border: '1px solid rgba(255, 255, 255, 0.1)',
+          borderRadius: '8px',
+          padding: '12px 20px',
+          color: '#e2e8f0',
+          fontSize: '13px',
+          lineHeight: '1.5',
+          textAlign: 'center',
+          boxShadow: '0 10px 25px rgba(0, 0, 0, 0.6)',
+          backdropFilter: 'blur(4px)',
+          zIndex: '30'
+        },
+        onclick: (e) => e.stopPropagation()
+      }, caption);
     }
 }

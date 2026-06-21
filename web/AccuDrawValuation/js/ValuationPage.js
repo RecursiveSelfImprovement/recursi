@@ -315,122 +315,32 @@ class ValuationPage {
   }
 
   buildTranscriptsBlock(app) {
-    const container = makeElement('section', { className: 'space-y-6' }, [
-      makeElement('div', { className: 'transcripts-bar' }, [
-        makeElement(
-          'h2',
-          { className: 'transcripts-bar-title' },
-          'Model Valuation Quotes'
-        ),
+      const tabFilterContainer = makeElement('div', { className: 'tab-filters' }, [
+        this.buildFilterButton(app, 'all', 'Show All'),
+        this.buildFilterButton(app, 'claude', 'Claude'),
+        this.buildFilterButton(app, 'gemini', 'Gemini'),
+        this.buildFilterButton(app, 'chatgpt', 'ChatGPT'),
+        this.buildFilterButton(app, 'grok', 'Grok'),
+      ]);
 
-        makeElement('div', { className: 'tab-filters' }, [
-          this.buildFilterButton(app, 'all', 'Show All'),
-          this.buildFilterButton(app, 'claude', 'Claude'),
-          this.buildFilterButton(app, 'gemini', 'Gemini'),
-          this.buildFilterButton(app, 'chatgpt', 'ChatGPT'),
-          this.buildFilterButton(app, 'grok', 'Grok'),
-        ]),
-      ]),
-    ]);
+      const headerBar = makeElement('div', { className: 'transcripts-bar' }, [
+        makeElement('h2', { className: 'transcripts-bar-title' }, 'Model Valuation Quotes'),
+        tabFilterContainer
+      ]);
 
-    const transcriptsList = makeElement('div', {
-      className: 'transcripts-card-list',
-    });
+      const container = makeElement('section', { className: 'space-y-6' }, [headerBar]);
+      const transcriptsList = makeElement('div', { className: 'transcripts-card-list' });
 
-    app.data.models.forEach((model) => {
-      if (app.activeTab !== 'all' && app.activeTab !== model.key) return;
+      app.data.models.forEach((model) => {
+        if (app.activeTab !== 'all' && app.activeTab !== model.key) return;
+        
+        const card = this.buildModelTranscriptCard(app, model);
+        transcriptsList.appendChild(card);
+      });
 
-      const card = makeElement(
-        'article',
-        { className: 'cad-panel transcript-detail-card' },
-        [
-          makeElement('div', {
-            className: 'transcript-card-stripe',
-            style: { backgroundColor: model.color },
-          }),
-
-          makeElement('div', { className: 'transcript-card-inner' }, [
-            makeElement('div', { className: 'transcript-card-main' }, [
-              makeElement('div', { className: 'transcript-author-group' }, [
-                makeElement('span', {
-                  className: 'transcript-author-circle',
-                  style: { backgroundColor: model.color },
-                }),
-                makeElement(
-                  'h3',
-                  { className: 'transcript-author-header' },
-                  model.name
-                ),
-              ]),
-
-              makeElement(
-                'div',
-                { className: 'transcript-quote-box' },
-                model.quotes.map((q) => {
-                  const highlightedHTML = this.highlightKeyPhrases(app, q);
-                  return makeElement(
-                    'p',
-                    { className: 'transcript-bullet-quote' },
-                    [
-                      makeElement(
-                        'span',
-                        { className: 'transcript-bullet-symbol' },
-                        '•'
-                      ),
-                      makeElement('span', { innerHTML: highlightedHTML }),
-                    ]
-                  );
-                })
-              ),
-            ]),
-
-            makeElement('div', { className: 'transcript-card-sidebar' }, [
-              makeElement('div', { className: 'sidebar-model-totals' }, [
-                makeElement(
-                  'span',
-                  { className: 'sidebar-total-label' },
-                  'Identified Valuation'
-                ),
-                makeElement(
-                  'span',
-                  {
-                    className: 'sidebar-total-number',
-                    style: { color: model.color },
-                  },
-                  `${model.min} - ${model.max}`
-                ),
-                makeElement(
-                  'span',
-                  { className: 'sidebar-total-percent' },
-                  `${model.pct}% Contribution of Bentley Cap`
-                ),
-              ]),
-              makeElement(
-                'a',
-                {
-                  href: model.url,
-                  target: '_blank',
-                  rel: 'noopener noreferrer',
-                  className: 'sidebar-link-btn',
-                  style: {
-                    color: model.color,
-                    borderColor: `${model.color}33`,
-                    backgroundColor: `${model.color}0a`,
-                  },
-                },
-                'Verify Original Transcript ↗'
-              ),
-            ]),
-          ]),
-        ]
-      );
-
-      transcriptsList.appendChild(card);
-    });
-
-    container.appendChild(transcriptsList);
-    return container;
-  }
+      container.appendChild(transcriptsList);
+      return container;
+    }
 
   buildFilterButton(app, filterId, labelText) {
     const isActive = app.activeTab === filterId;
@@ -565,138 +475,40 @@ class ValuationPage {
   }
 
   buildExtendedQueriesSection(app) {
-    const container = makeElement(
-      'section',
-      {
-        className:
-          'space-y-8 mt-12 pt-12 border-t border-[var(--border-color)]',
-      },
-      [
-        makeElement('div', { className: 'space-y-2' }, [
-          makeElement(
-            'h2',
-            {
-              className:
-                'text-2xl font-black text-[var(--text-title)] uppercase tracking-wider',
-              style: { fontFamily: 'ui-monospace, monospace' },
-            },
-            'Extended Queries & Historical Rarity Analysis'
-          ),
-          makeElement(
-            'p',
-            { className: 'text-sm text-[var(--text-secondary)]' },
-            'Deep dive dialogues assessing the exceptional rarity of high-leverage single-hire innovations in technology history.'
-          ),
-        ]),
-      ]
-    );
+      const headerTitle = makeElement('h2', {
+        className: 'text-2xl font-black text-[var(--text-title)] uppercase tracking-wider',
+        style: { fontFamily: 'ui-monospace, monospace' }
+      }, 'Extended Queries & Historical Rarity Analysis');
 
-    const introCard = this.buildSynthesisIntroBlock(app);
-    if (introCard) {
-      container.appendChild(introCard);
+      const headerSubtitle = makeElement('p', {
+        className: 'text-sm text-[var(--text-secondary)]'
+      }, 'Deep dive dialogues assessing the exceptional rarity of high-leverage single-hire innovations in technology history.');
+
+      const container = makeElement('section', {
+        className: 'space-y-8 mt-12 pt-12 border-t border-[var(--border-color)]'
+      }, [
+        makeElement('div', { className: 'space-y-2' }, [headerTitle, headerSubtitle])
+      ]);
+
+      const introCard = this.buildSynthesisIntroBlock(app);
+      if (introCard) {
+        container.appendChild(introCard);
+      }
+
+      const dialogueList = makeElement('div', { className: 'transcripts-card-list mt-8' });
+
+      ['claude', 'gemini'].forEach((key) => {
+        const model = app.data.models.find((m) => m.key === key);
+        const convHTML = app.data.conversations[key];
+        if (!model || !convHTML) return;
+
+        const card = this.buildExtendedQueryCard(app, model, convHTML);
+        dialogueList.appendChild(card);
+      });
+
+      container.appendChild(dialogueList);
+      return container;
     }
-
-    const dialogueList = makeElement('div', {
-      className: 'transcripts-card-list mt-8',
-    });
-
-    ['claude', 'gemini'].forEach((key) => {
-      const model = app.data.models.find((m) => m.key === key);
-      const convHTML = app.data.conversations[key];
-      if (!model || !convHTML) return;
-
-      const card = makeElement(
-        'article',
-        { className: 'cad-panel transcript-detail-card' },
-        [
-          makeElement('div', {
-            className: 'transcript-card-stripe',
-            style: { backgroundColor: model.color },
-          }),
-        ]
-      );
-
-      const cardInner = makeElement('div', {
-        className: 'transcript-card-inner',
-      });
-      const cardMain = makeElement('div', {
-        className: 'transcript-card-main',
-      });
-
-      const authorGroup = makeElement(
-        'div',
-        { className: 'transcript-author-group' },
-        [
-          makeElement('span', {
-            className: 'transcript-author-circle',
-            style: { backgroundColor: model.color },
-          }),
-          makeElement(
-            'h3',
-            { className: 'transcript-author-header' },
-            `${model.name} - Extended Dialogue`
-          ),
-        ]
-      );
-      cardMain.appendChild(authorGroup);
-
-      const flowWrapper = makeElement('div', {
-        className: 'conversation-flow',
-        innerHTML: convHTML,
-      });
-
-      flowWrapper.querySelectorAll('.turn').forEach((turn) => {
-        const isUser = turn.classList.contains('speaker-user');
-        turn.className = `conversation-turn ${
-          isUser ? 'speaker-user' : 'speaker-model'
-        }`;
-        turn.style.setProperty('--accent-color', model.color);
-
-        const labelText = isUser ? 'Prompt' : model.name;
-        const headerLabel = makeElement(
-          'div',
-          { className: 'turn-header' },
-          labelText
-        );
-        turn.insertBefore(headerLabel, turn.firstChild);
-
-        const bodyWrapper = makeElement('div', { className: 'turn-body' });
-        const originalChildren = Array.from(turn.children).slice(1);
-
-        originalChildren.forEach((child) => {
-          const tagName = child.tagName.toLowerCase();
-          const childText = child.textContent.trim().toLowerCase();
-
-          if (
-            (tagName === 'h3' || tagName === 'h4') &&
-            (childText === 'rob' ||
-              childText === 'claude' ||
-              childText === 'gemini' ||
-              childText.includes('assessment') ||
-              childText.includes('response') ||
-              childText.includes('reveal') ||
-              childText.includes('question') ||
-              childText.includes('summary estimate'))
-          ) {
-            return;
-          }
-          bodyWrapper.appendChild(child);
-        });
-
-        turn.appendChild(bodyWrapper);
-      });
-
-      this.applySmartHighlights(flowWrapper);
-      cardMain.appendChild(flowWrapper);
-
-      cardInner.appendChild(cardMain);
-      card.appendChild(cardInner);
-      dialogueList.appendChild(card);
-    });
-
-    container.appendChild(dialogueList);
-    return container;
-  }
 
   applySmartHighlights(containerElement) {
     const rules = [
@@ -1542,6 +1354,138 @@ class ValuationPage {
             }
           }, 'View Higher Valuation Gemini Chat ↗')
         ])
+      ]);
+    }
+
+  buildModelTranscriptCard(app, model) {
+      const cardStripe = makeElement('div', {
+        className: 'transcript-card-stripe',
+        style: { backgroundColor: model.color }
+      });
+
+      const authorBadge = makeElement('div', { className: 'transcript-author-group' }, [
+        makeElement('span', {
+          className: 'transcript-author-circle',
+          style: { backgroundColor: model.color }
+        }),
+        makeElement('h3', { className: 'transcript-author-header' }, model.name)
+      ]);
+
+      const quotesBox = makeElement(
+        'div',
+        { className: 'transcript-quote-box' },
+        model.quotes.map((q) => {
+          const highlightedHTML = this.highlightKeyPhrases(app, q);
+          return makeElement('p', { className: 'transcript-bullet-quote' }, [
+            makeElement('span', { className: 'transcript-bullet-symbol' }, '•'),
+            makeElement('span', { innerHTML: highlightedHTML })
+          ]);
+        })
+      );
+
+      const sidebarTotals = makeElement('div', { className: 'sidebar-model-totals' }, [
+        makeElement('span', { className: 'sidebar-total-label' }, 'Identified Valuation'),
+        makeElement('span', {
+          className: 'sidebar-total-number',
+          style: { color: model.color }
+        }, `${model.min} - ${model.max}`),
+        makeElement('span', { className: 'sidebar-total-percent' }, `${model.pct}% Contribution of Bentley Cap`)
+      ]);
+
+      const verifyLink = makeElement('a', {
+        href: model.url,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+        className: 'sidebar-link-btn',
+        style: {
+          color: model.color,
+          borderColor: `${model.color}33`,
+          backgroundColor: `${model.color}0a`
+        }
+      }, 'Verify Original Transcript ↗');
+
+      const sidebar = makeElement('div', { className: 'transcript-card-sidebar' }, [
+        sidebarTotals,
+        verifyLink
+      ]);
+
+      const mainContent = makeElement('div', { className: 'transcript-card-main' }, [
+        authorBadge,
+        quotesBox
+      ]);
+
+      return makeElement('article', { className: 'cad-panel transcript-detail-card' }, [
+        cardStripe,
+        makeElement('div', { className: 'transcript-card-inner' }, [
+          mainContent,
+          sidebar
+        ])
+      ]);
+    }
+
+  buildExtendedQueryCard(app, model, convHTML) {
+      const cardStripe = makeElement('div', {
+        className: 'transcript-card-stripe',
+        style: { backgroundColor: model.color }
+      });
+
+      const authorBadge = makeElement('div', { className: 'transcript-author-group' }, [
+        makeElement('span', {
+          className: 'transcript-author-circle',
+          style: { backgroundColor: model.color }
+        }),
+        makeElement('h3', { className: 'transcript-author-header' }, `${model.name} - Extended Dialogue`)
+      ]);
+
+      const flowWrapper = makeElement('div', {
+        className: 'conversation-flow',
+        innerHTML: convHTML
+      });
+
+      flowWrapper.querySelectorAll('.turn').forEach((turn) => {
+        const isUser = turn.classList.contains('speaker-user');
+        turn.className = `conversation-turn ${isUser ? 'speaker-user' : 'speaker-model'}`;
+        turn.style.setProperty('--accent-color', model.color);
+
+        const labelText = isUser ? 'Prompt' : model.name;
+        const headerLabel = makeElement('div', { className: 'turn-header' }, labelText);
+        turn.insertBefore(headerLabel, turn.firstChild);
+
+        const bodyWrapper = makeElement('div', { className: 'turn-body' });
+        const originalChildren = Array.from(turn.children).slice(1);
+
+        originalChildren.forEach((child) => {
+          const tagName = child.tagName.toLowerCase();
+          const childText = child.textContent.trim().toLowerCase();
+
+          const skipHeader = (tagName === 'h3' || tagName === 'h4') && (
+            childText === 'rob' ||
+            childText === 'claude' ||
+            childText === 'gemini' ||
+            childText.includes('assessment') ||
+            childText.includes('response') ||
+            childText.includes('reveal') ||
+            childText.includes('question') ||
+            childText.includes('summary estimate')
+          );
+
+          if (skipHeader) return;
+          bodyWrapper.appendChild(child);
+        });
+
+        turn.appendChild(bodyWrapper);
+      });
+
+      this.applySmartHighlights(flowWrapper);
+
+      const mainContent = makeElement('div', { className: 'transcript-card-main' }, [
+        authorBadge,
+        flowWrapper
+      ]);
+
+      return makeElement('article', { className: 'cad-panel transcript-detail-card' }, [
+        cardStripe,
+        makeElement('div', { className: 'transcript-card-inner' }, [mainContent])
       ]);
     }
 }
