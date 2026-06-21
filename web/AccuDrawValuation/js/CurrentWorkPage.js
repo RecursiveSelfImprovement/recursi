@@ -1,11 +1,26 @@
 class CurrentWorkPage {
+    // =========================================================================
+    // RENDER ROUTINE
+    // Generates a beautiful, vertically scrollable editorial column
+    // matching the spacious aesthetic of the AI Perspective page.
+    // =========================================================================
     render(app) {
+      this.app = app;
       this.applyStyles();
-      const container = makeElement("div", { className: "space-y-8 pb-12" });
-      container.appendChild(this.buildIntroBlock(app));
-      container.appendChild(this.buildSystemHighlightsGrid(app));
-      container.appendChild(this.buildVideoShowcase(app));
-      return container;
+
+      const content = CurrentWorkPage.PAGE_CONTENT;
+      const mainContainer = makeElement("div", {className: "current-work-editorial-wrapper"});
+
+      // 1. Status Notice Block
+      mainContainer.appendChild(this.buildStatusCard(content.statusBanner));
+
+      // 2. Narrative Column Block
+      mainContainer.appendChild(this.buildNarrativeCard(content.narrativeColumn));
+
+      // 3. Spaced-out Scrollable Editorial Stream
+      mainContainer.appendChild(this.buildEditorialStream(content.sections));
+
+      return mainContainer;
     }
 
     buildIntroBlock(app) {
@@ -136,13 +151,14 @@ class CurrentWorkPage {
       ]);
     }
 
-    loadVideoIntoPlayer(playerId) {
+    // =========================================================================
+    // VIDEO PLAYER INITIALIZATION
+    // =========================================================================
+    loadVideoIntoPlayer(playerId, videoId) {
       const container = document.getElementById(playerId);
       if (!container) return;
 
       container.innerHTML = "";
-      
-      const videoId = playerId === "vibe-player-1" ? "ply26G4DdcM" : "dQw4w9WgXcQ";
 
       try {
         if (window.VideoPlayer) {
@@ -154,7 +170,7 @@ class CurrentWorkPage {
             autoplay: true,
             controls: true,
             startTime: 0,
-            endTime: 120
+            endTime: 3600
           });
         } else {
           this.useIframeFallback(container, videoId);
@@ -171,7 +187,8 @@ class CurrentWorkPage {
         style: {
           width: "100%",
           height: "100%",
-          border: "none"
+          border: "none",
+          aspectRatio: "16/9"
         },
         allow: "autoplay; encrypted-media",
         allowfullscreen: "true"
@@ -179,7 +196,279 @@ class CurrentWorkPage {
       container.appendChild(iframe);
     }
 
+    // =========================================================================
+    // COMPACT DYNAMIC STYLESHEET
+    // =========================================================================
     applyStyles() {
-      // Dynamic styles
+      applyCss(`
+    .current-work-editorial-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 36px;
+      max-width: 900px;
+      margin: 0 auto;
+      width: 100%;
     }
-  }
+    .current-work-status-banner {
+      background-color: rgba(245, 158, 11, 0.04);
+      border: 1px solid rgba(245, 158, 11, 0.2);
+      padding: 24px;
+      border-radius: 12px;
+      margin-bottom: 24px;
+    }
+    .status-alert-icon {
+      font-size: 16px;
+    }
+    .narrative-editorial-paragraph {
+      font-size: 15px;
+      color: var(--text-primary);
+      line-height: 1.85;
+    }
+    .video-editorial-stream {
+      display: flex;
+      flex-direction: column;
+      margin-top: 24px;
+    }
+    .video-editorial-block {
+      display: flex;
+      flex-direction: column;
+      margin-bottom: 40px;
+    }
+    .video-editorial-apology-box {
+      background-color: rgba(245, 158, 11, 0.05);
+      border-left: 3px solid #f59e0b;
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+    }
+    .editorial-video-frame-wrapper {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      background-color: #010204;
+      transition: border-color 0.2s ease;
+    }
+    .editorial-video-frame-wrapper:hover {
+      border-color: var(--border-hover);
+    }
+    .editorial-video-frame-container {
+      width: 100%;
+      aspect-ratio: 16/9;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .editorial-video-placeholder-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      width: 100%;
+      height: 100%;
+    }
+  `, "current-work-editorial-styles");
+    }
+  
+  // =========================================================================
+    // EDITABLE CONTENT CONFIGURATION
+    // All text narratives, status updates, and video parameters are defined here.
+    // Strings are split into readable arrays for easy manual editing in the code.
+    // =========================================================================
+    static get PAGE_CONTENT() {
+      return {
+        // YouTube video ID register - easily find and update all video links here
+        videoIds: {
+          mainWalkthrough: "sDSFBj6MuzY",  // Video 1: Primary lengthy walkthrough
+          playlistAndPiano: "ply26G4DdcM", // Video 2: Ad-free playlists & piano interface
+          rickAstleyPlaceholder: "dQw4w9WgXcQ", // Video 3: Rick Astley placeholder / extra demo
+          additionalAIOverview: "7VV6poSrk3Y"  // Video 4: Conceptual robotics & future integration
+        },
+
+        // Status banner at the beginning of the page
+        statusBanner: {
+          title: "⚠️ Status Update: Presentation Enhancements In Progress",
+          paragraphs: [
+            [
+              "Please note that this section is actively being enhanced. The explanatory ",
+              "materials, text documentation, and technical demonstration videos are currently ",
+              "being trimmed down, edited, and updated to be significantly shorter, more concise, ",
+              "and directly to the point. However, the software product itself is fully complete, ",
+              "functional, and structurally sound. It has already been shared publicly (though not yet widely), ",
+              "and a clear, viable path toward a broader launch is actively being pursued."
+            ].join("")
+          ]
+        },
+
+        // Narrative Section: Subtly integrating personal context and the $2.3B contrast
+        narrativeColumn: {
+          heading: "Foundational Moats, Earning Potential, and Personal Horizons",
+          paragraphs: [
+            [
+              "Building recursively self-improving Visual and Vibe Coding environments requires ",
+              "substantial stability, time, and focus. There is a stark, undeniable contrast between ",
+              "authoring core UX paradigms (such as AccuDraw and SmartLine) that historically created ",
+              "an estimated $2.3 billion in return on investment for major enterprise CAD vendors, ",
+              "and the disruptive personal dislocations of the recent past. Navigating a sudden, ",
+              "politically motivated firing, combined with the profound emotional strain of having a ",
+              "historically exceptionally close relationship with my daughter disrupted after her mother ",
+              "relocated her, has deeply impacted the pacing of this work."
+            ].join(""),
+            [
+              "How much of this personal history is ultimately woven into the public launch material ",
+              "remains a decision currently under active consideration. To be completely clear: if ",
+              "extreme personal or financial circumstances-such as being forced out on the street ",
+              "by family trustees-leave me with no other viable path, there exists a strong, inherent ",
+              "incentive to fully document and tell that story as a central pillar of this project's ",
+              "broader narrative. For now, the primary goal remains delivering exceptional developer ",
+              "tools, but the high-leverage human stakes behind this transition remain undeniable."
+            ].join("")
+          ]
+        },
+
+        // Spacious, narrative-oriented editorial sections matching the style of the AI Perspective page
+        sections: [
+          {
+            id: "main-walkthrough",
+            title: "1. Core Technical Walkthrough & Vibe Coding Engine",
+            videoIdKey: "mainWalkthrough",
+            isLengthy: true,
+            apologyText: [
+              "We apologize for the length of this primary technical demonstration; it is currently ",
+              "quite lengthy and is actively scheduled to be trimmed down to a shorter version. ",
+              "However, there is a wealth of core architectural insights, live AST compilation flows, and ",
+              "recursively self-improving code demonstrations here that make it highly worth watching in full."
+            ].join(""),
+            description: [
+              "This primary walkthrough demonstrates how the browser-based environment uses natural language ",
+              "prompts to recursively inspect, refactor, and rewrite its own JavaScript source files on the fly. ",
+              "It shows how abstract syntax trees (ASTs) are safely managed client-side without relying on ",
+              "unstable, multi-layered server environments or dynamic backends."
+            ].join("")
+          },
+          {
+            id: "playlist-piano",
+            title: "2. Ad-Free YouTube Playlists & Visual Piano Keyboard",
+            videoIdKey: "playlistAndPiano",
+            isLengthy: false,
+            description: [
+              "This demonstration showcases two highly impressive capabilities of the current system. First, ",
+              "it highlights an ad-free YouTube playlist aggregator that allows users to stream, organize, ",
+              "and play video feeds completely within the terms of service while bypassing standard distraction overlays. ",
+              "Second, it highlights my proprietary digital piano software, featuring sub-millisecond visual latency ",
+              "and a beautifully optimized layout built using visual coordinate principles first established in my early CAD days."
+            ].join("")
+          },
+          {
+            id: "rick-astley-demo",
+            title: "3. Classical Interactive Rendering & Testing Baseline",
+            videoIdKey: "rickAstleyPlaceholder",
+            isLengthy: false,
+            description: [
+              "An interactive sandbox test leveraging classical web streams to verify playback stability and frame ",
+              "synchronization across different network environments. This slot serves as an open diagnostic player ",
+              "frequently used to test audio-to-video alignment."
+            ].join("")
+          },
+          {
+            id: "ai-overview",
+            title: "4. Physical Robotics & Multimodal Coordinate Alignment",
+            videoIdKey: "additionalAIOverview",
+            isLengthy: false,
+            description: [
+              "A technical demonstration mapping the intersection of coordinate alignment loops with physical robotics ",
+              "baselines. This analysis demonstrates how localized, precision layout frameworks act as a translation ",
+              "bridge between natural language inputs and real-world spatial actions."
+            ].join("")
+          }
+        ]
+      };
+    }
+
+  buildStatusCard(statusData) {
+      return makeElement("div", {className: "current-work-status-banner mb-6"}, [
+        makeElement("div", {className: "flex items-center gap-2 mb-3"}, [
+          makeElement("span", {className: "status-alert-icon"}, "⚠️"),
+          makeElement("h3", {className: "text-base font-bold text-amber-500 uppercase tracking-wider"}, statusData.title)
+        ]),
+        ...statusData.paragraphs.map(p => makeElement("p", {className: "text-sm text-[var(--text-secondary)] leading-relaxed"}, p))
+      ]);
+    }
+
+  buildNarrativeCard(narrativeData) {
+      const children = [
+        makeElement("h2", {className: "text-xl font-black text-[var(--text-title)] mb-4"}, narrativeData.heading)
+      ];
+
+      narrativeData.paragraphs.forEach(p => {
+        children.push(makeElement("p", {className: "narrative-editorial-paragraph mb-4"}, p));
+      });
+
+      return makeElement("div", {className: "backstory-gradient-card mb-8"}, children);
+    }
+
+  buildEditorialStream(sections) {
+      const stream = makeElement("div", {className: "video-editorial-stream space-y-12"});
+
+      sections.forEach(sec => {
+        stream.appendChild(this.buildVideoEditorialBlock(sec));
+      });
+
+      return makeElement("section", {className: "cad-panel"}, [
+        makeElement("div", {className: "dashboard-header-group mb-8"}, [
+          makeElement("h2", {
+            className: "text-xl font-bold text-[var(--text-title)] uppercase tracking-wider",
+            style: {fontFamily: "ui-monospace, monospace"}
+          }, "Prototype Demonstration Stream"),
+          makeElement("p", {className: "text-sm text-[var(--text-secondary)] mt-1"},
+            "A vertical narrative flow demonstrating the visual development interface in action. Scroll down to view all systems."
+          )
+        ]),
+        stream
+      ]);
+    }
+
+  buildVideoEditorialBlock(section) {
+      const content = CurrentWorkPage.PAGE_CONTENT;
+      const videoId = content.videoIds[section.videoIdKey];
+      const playerId = `current-work-player-${section.id}`;
+
+      const children = [
+        makeElement("h3", {className: "text-lg font-black text-[var(--text-title)] mb-3"}, section.title)
+      ];
+
+      // Video-specific apology box (e.g. for the main lengthy video)
+      if (section.isLengthy && section.apologyText) {
+        children.push(makeElement("div", {className: "video-editorial-apology-box mb-4"}, [
+          makeElement("span", {className: "text-amber-500 font-mono font-bold block mb-1 text-xs uppercase tracking-wider"}, "Length & Polish Notice"),
+          makeElement("p", {className: "text-xs text-[var(--text-secondary)] leading-relaxed italic"}, section.apologyText)
+        ]));
+      }
+
+      // Narrative section text description
+      children.push(makeElement("p", {className: "text-sm text-[var(--text-primary)] leading-relaxed mb-6"}, section.description));
+
+      // Video element - occupies clean, high-res horizontal viewport spacing for watchability
+      children.push(makeElement("div", {className: "editorial-video-frame-wrapper mb-4 shadow-xl"}, [
+        makeElement("div", {
+          id: playerId,
+          className: "editorial-video-frame-container",
+          style: {minHeight: "360px", backgroundColor: "#020306"}
+        }, [
+          makeElement("div", {className: "editorial-video-placeholder-overlay p-8"}, [
+            makeElement("span", {style: {fontSize: "44px", marginBottom: "12px", display: "block"}}, "🎥"),
+            makeElement("button", {
+              className: "copy-prompt-btn",
+              onclick: () => this.loadVideoIntoPlayer(playerId, videoId)
+            }, "Play Video Demonstration")
+          ])
+        ])
+      ]));
+
+      children.push(makeElement("p", {className: "text-xs text-[var(--text-secondary)] italic opacity-80"},
+        `Active Feed Link: https://www.youtube.com/watch?v=${videoId}`
+      ));
+
+      return makeElement("div", {className: "video-editorial-block pb-10 border-b border-[var(--border-color)] last:border-0 last:pb-0 last:mb-0"}, children);
+    }
+}
