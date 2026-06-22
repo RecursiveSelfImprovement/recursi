@@ -1,0 +1,15 @@
+{
+  "meta": "This file is managed locally, LLMs should not edit this file",
+  "main": [
+    "src/PleasureAndPain.js"
+  ],
+  "local": [
+    "src/ModelLoader.js",
+    "src/Simple3dShapes.js"
+  ],
+  "library": [
+    "UITools.js",
+    "ThreeJSLoader.js"
+  ],
+  "thirdParty": []
+}
