@@ -1,11 +1,11 @@
 {
   "meta": "This file is managed locally, LLMs should not edit this file",
   "main": [
-    "src/PleasureAndPain.js"
+    "src/BulbAndButton.js"
   ],
   "local": [
     "src/ModelLoader.js",
-    "src/NeuronGrid.js"
+    "src/Simple3dShapes.js"
   ],
   "library": [
     "UITools.js",

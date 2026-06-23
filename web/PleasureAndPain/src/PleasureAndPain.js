@@ -17,6 +17,7 @@ class PleasureAndPain {
       this.meshes = [];
       this.loadedModel = null;
       this.sharedNeuronMaterial = null;
+      this.neuronGrid = null; // Instantiated on grid build
 
       // Active sequence state
       this.activeSequence = null;
@@ -287,8 +288,16 @@ class PleasureAndPain {
     }
 
   _clearSceneGeometry() {
-      ModelLoader.clearSceneGeometry(this.app, this.meshes, this.loadedModel);
-      this.loadedModel = null;
+      if (this.neuronGrid) {
+        this.neuronGrid.clear();
+      } else {
+        ModelLoader.clearSceneGeometry(this.app, this.meshes, this.loadedModel);
+      }
+      
+      if (this.loadedModel) {
+        this.app.remove(this.loadedModel);
+        this.loadedModel = null;
+      }
     }
 
   _generateSaturatedColor() {
@@ -396,6 +405,16 @@ class PleasureAndPain {
 
       const parentElement = env.container;
 
+      // Fix standalone screen fill constraint to prevent 0px canvas height collapse
+      if (parentElement === document.body) {
+        document.documentElement.style.height = '100%';
+        document.documentElement.style.width = '100%';
+        document.documentElement.style.margin = '0';
+        document.body.style.height = '100%';
+        document.body.style.width = '100%';
+        document.body.style.margin = '0';
+      }
+
       parentElement.style.position = 'relative';
       parentElement.style.width = '100%';
       parentElement.style.height = '100%';
@@ -463,18 +482,13 @@ class PleasureAndPain {
       const THREE = this.app.THREE;
       this.pointer = new THREE.Vector2();
 
-      // Fit camera ONCE at the initial network creation
       this._buildHexagonalGrid(true);
       this._setupUI();
 
-      // Hook up render-update frame callback to drive animations smoothly
-      const originalOnUpdate = this.app.onUpdateCallback;
       this.app.onUpdateCallback = () => {
-        if (originalOnUpdate) originalOnUpdate();
         this._updateAnimations();
       };
 
-      // Set up modular rendering that honors post-processing if active
       this.app.renderer.setAnimationLoop(() => {
         if (this.app.controls) this.app.controls.update();
         if (this.app.onUpdateCallback) this.app.onUpdateCallback();
@@ -515,19 +529,25 @@ class PleasureAndPain {
       this.cleanupHighlightSequence();
       this._clearSceneGeometry();
       
-      const opacity = 1.0 - this.gridParams.transparency;
+      if (!this.neuronGrid) {
+        this.neuronGrid = new NeuronGrid(this.app);
+      }
 
-      const result = Simple3dShapes.buildHexagonalGrid(
-        this.app,
+      console.log("[PleasureAndPain] Calling neuronGrid.build() with gridParams:", this.gridParams);
+
+      this.neuronGrid.build(
         this.gridParams.nx,
         this.gridParams.ny,
         this.gridParams.nz,
         this.gridParams.radius,
-        opacity
+        this.gridParams.transparency
       );
-      this.meshes.push(...result.meshes);
-      this.sharedNeuronMaterial = result.sharedMaterial;
-      this.bbox = result.bbox;
+
+      this.meshes = this.neuronGrid.meshes;
+      this.sharedNeuronMaterial = this.neuronGrid.sharedMaterial;
+      this.bbox = this.neuronGrid.bbox;
+
+      console.log("[PleasureAndPain] Grid build completed. Meshes synced:", this.meshes.length);
       
       // Initialize or restore neuron strengths
       this.meshes.forEach((m) => {
@@ -553,13 +573,21 @@ class PleasureAndPain {
       this._applyStrengthAndOpacity();
 
       if (adjustCamera) {
-        this._adjustCameraToFit(result.bbox);
+        console.log("[PleasureAndPain] Adjusting camera to fit bbox:", this.bbox);
+        this._adjustCameraToFit(this.bbox);
       }
     }
 
   _adjustCameraToFit(bbox) {
       const THREE = this.app.THREE;
       if (!bbox) return;
+
+      // Ensure the camera far clipping plane is large enough so that the grid is never clipped out
+      if (this.app.camera) {
+        this.app.camera.far = 1000;
+        this.app.camera.updateProjectionMatrix();
+      }
+
       const size = new THREE.Vector3();
       bbox.getSize(size);
       const maxDim = Math.max(size.x, size.y, size.z, 1.0);
@@ -628,21 +656,10 @@ class PleasureAndPain {
     }
 
   findAdjacentSpheres(targetMesh) {
-      const D = 0.16;
-      const minDistance = D * 0.85;
-      const maxDistance = D * 1.15;
-      const neighbors = [];
-      const targetPos = targetMesh.position;
-
-      this.meshes.forEach((mesh) => {
-        if (mesh !== targetMesh) {
-          const dist = targetPos.distanceTo(mesh.position);
-          if (dist >= minDistance && dist <= maxDistance) {
-            neighbors.push(mesh);
-          }
-        }
-      });
-      return neighbors;
+      if (this.neuronGrid) {
+        return this.neuronGrid.findAdjacentSpheres(targetMesh);
+      }
+      return [];
     }
 
   triggerHighlightSequence() {
@@ -827,16 +844,34 @@ class PleasureAndPain {
 
   _applyStrengthAndOpacity() {
       const baseOpacity = 1.0 - this.gridParams.transparency;
+      
+      // Update the shared material parameters once for all standard nodes
+      if (this.sharedNeuronMaterial) {
+        this.sharedNeuronMaterial.transparent = baseOpacity < 1.0;
+        this.sharedNeuronMaterial.opacity = baseOpacity;
+        this.sharedNeuronMaterial.needsUpdate = true;
+      }
+
       this.meshes.forEach((mesh) => {
         const strength = mesh.userData.strength !== undefined ? mesh.userData.strength : 1.0;
-        
+        const warmth = mesh.userData.warmth || 0;
+
         // Scale physical size is controlled by individual strength
         mesh.scale.setScalar(strength);
-        
-        // Custom material transparency represents opacity modified by individual strength
-        this._ensureUniqueMaterial(mesh);
-        mesh.material.transparent = true;
-        mesh.material.opacity = baseOpacity * strength;
+
+        // Only clone and create a unique material if custom properties are active
+        if (strength !== 1.0 || warmth > 0) {
+          this._ensureUniqueMaterial(mesh);
+          mesh.material.transparent = true;
+          mesh.material.opacity = baseOpacity * strength;
+        } else {
+          // Revert to shared material to avoid silent GPU/WebGL shader compile crashes
+          const oldMat = mesh.material;
+          if (oldMat !== this.sharedNeuronMaterial) {
+            mesh.material = this.sharedNeuronMaterial;
+            oldMat.dispose();
+          }
+        }
       });
     }
 
