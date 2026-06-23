@@ -17,25 +17,31 @@ class PleasureAndPain {
       this.meshes = [];
       this.loadedModel = null;
       this.sharedNeuronMaterial = null;
-      this.neuronGrid = null; // Instantiated on grid build
+      this.neuronGrid = null;
 
       // Active sequence state
       this.activeSequence = null;
 
-      // Toggle states
+      // Default states requested by user: uniform blue, randomized strength, bloom on by default
       this.colorsRandomized = false;
-      this.strengthRandomized = false;
-      this.bloomEnabled = false;
+      this.strengthRandomized = true;
+      this.bloomEnabled = true;
       this.composer = null;
 
-      // Default configuration
+      // Default configuration requested: 11x27x34, radius 0.05, transparency 0.75, count 10
       this.gridParams = {
-        nx: 10,
-        ny: 40,
-        nz: 30,
-        radius: 0.08,
-        transparency: 0.6
+        nx: 11,
+        ny: 27,
+        nz: 34,
+        radius: 0.05,
+        transparency: 0.75
       };
+
+      // External bulbs & buttons trackers
+      this.bulbInstances = [];
+      this.buttonInstances = [];
+      this.interactiveMeshes = [];
+      this.externalCount = 10;
     }
 
   
@@ -103,6 +109,26 @@ class PleasureAndPain {
       const sliderC = makeSliderRow('Length', 'nz', 1, 45, 1);
       const sliderRadius = makeSliderRow('Radius', 'radius', 0.01, 0.08, 0.01);
       const sliderTransparency = makeSliderRow('Transparency', 'transparency', 0.0, 0.95, 0.05);
+
+      // Slider for External Bulbs & Buttons along face boundaries
+      const valSpanExt = makeElement('span', { style: { float: 'right', fontWeight: 'bold', color: '#fff' } }, this.externalCount.toString());
+      const labelExt = makeElement('div', { style: { fontSize: '12px', color: '#ccc', marginBottom: '3px' } }, ['External Bulbs & Buttons', valSpanExt]);
+      const sliderExt = makeElement('input', {
+        type: 'range',
+        min: '0',
+        max: '30',
+        step: '1',
+        value: this.externalCount.toString(),
+        style: { width: '100%', marginBottom: '8px', accentColor: '#a9dfd1' }
+      });
+      sliderExt.oninput = (e) => {
+        const val = parseInt(e.target.value);
+        this.externalCount = val;
+        valSpanExt.textContent = e.target.value;
+        this._spawnExternalElements(this.externalCount);
+        feedback.textContent = `Spawned ${val} bulbs/buttons along network perimeter.`;
+      };
+      const sliderExtRow = makeElement('div', { style: { marginBottom: '4px' } }, [labelExt, sliderExt]);
 
       const btnHighlight = makeElement(
         'button',
@@ -195,46 +221,6 @@ class PleasureAndPain {
         this._toggleBloom(feedback);
       };
 
-      const dropZone = makeElement(
-        'div',
-        {
-          id: 'drop-zone',
-          style: {
-            border: '1px dashed #666',
-            borderRadius: '4px',
-            padding: '8px',
-            textAlign: 'center',
-            marginTop: '8px',
-            color: '#aaa',
-            fontSize: '11px',
-            background: '#2b2b2b',
-            cursor: 'pointer'
-          },
-        },
-        'Drop GLB to load custom mesh'
-      );
-
-      dropZone.ondragover = (event) => {
-        event.preventDefault();
-        dropZone.style.backgroundColor = '#383838';
-        dropZone.style.borderColor = '#888';
-      };
-      dropZone.ondragleave = () => {
-        dropZone.style.backgroundColor = '#2b2b2b';
-        dropZone.style.borderColor = '#666';
-      };
-      dropZone.ondrop = (event) => {
-        event.preventDefault();
-        dropZone.style.backgroundColor = '#2b2b2b';
-        dropZone.style.borderColor = '#666';
-        const file = event.dataTransfer.files[0];
-        if (file && file.name.toLowerCase().endsWith('.glb')) {
-          this._loadGLB(file, feedback);
-        } else {
-          feedback.textContent = 'Please drop a .glb file.';
-        }
-      };
-
       const content = makeElement('div', { style: { padding: '5px' } }, [
         totalNeuronsSpan,
         sliderA,
@@ -242,11 +228,11 @@ class PleasureAndPain {
         sliderC,
         sliderRadius,
         sliderTransparency,
+        sliderExtRow,
         btnHighlight,
         btnRandomize,
         btnRandomizeStrength,
         btnBloom,
-        dropZone,
         feedback,
       ]);
 
@@ -254,7 +240,7 @@ class PleasureAndPain {
         env: this.env,
         title: 'Pleasure & Pain Network',
         contentElement: content,
-        size: [270, 550],
+        size: [270, 500],
         position: [20, 40],
         onGeometryChange: (boxInstance, geometry) => {
           if (geometry && geometry.inner) {
@@ -288,6 +274,7 @@ class PleasureAndPain {
     }
 
   _clearSceneGeometry() {
+      this._clearExternalElements();
       if (this.neuronGrid) {
         this.neuronGrid.clear();
       } else {
@@ -351,6 +338,7 @@ class PleasureAndPain {
   destroy() {
       this.destroyed = true;
       this.cleanupHighlightSequence();
+      this._clearExternalElements();
 
       if (Array.isArray(this.cleanupFns)) {
         for (const cleanup of this.cleanupFns.splice(0)) {
@@ -400,12 +388,11 @@ class PleasureAndPain {
       this.env = env;
 
       if (!env || !env.container) {
-        throw new Error("[Basic3d] run() requires an environment object with a valid container.");
+        throw new Error("[PleasureAndPain] run() requires an environment object with a valid container.");
       }
 
       const parentElement = env.container;
 
-      // Fix standalone screen fill constraint to prevent 0px canvas height collapse
       if (parentElement === document.body) {
         document.documentElement.style.height = '100%';
         document.documentElement.style.width = '100%';
@@ -458,7 +445,7 @@ class PleasureAndPain {
         cameraPos: { x: 0.8, y: 1.5, z: 2.2 },
         enableControls: true,
         useThickLines: false,
-        useRaycaster: false,
+        useRaycaster: true,
         commonLoaders: true,
         hdrPath:
           'https://recursi.dev/thirdparty/three-js-r153/assets/textures/venice_sunset_1k.hdr',
@@ -484,6 +471,11 @@ class PleasureAndPain {
 
       this._buildHexagonalGrid(true);
       this._setupUI();
+      this._setupRaycasting();
+
+      if (this.bloomEnabled) {
+        this._setupBloomPostProcessing().catch(err => console.error(err));
+      }
 
       this.app.onUpdateCallback = () => {
         this._updateAnimations();
@@ -545,11 +537,19 @@ class PleasureAndPain {
 
       this.meshes = this.neuronGrid.meshes;
       this.sharedNeuronMaterial = this.neuronGrid.sharedMaterial;
-      this.bbox = this.neuronGrid.bbox;
+
+      // Center the bounding box metrics matching centered neuron coordinates
+      const THREE = this.app.THREE;
+      const rawBbox = this.neuronGrid.bbox;
+      const center = new THREE.Vector3();
+      rawBbox.getCenter(center);
+      
+      this.bbox = rawBbox.clone();
+      this.bbox.min.sub(center);
+      this.bbox.max.sub(center);
 
       console.log("[PleasureAndPain] Grid build completed. Meshes synced:", this.meshes.length);
       
-      // Initialize or restore neuron strengths
       this.meshes.forEach((m) => {
         if (this.strengthRandomized) {
           m.userData.strength = Math.random();
@@ -558,7 +558,6 @@ class PleasureAndPain {
         }
       });
 
-      // Keep colors randomized if currently toggled on
       if (this.colorsRandomized) {
         const colors = this.getThemeColors();
         this.meshes.forEach((m) => {
@@ -572,6 +571,8 @@ class PleasureAndPain {
 
       this._applyStrengthAndOpacity();
 
+      this._spawnExternalElements(this.externalCount);
+
       if (adjustCamera) {
         console.log("[PleasureAndPain] Adjusting camera to fit bbox:", this.bbox);
         this._adjustCameraToFit(this.bbox);
@@ -582,7 +583,6 @@ class PleasureAndPain {
       const THREE = this.app.THREE;
       if (!bbox) return;
 
-      // Ensure the camera far clipping plane is large enough so that the grid is never clipped out
       if (this.app.camera) {
         this.app.camera.far = 1000;
         this.app.camera.updateProjectionMatrix();
@@ -594,9 +594,9 @@ class PleasureAndPain {
 
       const fov = this.app.camera.fov * (Math.PI / 180);
       let cameraDistance = Math.abs(maxDim / 2 / Math.tan(fov / 2));
-      cameraDistance *= 1.6; // framing margin
+      cameraDistance *= 1.8;
 
-      this.app.camera.position.set(maxDim * 0.9, maxDim * 0.8, cameraDistance);
+      this.app.camera.position.set(maxDim * 1.0, maxDim * 0.9, cameraDistance);
       if (this.app.controls) {
         this.app.controls.target.set(0, 0, 0);
         this.app.controls.update();
@@ -643,7 +643,6 @@ class PleasureAndPain {
       }
 
       this.meshes.forEach((mesh) => {
-        // Only touch non-active sequence meshes
         const inActiveSeq = this.activeSequence && (
           mesh === this.activeSequence.centerSphere ||
           this.activeSequence.adjSpheres.includes(mesh)
@@ -664,40 +663,84 @@ class PleasureAndPain {
 
   triggerHighlightSequence() {
       if (this.meshes.length === 0) return;
-      this.cleanupHighlightSequence();
-
-      const THREE = this.app.THREE;
-      const centerSphere = this.meshes[Math.floor(Math.random() * this.meshes.length)];
-      const adjSpheres = this.findAdjacentSpheres(centerSphere);
-
-      this._ensureUniqueMaterial(centerSphere);
-      adjSpheres.forEach(m => this._ensureUniqueMaterial(m));
-
-      const centerBaseColor = centerSphere.material.color.clone();
-      const neighborBaseColors = adjSpheres.map(m => m.material.color.clone());
-      const baseOpacity = 1.0 - this.gridParams.transparency;
-
-      this.activeSequence = {
-        startTime: performance.now(),
-        centerSphere: centerSphere,
-        adjSpheres: adjSpheres,
-        centerBaseColor: centerBaseColor,
-        neighborBaseColors: neighborBaseColors,
-        baseOpacity: baseOpacity
-      };
+      const randomNeuron = this.meshes[Math.floor(Math.random() * this.meshes.length)];
+      this.triggerHighlightSequenceAtNeuron(randomNeuron);
     }
 
   _updateAnimations() {
+      const THREE = this.app.THREE;
+
+      // 1. Update button plungers
+      if (this.buttonInstances) {
+        for (const btn of this.buttonInstances) {
+          let targetY = 0.15;
+          if (btn.pressActive) {
+            targetY = 0.08;
+            if (Date.now() - btn.pressStartTime > 140) {
+              btn.pressActive = false;
+            }
+          }
+          if (btn.plungerMesh) {
+            btn.plungerMesh.position.y += (targetY - btn.plungerMesh.position.y) * 0.35;
+          }
+        }
+      }
+
+      // 2. Update bulb illuminations
+      if (this.bulbInstances) {
+        for (const bulb of this.bulbInstances) {
+          const maxIntensity = bulb.maxIntensity || 4.0;
+          const targetIntensity = bulb.isOn ? maxIntensity : 0.0;
+          const targetGlowOpacity = bulb.isOn ? 0.35 : 0.0;
+
+          if (bulb.pointLight) {
+            bulb.pointLight.intensity += (targetIntensity - bulb.pointLight.intensity) * 0.25;
+          }
+
+          // Core glow
+          if (bulb.coreMesh && bulb.coreMesh.material) {
+            const targetCoreIntensity = bulb.isOn ? 6.0 : 0.1;
+            if (bulb.coreMesh.material.emissiveIntensity !== undefined) {
+              bulb.coreMesh.material.emissiveIntensity += (targetCoreIntensity - bulb.coreMesh.material.emissiveIntensity) * 0.25;
+            }
+
+            const targetCoreColor = bulb.isOn ? bulb.color.clone().multiplyScalar(1.5) : bulb.color.clone().multiplyScalar(0.1);
+            if (bulb.coreMesh.material.emissive && bulb.coreMesh.material.emissive.lerp) {
+              bulb.coreMesh.material.emissive.lerp(targetCoreColor, 0.25);
+            }
+          }
+
+          // Bulb glass transparency & glow colors
+          if (bulb.glassMesh && bulb.glassMesh.material) {
+            const targetGlassEmissive = bulb.isOn ? 1.4 : 0.0;
+            if (bulb.glassMesh.material.emissiveIntensity !== undefined) {
+              bulb.glassMesh.material.emissiveIntensity += (targetGlassEmissive - bulb.glassMesh.material.emissiveIntensity) * 0.25;
+            }
+
+            const targetColor = bulb.isOn ? bulb.color : new THREE.Color(0x000000);
+            if (bulb.glassMesh.material.emissive && bulb.glassMesh.material.emissive.lerp) {
+              bulb.glassMesh.material.emissive.lerp(targetColor, 0.25);
+            }
+
+            bulb.glassMesh.material.transmission = bulb.isOn ? 0.25 : 0.95;
+          }
+
+          // Corona glow envelope
+          if (bulb.glowMesh && bulb.glowMesh.material) {
+            bulb.glowMesh.material.opacity += (targetGlowOpacity - bulb.glowMesh.material.opacity) * 0.15;
+          }
+        }
+      }
+
+      // 3. Highlight sequence update
       if (!this.activeSequence) return;
 
-      const THREE = this.app.THREE;
       const seq = this.activeSequence;
       const elapsed = (performance.now() - seq.startTime) / 1000;
 
       const yellowColor = new THREE.Color(0xffff00);
       const orangeColor = new THREE.Color(0xff6600);
 
-      // Phase 1: 0.0s to 1.0s -> Center sphere scales up and turns yellow with bright emissive glow
       if (elapsed <= 1.0) {
         const t = elapsed / 1.0;
         const scale = THREE.MathUtils.lerp(1.0, 2.2, t);
@@ -707,13 +750,11 @@ class PleasureAndPain {
         seq.centerSphere.material.opacity = THREE.MathUtils.lerp(seq.baseOpacity, 1.0, t);
         seq.centerSphere.material.transparent = seq.centerSphere.material.opacity < 1.0;
 
-        // Apply high emissive intensity for the bloom filter to catch
         if (seq.centerSphere.material.emissive) {
           seq.centerSphere.material.emissive.copy(yellowColor);
           seq.centerSphere.material.emissiveIntensity = THREE.MathUtils.lerp(0.0, 2.5, t);
         }
       }
-      // Phase 2: 1.0s to 2.5s -> Center sphere shrinks back down, neighbors become solid glowing orange
       else if (elapsed <= 2.5) {
         const tCenter = Math.min((elapsed - 1.0) / 0.5, 1.0);
         const scale = THREE.MathUtils.lerp(2.2, 1.0, tCenter);
@@ -740,7 +781,6 @@ class PleasureAndPain {
           }
         });
       }
-      // Phase 3: 2.5s to 4.0s -> Adjacent spheres fade smoothly back to original translucent state
       else if (elapsed <= 4.0) {
         const tFade = (elapsed - 2.5) / 1.5;
         seq.adjSpheres.forEach((m, idx) => {
@@ -770,7 +810,7 @@ class PleasureAndPain {
           seq.centerSphere.material.transparent = seq.baseOpacity < 1.0;
 
           if (seq.centerSphere.material.emissive) {
-            seq.centerSphere.material.emissive.setHex(0x000000);
+            seq.centerSphere.material.emissive.setHex ? seq.centerSphere.material.emissive.setHex(0x000000) : null;
             seq.centerSphere.material.emissiveIntensity = 0.0;
           }
         }
@@ -783,7 +823,7 @@ class PleasureAndPain {
             m.material.transparent = seq.baseOpacity < 1.0;
 
             if (m.material.emissive) {
-              m.material.emissive.setHex(0x000000);
+              m.material.emissive.setHex ? m.material.emissive.setHex(0x000000) : null;
               m.material.emissiveIntensity = 0.0;
             }
           });
@@ -845,7 +885,6 @@ class PleasureAndPain {
   _applyStrengthAndOpacity() {
       const baseOpacity = 1.0 - this.gridParams.transparency;
       
-      // Update the shared material parameters once for all standard nodes
       if (this.sharedNeuronMaterial) {
         this.sharedNeuronMaterial.transparent = baseOpacity < 1.0;
         this.sharedNeuronMaterial.opacity = baseOpacity;
@@ -856,16 +895,13 @@ class PleasureAndPain {
         const strength = mesh.userData.strength !== undefined ? mesh.userData.strength : 1.0;
         const warmth = mesh.userData.warmth || 0;
 
-        // Scale physical size is controlled by individual strength
         mesh.scale.setScalar(strength);
 
-        // Only clone and create a unique material if custom properties are active
         if (strength !== 1.0 || warmth > 0) {
           this._ensureUniqueMaterial(mesh);
           mesh.material.transparent = true;
           mesh.material.opacity = baseOpacity * strength;
         } else {
-          // Revert to shared material to avoid silent GPU/WebGL shader compile crashes
           const oldMat = mesh.material;
           if (oldMat !== this.sharedNeuronMaterial) {
             mesh.material = this.sharedNeuronMaterial;
@@ -898,12 +934,11 @@ class PleasureAndPain {
       const renderPass = new RenderPass(this.app.scene, this.app.camera);
       composer.addPass(renderPass);
 
-      // Bloom Pass Parameters: (resolution, strength, radius, threshold)
       const bloomPass = new UnrealBloomPass(
         new this.app.THREE.Vector2(width, height),
-        1.6,  // strength
-        0.4,  // radius
-        0.05  // low threshold to capture emissive values easily
+        1.6,
+        0.4,
+        0.05
       );
       composer.addPass(bloomPass);
       this.composer = composer;
@@ -927,5 +962,311 @@ class PleasureAndPain {
       } else {
         feedbackElement.textContent = 'Glow effect deactivated.';
       }
+    }
+
+  _clearExternalElements() {
+      if (this.bulbInstances) {
+        for (const bulb of this.bulbInstances) {
+          this.app.scene.remove(bulb.group);
+          bulb.group.traverse((child) => {
+            if (child.isMesh) {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                else child.material.dispose();
+              }
+            }
+          });
+        }
+      }
+      this.bulbInstances = [];
+
+      if (this.buttonInstances) {
+        for (const btn of this.buttonInstances) {
+          this.app.scene.remove(btn.group);
+          btn.group.traverse((child) => {
+            if (child.isMesh) {
+              if (child.geometry) child.geometry.dispose();
+              if (child.material) {
+                if (Array.isArray(child.material)) child.material.forEach(m => m.dispose());
+                else child.material.dispose();
+              }
+            }
+          });
+        }
+      }
+      this.buttonInstances = [];
+      this.interactiveMeshes = [];
+    }
+
+  _spawnExternalElements(count) {
+      this._clearExternalElements();
+      if (!this.bbox) return;
+
+      const THREE = this.app.THREE;
+      const min = this.bbox.min;
+      const max = this.bbox.max;
+
+      const faces = ['left', 'right', 'top', 'bottom', 'front', 'back'];
+      const themeColors = this.getThemeColors();
+
+      const numToSpawn = Math.max(0, count);
+
+      for (let i = 0; i < numToSpawn; i++) {
+        const isBulb = Math.random() > 0.5;
+        const face = faces[Math.floor(Math.random() * faces.length)];
+        
+        let x = 0, y = 0, z = 0;
+        let orientation = 'top';
+        const margin = 0.22;
+
+        // Position bases exactly on the boundary plane faces of centered grid
+        switch (face) {
+          case 'left':
+            x = min.x;
+            y = this._getRandomInRange(min.y, max.y, margin);
+            z = this._getRandomInRange(min.z, max.z, margin);
+            orientation = 'left';
+            break;
+          case 'right':
+            x = max.x;
+            y = this._getRandomInRange(min.y, max.y, margin);
+            z = this._getRandomInRange(min.z, max.z, margin);
+            orientation = 'right';
+            break;
+          case 'top':
+            x = this._getRandomInRange(min.x, max.x, margin);
+            y = max.y;
+            z = this._getRandomInRange(min.z, max.z, margin);
+            orientation = 'top';
+            break;
+          case 'bottom':
+            x = this._getRandomInRange(min.x, max.x, margin);
+            y = min.y;
+            z = this._getRandomInRange(min.z, max.z, margin);
+            orientation = 'bottom';
+            break;
+          case 'front':
+            x = this._getRandomInRange(min.x, max.x, margin);
+            y = this._getRandomInRange(min.y, max.y, margin);
+            z = max.z;
+            orientation = 'front';
+            break;
+          case 'back':
+            x = this._getRandomInRange(min.x, max.x, margin);
+            y = this._getRandomInRange(min.y, max.y, margin);
+            z = min.z;
+            orientation = 'back';
+            break;
+        }
+
+        const colorHex = themeColors[Math.floor(Math.random() * themeColors.length)].getHex();
+        const scale = 0.5 + Math.random() * 0.4;
+
+        if (isBulb) {
+          const bulb = Simple3dShapes.createBulb(this.app, {
+            color: colorHex,
+            orientation,
+            position: { x, y, z },
+            scale,
+            onClick: (isOn) => {
+              this._playSwitchSound(isOn);
+            }
+          });
+          this._registerBulbInstance(bulb);
+        } else {
+          const btn = Simple3dShapes.createButton(this.app, {
+            color: colorHex,
+            orientation,
+            position: { x, y, z },
+            scale,
+            onClick: () => {
+              this._playClickSound();
+              this._toggleRandomBulb();
+              this.triggerHighlightSequence();
+            }
+          });
+          this._registerButtonInstance(btn);
+        }
+      }
+    }
+
+  _getRandomInRange(minVal, maxVal, margin) {
+      if (maxVal - minVal < margin * 2) {
+        return (minVal + maxVal) / 2;
+      }
+      return minVal + margin + Math.random() * (maxVal - minVal - margin * 2);
+    }
+
+  _registerBulbInstance(bulb) {
+      bulb.isOn = false;
+      bulb.maxIntensity = 4.0;
+      this.bulbInstances.push(bulb);
+      
+      bulb.group.traverse((child) => {
+        if (child.isMesh) {
+          this.interactiveMeshes.push(child);
+        }
+      });
+    }
+
+  _registerButtonInstance(btn) {
+      btn.pressActive = false;
+      btn.pressStartTime = 0;
+      this.buttonInstances.push(btn);
+      
+      btn.group.traverse((child) => {
+        if (child.isMesh) {
+          this.interactiveMeshes.push(child);
+        }
+      });
+    }
+
+  _toggleRandomBulb() {
+      if (this.bulbInstances.length > 0) {
+        const randomBulb = this.bulbInstances[Math.floor(Math.random() * this.bulbInstances.length)];
+        randomBulb.isOn = !randomBulb.isOn;
+        this._playSwitchSound(randomBulb.isOn);
+      }
+    }
+
+  triggerHighlightSequenceAtNeuron(centerSphere) {
+      if (!centerSphere) return;
+      this.cleanupHighlightSequence();
+
+      const THREE = this.app.THREE;
+      const adjSpheres = this.findAdjacentSpheres(centerSphere);
+
+      this._ensureUniqueMaterial(centerSphere);
+      adjSpheres.forEach(m => this._ensureUniqueMaterial(m));
+
+      const centerBaseColor = centerSphere.material.color.clone();
+      const neighborBaseColors = adjSpheres.map(m => m.material.color.clone());
+      const baseOpacity = 1.0 - this.gridParams.transparency;
+
+      this.activeSequence = {
+        startTime: performance.now(),
+        centerSphere: centerSphere,
+        adjSpheres: adjSpheres,
+        centerBaseColor: centerBaseColor,
+        neighborBaseColors: neighborBaseColors,
+        baseOpacity: baseOpacity
+      };
+    }
+
+  _setupRaycasting() {
+      const THREE = this.app.THREE;
+      
+      const onPointerDown = (event) => {
+        if (!this.app || !this.app.renderer || !this.app.camera) return;
+        const rect = this.app.renderer.domElement.getBoundingClientRect();
+        const x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+        const y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+        const raycaster = new THREE.Raycaster();
+        raycaster.setFromCamera(new THREE.Vector2(x, y), this.app.camera);
+
+        const intersects = raycaster.intersectObjects(this.app.scene.children, true);
+        if (intersects.length > 0) {
+          const clickedObj = intersects[0].object;
+
+          // 1. Detect active Bulb clicks
+          for (const bulb of this.bulbInstances) {
+            let matches = false;
+            clickedObj.traverseAncestors((ancestor) => {
+              if (ancestor === bulb.group) matches = true;
+            });
+            if (clickedObj === bulb.glassMesh || clickedObj === bulb.coreMesh) {
+              matches = true;
+            }
+            if (matches) {
+              this._toggleBulbInstance(bulb);
+              return;
+            }
+          }
+
+          // 2. Detect active Button clicks
+          for (const btn of this.buttonInstances) {
+            let matches = false;
+            clickedObj.traverseAncestors((ancestor) => {
+              if (ancestor === btn.group) matches = true;
+            });
+            if (clickedObj === btn.plungerMesh) {
+              matches = true;
+            }
+            if (matches) {
+              this._pressButtonInstance(btn);
+              return;
+            }
+          }
+
+          // 3. Detect grid neurons
+          if (this.meshes.includes(clickedObj)) {
+            this.triggerHighlightSequenceAtNeuron(clickedObj);
+          }
+        }
+      };
+
+      const domElement = this.app.renderer.domElement;
+      domElement.addEventListener('pointerdown', onPointerDown);
+
+      this.cleanupFns.push(() => {
+        domElement.removeEventListener('pointerdown', onPointerDown);
+      });
+    }
+
+  _toggleBulbInstance(bulb) {
+      bulb.isOn = !bulb.isOn;
+      this._playSwitchSound(bulb.isOn);
+      if (typeof bulb.onClick === 'function') {
+        bulb.onClick(bulb.isOn);
+      }
+    }
+
+  _pressButtonInstance(btn) {
+      btn.pressActive = true;
+      btn.pressStartTime = Date.now();
+      this._playClickSound();
+      if (typeof btn.onClick === 'function') {
+        btn.onClick();
+      }
+    }
+
+  _playClickSound() {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(160, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+        gain.gain.setValueAtTime(0.12, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.08);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.08);
+      } catch (e) {}
+    }
+
+  _playSwitchSound(state) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const ctx = new AudioContext();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(state ? 750 : 380, ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+        gain.gain.setValueAtTime(0.06, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.06);
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.06);
+      } catch (e) {}
     }
 }

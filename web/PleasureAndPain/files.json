@@ -4,6 +4,7 @@
     "src/PleasureAndPain.js"
   ],
   "local": [
+    "../BulbAndButton/src/Simple3dShapes.js",
     "src/ModelLoader.js",
     "src/NeuronGrid.js"
   ],
