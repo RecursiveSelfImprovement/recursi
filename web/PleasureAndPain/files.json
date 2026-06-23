@@ -5,7 +5,10 @@
   ],
   "local": [
     "../BulbAndButton/src/Simple3dShapes.js",
+    "src/ExternalDeviceManager.js",
+    "src/GridWalker.js",
     "src/ModelLoader.js",
+    "src/NetworkControlsUI.js",
     "src/NeuronGrid.js"
   ],
   "library": [
