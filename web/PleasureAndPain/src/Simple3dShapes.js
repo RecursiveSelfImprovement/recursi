@@ -3,11 +3,12 @@ class Simple3dShapes {
 
   
 
-  static buildHexagonalGrid(app, nx, ny, nz, radius, spacingFactor = 1.0, opacity = 0.4) {
+  static buildHexagonalGrid(app, nx, ny, nz, radius, opacity = 0.4) {
       const THREE = app.THREE;
       const meshes = [];
 
-      const D = 2 * radius * spacingFactor;
+      // Fixed center-to-center spacing for the neuron grid layout
+      const D = 0.16;
 
       const s_x = D;
       const s_y = D * Math.sqrt(3) / 2;
@@ -36,7 +37,7 @@ class Simple3dShapes {
       const center = new THREE.Vector3();
       bbox.getCenter(center);
 
-      // Saturated vibrant bright blue
+      // Saturated vibrant bright blue for standard state
       const vibrantBlue = new THREE.Color(0x0055ff);
       
       const sphereGeo = new THREE.SphereGeometry(radius, 10, 8);

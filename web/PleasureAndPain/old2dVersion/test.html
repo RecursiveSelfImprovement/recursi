@@ -1,0 +1,41 @@
+<!DOCTYPE HTML>
+<html>
+  <head>
+    <style>
+      body {
+        margin: 0px;
+        padding: 0px;
+      }
+    </style>
+  </head>
+  <body>
+    <canvas id="myCanvas" width="800" height="600"></canvas>
+    <script>
+      var canvas = document.getElementById('myCanvas');
+      var context = canvas.getContext('2d');
+      var w = 800
+      var h = 600
+
+      var colors = ["#ff0", "#00f", "#ff0", "#ffd", "#dfb", "#dc9", "#f05", "#faf", "#aff", "#af8", "#9f3", "#fd8"]
+
+      function timerFunc () {
+        for(var i=0; i<20; i++) {
+          var centerX = Math.floor(Math.random()*800);
+          var centerY = Math.floor(Math.random()*600);
+          var radius = Math.floor(Math.random()*20) + 4;
+
+          context.beginPath();
+          context.arc(centerX, centerY, radius, 0, 2 * Math.PI, false);
+          context.fillStyle = colors[Math.floor(Math.random()*12)];
+          context.fill();
+          context.lineWidth = 2;
+          context.strokeStyle = colors[Math.floor(Math.random()*12)];;
+          context.stroke();
+        }
+      setTimeout(timerFunc, 40)
+      }
+
+  timerFunc()
+    </script>
+  </body>
+</html>

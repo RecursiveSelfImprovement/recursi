@@ -16,10 +16,16 @@ class PleasureAndPain {
       this.app = null;
       this.meshes = [];
       this.loadedModel = null;
-      this.sharedSphereMaterial = null;
+      this.sharedNeuronMaterial = null;
 
       // Active sequence state
       this.activeSequence = null;
+
+      // Toggle states
+      this.colorsRandomized = false;
+      this.strengthRandomized = false;
+      this.bloomEnabled = false;
+      this.composer = null;
 
       // Default configuration
       this.gridParams = {
@@ -27,23 +33,13 @@ class PleasureAndPain {
         ny: 40,
         nz: 30,
         radius: 0.08,
-        spacingFactor: 1.0,
-        transparency: 0.4
+        transparency: 0.6
       };
     }
 
   
 
-  _assignColorsRandomly() {
-      const colors = this.getThemeColors();
-      this.meshes.forEach((m) => {
-        if (m.userData.locked !== true) {
-          const randomColor = colors[Math.floor(Math.random() * colors.length)];
-          this._ensureUniqueMaterial(m);
-          m.material.color.copy(randomColor);
-        }
-      });
-    }
+  
 
   _setupUI() {
       const feedback = makeElement(
@@ -52,7 +48,7 @@ class PleasureAndPain {
         'Ready.'
       );
 
-      const totalSpheresSpan = makeElement('div', {
+      const totalNeuronsSpan = makeElement('div', {
         style: {
           fontSize: '12px',
           fontWeight: 'bold',
@@ -63,20 +59,20 @@ class PleasureAndPain {
           padding: '4px',
           borderRadius: '4px'
         }
-      }, `Total Spheres: ${this.meshes.length}`);
+      }, `Total Neurons: ${this.meshes.length}`);
 
       let rebuildTimeout = null;
-      const triggerRebuild = (adjustCamera = false) => {
+      const triggerRebuild = () => {
         if (rebuildTimeout) clearTimeout(rebuildTimeout);
         feedback.textContent = 'Calculating...';
         rebuildTimeout = setTimeout(() => {
-          this._buildHexagonalGrid(adjustCamera);
-          totalSpheresSpan.textContent = `Total Spheres: ${this.meshes.length}`;
-          feedback.textContent = `Grid rebuilt.`;
+          this._buildHexagonalGrid(false);
+          totalNeuronsSpan.textContent = `Total Neurons: ${this.meshes.length}`;
+          feedback.textContent = `Network rebuilt.`;
         }, 120);
       };
 
-      const makeSliderRow = (labelText, key, min, max, step, forceCameraRefit = false) => {
+      const makeSliderRow = (labelText, key, min, max, step) => {
         const valSpan = makeElement('span', { style: { float: 'right', fontWeight: 'bold', color: '#fff' } }, this.gridParams[key].toString());
         const label = makeElement('div', { style: { fontSize: '12px', color: '#ccc', marginBottom: '3px' } }, [labelText, valSpan]);
         const slider = makeElement('input', {
@@ -93,21 +89,19 @@ class PleasureAndPain {
           valSpan.textContent = e.target.value;
 
           if (key === 'transparency') {
-            this._updateSphereOpacity();
+            this._updateNeuronOpacity();
           } else {
-            triggerRebuild(forceCameraRefit);
+            triggerRebuild();
           }
         };
         return makeElement('div', { style: { marginBottom: '4px' } }, [label, slider]);
       };
 
-      // Camera adjusts to fit ONLY when counts (nx, ny, nz) change!
-      const sliderA = makeSliderRow('Spheres A (X)', 'nx', 1, 40, 1, true);
-      const sliderB = makeSliderRow('Spheres B (Y)', 'ny', 1, 50, 1, true);
-      const sliderC = makeSliderRow('Spheres C (Z)', 'nz', 1, 45, 1, true);
-      const sliderRadius = makeSliderRow('Sphere Radius', 'radius', 0.02, 0.4, 0.01, false);
-      const sliderSpacing = makeSliderRow('Spacing Factor', 'spacingFactor', 0.5, 2.0, 0.05, false);
-      const sliderTransparency = makeSliderRow('Transparency (Opacity)', 'transparency', 0.05, 1.0, 0.05, false);
+      const sliderA = makeSliderRow('Width', 'nx', 1, 40, 1);
+      const sliderB = makeSliderRow('Height', 'ny', 1, 50, 1);
+      const sliderC = makeSliderRow('Length', 'nz', 1, 45, 1);
+      const sliderRadius = makeSliderRow('Radius', 'radius', 0.01, 0.08, 0.01);
+      const sliderTransparency = makeSliderRow('Transparency', 'transparency', 0.0, 0.95, 0.05);
 
       const btnHighlight = makeElement(
         'button',
@@ -126,12 +120,12 @@ class PleasureAndPain {
             fontSize: '12px'
           },
         },
-        '🔥 Highlight Sequence'
+        '🔥 Highlight Path'
       );
       btnHighlight.onclick = () => {
         this.triggerHighlightSequence();
         const count = this.activeSequence ? this.activeSequence.adjSpheres.length : 0;
-        feedback.textContent = `Highlighted sphere with ${count} neighbors.`;
+        feedback.textContent = `Highlighted path starting at neuron with ${count} neighbors.`;
       };
 
       const btnRandomize = makeElement(
@@ -150,11 +144,54 @@ class PleasureAndPain {
             fontSize: '11px'
           },
         },
-        'Randomize Colors'
+        'Toggle Random Colors'
       );
       btnRandomize.onclick = () => {
-        this._assignColorsRandomly();
-        feedback.textContent = 'Vibrant randomized colors applied.';
+        this._toggleRandomColors(feedback);
+      };
+
+      const btnRandomizeStrength = makeElement(
+        'button',
+        {
+          style: {
+            display: 'block',
+            margin: '4px auto',
+            width: '100%',
+            padding: '6px',
+            background: '#444',
+            border: '1px solid #555',
+            borderRadius: '4px',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: '11px'
+          },
+        },
+        'Toggle Random Strength'
+      );
+      btnRandomizeStrength.onclick = () => {
+        this._toggleRandomStrength(feedback);
+      };
+
+      const btnBloom = makeElement(
+        'button',
+        {
+          style: {
+            display: 'block',
+            margin: '4px auto',
+            width: '100%',
+            padding: '6px',
+            background: '#444',
+            border: '1px solid #555',
+            borderRadius: '4px',
+            color: '#fff',
+            cursor: 'pointer',
+            fontSize: '11px'
+          },
+        },
+        'Toggle Glow Effect'
+      );
+      btnBloom.onclick = () => {
+        this._toggleBloom(feedback);
       };
 
       const dropZone = makeElement(
@@ -198,24 +235,25 @@ class PleasureAndPain {
       };
 
       const content = makeElement('div', { style: { padding: '5px' } }, [
-        totalSpheresSpan,
+        totalNeuronsSpan,
         sliderA,
         sliderB,
         sliderC,
         sliderRadius,
-        sliderSpacing,
         sliderTransparency,
         btnHighlight,
         btnRandomize,
+        btnRandomizeStrength,
+        btnBloom,
         dropZone,
         feedback,
       ]);
 
       this.controlsDialog = UITools.makeDialog({
         env: this.env,
-        title: 'Hexagonal Close Packing',
+        title: 'Pleasure & Pain Network',
         contentElement: content,
-        size: [270, 520],
+        size: [270, 550],
         position: [20, 40],
         onGeometryChange: (boxInstance, geometry) => {
           if (geometry && geometry.inner) {
@@ -285,7 +323,7 @@ class PleasureAndPain {
 
         const oldMaterial = object.material;
         object.material = newMaterial;
-        if (oldMaterial && oldMaterial !== this.sharedSphereMaterial) {
+        if (oldMaterial && oldMaterial !== this.sharedNeuronMaterial) {
           oldMaterial.dispose();
         }
       }
@@ -425,7 +463,7 @@ class PleasureAndPain {
       const THREE = this.app.THREE;
       this.pointer = new THREE.Vector2();
 
-      // Fit camera on initial build
+      // Fit camera ONCE at the initial network creation
       this._buildHexagonalGrid(true);
       this._setupUI();
 
@@ -435,6 +473,18 @@ class PleasureAndPain {
         if (originalOnUpdate) originalOnUpdate();
         this._updateAnimations();
       };
+
+      // Set up modular rendering that honors post-processing if active
+      this.app.renderer.setAnimationLoop(() => {
+        if (this.app.controls) this.app.controls.update();
+        if (this.app.onUpdateCallback) this.app.onUpdateCallback();
+
+        if (this.bloomEnabled && this.composer) {
+          this.composer.render();
+        } else {
+          this.app.renderer.render(this.app.scene, this.app.camera);
+        }
+      });
 
       if (env && typeof env.requestKeystrokeControl === 'function') {
         env.requestKeystrokeControl((active) => {
@@ -454,6 +504,9 @@ class PleasureAndPain {
       if (this.app && typeof this.app.resize === 'function') {
         this.app.resize(width, height);
       }
+      if (this.composer) {
+        this.composer.setSize(width, height);
+      }
     }
 
   
@@ -462,19 +515,43 @@ class PleasureAndPain {
       this.cleanupHighlightSequence();
       this._clearSceneGeometry();
       
+      const opacity = 1.0 - this.gridParams.transparency;
+
       const result = Simple3dShapes.buildHexagonalGrid(
         this.app,
         this.gridParams.nx,
         this.gridParams.ny,
         this.gridParams.nz,
         this.gridParams.radius,
-        this.gridParams.spacingFactor,
-        this.gridParams.transparency
+        opacity
       );
       this.meshes.push(...result.meshes);
-      this.sharedSphereMaterial = result.sharedMaterial;
+      this.sharedNeuronMaterial = result.sharedMaterial;
       this.bbox = result.bbox;
       
+      // Initialize or restore neuron strengths
+      this.meshes.forEach((m) => {
+        if (this.strengthRandomized) {
+          m.userData.strength = Math.random();
+        } else {
+          m.userData.strength = 1.0;
+        }
+      });
+
+      // Keep colors randomized if currently toggled on
+      if (this.colorsRandomized) {
+        const colors = this.getThemeColors();
+        this.meshes.forEach((m) => {
+          if (m.userData.locked !== true) {
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            this._ensureUniqueMaterial(m);
+            m.material.color.copy(randomColor);
+          }
+        });
+      }
+
+      this._applyStrengthAndOpacity();
+
       if (adjustCamera) {
         this._adjustCameraToFit(result.bbox);
       }
@@ -499,15 +576,14 @@ class PleasureAndPain {
     }
 
   _ensureUniqueMaterial(mesh) {
-      if (mesh.material === this.sharedSphereMaterial) {
-        mesh.material = this.sharedSphereMaterial.clone();
+      if (mesh.material === this.sharedNeuronMaterial) {
+        mesh.material = this.sharedNeuronMaterial.clone();
       }
     }
 
   getAdjacentSpheres(targetMesh) {
-      // Find neighboring spheres in close-packed distance threshold
-      const D = 2 * this.gridParams.radius * this.gridParams.spacingFactor;
-      const tolerance = D * 1.15; // slightly larger for floating point tolerance
+      const D = 0.16;
+      const tolerance = D * 1.15;
       const neighbors = [];
       const targetPos = targetMesh.position;
 
@@ -552,8 +628,7 @@ class PleasureAndPain {
     }
 
   findAdjacentSpheres(targetMesh) {
-      const D = 2 * this.gridParams.radius * this.gridParams.spacingFactor;
-      // Define a tight range to find touching neighbors in the HCP crystal structure
+      const D = 0.16;
       const minDistance = D * 0.85;
       const maxDistance = D * 1.15;
       const neighbors = [];
@@ -578,13 +653,12 @@ class PleasureAndPain {
       const centerSphere = this.meshes[Math.floor(Math.random() * this.meshes.length)];
       const adjSpheres = this.findAdjacentSpheres(centerSphere);
 
-      // Make sure all target meshes have unique cloned materials to avoid affecting other spheres
       this._ensureUniqueMaterial(centerSphere);
       adjSpheres.forEach(m => this._ensureUniqueMaterial(m));
 
-      // Save initial state so we can restore perfectly later
       const centerBaseColor = centerSphere.material.color.clone();
       const neighborBaseColors = adjSpheres.map(m => m.material.color.clone());
+      const baseOpacity = 1.0 - this.gridParams.transparency;
 
       this.activeSequence = {
         startTime: performance.now(),
@@ -592,7 +666,7 @@ class PleasureAndPain {
         adjSpheres: adjSpheres,
         centerBaseColor: centerBaseColor,
         neighborBaseColors: neighborBaseColors,
-        baseOpacity: this.gridParams.transparency
+        baseOpacity: baseOpacity
       };
     }
 
@@ -601,49 +675,68 @@ class PleasureAndPain {
 
       const THREE = this.app.THREE;
       const seq = this.activeSequence;
-      const elapsed = (performance.now() - seq.startTime) / 1000; // in seconds
+      const elapsed = (performance.now() - seq.startTime) / 1000;
 
-      // Phase 1: 0.0s to 1.0s -> Center sphere scales up and turns yellow
+      const yellowColor = new THREE.Color(0xffff00);
+      const orangeColor = new THREE.Color(0xff6600);
+
+      // Phase 1: 0.0s to 1.0s -> Center sphere scales up and turns yellow with bright emissive glow
       if (elapsed <= 1.0) {
         const t = elapsed / 1.0;
         const scale = THREE.MathUtils.lerp(1.0, 2.2, t);
         seq.centerSphere.scale.setScalar(scale);
 
-        seq.centerSphere.material.color.lerpColors(seq.centerBaseColor, new THREE.Color(0xffff00), t);
+        seq.centerSphere.material.color.lerpColors(seq.centerBaseColor, yellowColor, t);
         seq.centerSphere.material.opacity = THREE.MathUtils.lerp(seq.baseOpacity, 1.0, t);
         seq.centerSphere.material.transparent = seq.centerSphere.material.opacity < 1.0;
+
+        // Apply high emissive intensity for the bloom filter to catch
+        if (seq.centerSphere.material.emissive) {
+          seq.centerSphere.material.emissive.copy(yellowColor);
+          seq.centerSphere.material.emissiveIntensity = THREE.MathUtils.lerp(0.0, 2.5, t);
+        }
       }
-      // Phase 2: 1.0s to 2.5s -> Center sphere shrinks back down, neighbors become solid orange
+      // Phase 2: 1.0s to 2.5s -> Center sphere shrinks back down, neighbors become solid glowing orange
       else if (elapsed <= 2.5) {
-        // 1. Restore center sphere
-        const tCenter = Math.min((elapsed - 1.0) / 0.5, 1.0); // complete center transition in 0.5s
+        const tCenter = Math.min((elapsed - 1.0) / 0.5, 1.0);
         const scale = THREE.MathUtils.lerp(2.2, 1.0, tCenter);
         seq.centerSphere.scale.setScalar(scale);
 
-        seq.centerSphere.material.color.lerpColors(new THREE.Color(0xffff00), seq.centerBaseColor, tCenter);
+        seq.centerSphere.material.color.lerpColors(yellowColor, seq.centerBaseColor, tCenter);
         seq.centerSphere.material.opacity = THREE.MathUtils.lerp(1.0, seq.baseOpacity, tCenter);
         seq.centerSphere.material.transparent = seq.centerSphere.material.opacity < 1.0;
 
-        // 2. Turn adjacent spheres orange and opaque
-        const tAdj = Math.min((elapsed - 1.0) / 0.4, 1.0); // complete neighbor fade-in in 0.4s
+        if (seq.centerSphere.material.emissive) {
+          seq.centerSphere.material.emissiveIntensity = THREE.MathUtils.lerp(2.5, 0.0, tCenter);
+        }
+
+        const tAdj = Math.min((elapsed - 1.0) / 0.4, 1.0);
         seq.adjSpheres.forEach((m, idx) => {
           const originalColor = seq.neighborBaseColors[idx];
-          m.material.color.lerpColors(originalColor, new THREE.Color(0xff6600), tAdj);
+          m.material.color.lerpColors(originalColor, orangeColor, tAdj);
           m.material.opacity = THREE.MathUtils.lerp(seq.baseOpacity, 1.0, tAdj);
           m.material.transparent = m.material.opacity < 1.0;
+
+          if (m.material.emissive) {
+            m.material.emissive.copy(orangeColor);
+            m.material.emissiveIntensity = THREE.MathUtils.lerp(0.0, 2.0, tAdj);
+          }
         });
       }
       // Phase 3: 2.5s to 4.0s -> Adjacent spheres fade smoothly back to original translucent state
       else if (elapsed <= 4.0) {
-        const tFade = (elapsed - 2.5) / 1.5; // smooth 1.5s fade-out
+        const tFade = (elapsed - 2.5) / 1.5;
         seq.adjSpheres.forEach((m, idx) => {
           const originalColor = seq.neighborBaseColors[idx];
-          m.material.color.lerpColors(new THREE.Color(0xff6600), originalColor, tFade);
+          m.material.color.lerpColors(orangeColor, originalColor, tFade);
           m.material.opacity = THREE.MathUtils.lerp(1.0, seq.baseOpacity, tFade);
           m.material.transparent = m.material.opacity < 1.0;
+
+          if (m.material.emissive) {
+            m.material.emissiveIntensity = THREE.MathUtils.lerp(2.0, 0.0, tFade);
+          }
         });
       }
-      // Sequence completed
       else {
         this.cleanupHighlightSequence();
       }
@@ -653,25 +746,151 @@ class PleasureAndPain {
       if (this.activeSequence) {
         const seq = this.activeSequence;
 
-        // Restore center
         if (seq.centerSphere) {
           seq.centerSphere.scale.setScalar(1.0);
           seq.centerSphere.material.color.copy(seq.centerBaseColor);
           seq.centerSphere.material.opacity = seq.baseOpacity;
           seq.centerSphere.material.transparent = seq.baseOpacity < 1.0;
+
+          if (seq.centerSphere.material.emissive) {
+            seq.centerSphere.material.emissive.setHex(0x000000);
+            seq.centerSphere.material.emissiveIntensity = 0.0;
+          }
         }
 
-        // Restore neighbors
         if (seq.adjSpheres) {
           seq.adjSpheres.forEach((m, idx) => {
             const originalColor = seq.neighborBaseColors[idx];
             m.material.color.copy(originalColor);
             m.material.opacity = seq.baseOpacity;
             m.material.transparent = seq.baseOpacity < 1.0;
+
+            if (m.material.emissive) {
+              m.material.emissive.setHex(0x000000);
+              m.material.emissiveIntensity = 0.0;
+            }
           });
         }
 
         this.activeSequence = null;
+      }
+    }
+
+  _toggleRandomColors(feedback) {
+      const THREE = this.app.THREE;
+      this.colorsRandomized = !this.colorsRandomized;
+
+      if (this.colorsRandomized) {
+        const colors = this.getThemeColors();
+        this.meshes.forEach((m) => {
+          if (m.userData.locked !== true) {
+            const randomColor = colors[Math.floor(Math.random() * colors.length)];
+            this._ensureUniqueMaterial(m);
+            m.material.color.copy(randomColor);
+          }
+        });
+        feedback.textContent = 'Randomized neuron colors applied.';
+      } else {
+        const defaultBlue = new THREE.Color(0x0055ff);
+        this.meshes.forEach((m) => {
+          if (m.userData.locked !== true) {
+            if (m.material !== this.sharedNeuronMaterial) {
+              m.material.color.copy(defaultBlue);
+            } else {
+              m.material.color.copy(defaultBlue);
+            }
+          }
+        });
+        feedback.textContent = 'Returned to uniform neuron colors.';
+      }
+    }
+
+  _updateNeuronOpacity() {
+      this._applyStrengthAndOpacity();
+    }
+
+  _toggleRandomStrength(feedbackElement) {
+      this.strengthRandomized = !this.strengthRandomized;
+      if (this.strengthRandomized) {
+        this.meshes.forEach((m) => {
+          m.userData.strength = Math.random();
+        });
+        feedbackElement.textContent = 'Randomized neuron strengths applied.';
+      } else {
+        this.meshes.forEach((m) => {
+          m.userData.strength = 1.0;
+        });
+        feedbackElement.textContent = 'Returned to full neuron strengths.';
+      }
+      this._applyStrengthAndOpacity();
+    }
+
+  _applyStrengthAndOpacity() {
+      const baseOpacity = 1.0 - this.gridParams.transparency;
+      this.meshes.forEach((mesh) => {
+        const strength = mesh.userData.strength !== undefined ? mesh.userData.strength : 1.0;
+        
+        // Scale physical size is controlled by individual strength
+        mesh.scale.setScalar(strength);
+        
+        // Custom material transparency represents opacity modified by individual strength
+        this._ensureUniqueMaterial(mesh);
+        mesh.material.transparent = true;
+        mesh.material.opacity = baseOpacity * strength;
+      });
+    }
+
+  async _setupBloomPostProcessing() {
+      const THREE_URL = 'https://recursi.dev/thirdparty/three-js-r153/build/three.module.js';
+      const ADDONS = 'https://recursi.dev/thirdparty/three-js-r153/examples/jsm';
+
+      const loadAddon = async (path) => {
+        const blobUrl = await this.app._fetchAndRewrite(ADDONS + path, THREE_URL, 1);
+        return await import(blobUrl);
+      };
+
+      const { EffectComposer } = await loadAddon('/postprocessing/EffectComposer.js');
+      const { RenderPass } = await loadAddon('/postprocessing/RenderPass.js');
+      const { UnrealBloomPass } = await loadAddon('/postprocessing/UnrealBloomPass.js');
+
+      const rect = this.app.renderer.domElement.getBoundingClientRect();
+      const width = rect.width || 640;
+      const height = rect.height || 360;
+
+      const composer = new EffectComposer(this.app.renderer);
+      composer.setSize(width, height);
+
+      const renderPass = new RenderPass(this.app.scene, this.app.camera);
+      composer.addPass(renderPass);
+
+      // Bloom Pass Parameters: (resolution, strength, radius, threshold)
+      const bloomPass = new UnrealBloomPass(
+        new this.app.THREE.Vector2(width, height),
+        1.6,  // strength
+        0.4,  // radius
+        0.05  // low threshold to capture emissive values easily
+      );
+      composer.addPass(bloomPass);
+      this.composer = composer;
+    }
+
+  _toggleBloom(feedbackElement) {
+      this.bloomEnabled = !this.bloomEnabled;
+      if (this.bloomEnabled) {
+        if (!this.composer) {
+          feedbackElement.textContent = 'Loading glow post-processing...';
+          this._setupBloomPostProcessing().then(() => {
+            feedbackElement.textContent = 'Glow effect activated.';
+          }).catch((err) => {
+            console.error(err);
+            feedbackElement.textContent = 'Error loading post-processing libraries.';
+            this.bloomEnabled = false;
+          });
+        } else {
+          feedbackElement.textContent = 'Glow effect activated.';
+        }
+      } else {
+        feedbackElement.textContent = 'Glow effect deactivated.';
       }
     }
 }

@@ -3,7 +3,9 @@
   "main": [
     "browser/Backend.js"
   ],
-  "local": [],
+  "local": [
+    "server/apps/BigFileFinder/FileSearcher.js"
+  ],
   "library": [
     "UITools.js",
     "SidePanel.js"
